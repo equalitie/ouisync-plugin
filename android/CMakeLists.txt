@@ -15,3 +15,15 @@ add_library(
 
     ${SOURCE_DIR}/localRepository.cpp
 )
+
+target_include_directories(native_ouisync PUBLIC ${CALLBACK_MANAGER_DIR})
+
+find_library( # Sets the name of the path variable.
+          android-lib
+
+          # Specifies the name of the NDK library that
+          # you want CMake to locate.
+          android )
+
+target_link_libraries(native_ouisync log)
+target_link_libraries(native_ouisync ${android-lib})
