@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:ouisync_plugin/ouisync_plugin.dart';
 
 void main() {
@@ -19,6 +17,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    NativeCallback.setupNativeCallbacks();
   }
 
   @override
