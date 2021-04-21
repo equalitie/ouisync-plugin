@@ -1,14 +1,13 @@
+import 'dart:ffi';
+import 'dart:io';
 
-import 'dart:async';
+final DynamicLibrary nativeOuiSyncLib = Platform.isAndroid
+  ? DynamicLibrary.open('libnative_ouisync.so')
+  : DynamicLibrary.process();
 
-import 'package:flutter/services.dart';
+final int Function(int x, int y) nativeTest =
+  nativeOuiSyncLib
+    .lookup<NativeFunction<Int32 Function(Int32, Int32)>>('native_test')
+    .asFunction();
 
-class OuisyncPlugin {
-  static const MethodChannel _channel =
-      const MethodChannel('ouisync_plugin');
 
-  static Future<String> get platformVersion async {
-    final String version = await _channel.invokeMethod('getPlatformVersion');
-    return version;
-  }
-}
