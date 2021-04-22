@@ -16,7 +16,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void initState() {
-    super.initState();
+    super.initState(); 
     NativeCallback.setupNativeCallbacks();
   }
 
@@ -28,7 +28,7 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('1 + 2 == ${nativeTest(1, 2)}'),
+          child: Text('OuiSync'),
         ),
       ),
     );

@@ -1,6 +1,9 @@
-#include <stdint.h>
+#include "localRepository.h"
+#include "CallbackManager.h"
 
-extern "C" __attribute__((visibility("default"))) __attribute__((used))
-int32_t native_test(int32_t x, int32_t y) {
-    return x + y;
+#include <string>
+
+void initializeOuisyncRepository(const char* repo_dir)
+{
+    
 }
