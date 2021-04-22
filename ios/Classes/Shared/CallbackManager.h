@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include <stdint.h>
+
 // dart_api.h
 typedef int64_t Dart_Port;
 
