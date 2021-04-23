@@ -12,7 +12,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  bool _createDirAsyncResult;
 
   @override
   void initState() {
@@ -28,9 +28,24 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('OuiSync'),
+          child: Text('createDirAsync returned $_createDirAsyncResult'),
         ),
       ),
     );
+  }
+
+  Future<void> createFolder(String repoDir, String newFolderRelativePath)  async {
+    await NativeCallback.createDirAsync(repoDir, newFolderRelativePath)
+    .catchError((onError) {
+      print('Error on createDirAsync call: $onError');
+    })
+    .then((returned) => {
+      setState(() {
+        _createDirAsyncResult = returned == 0;
+      })
+    })
+    .whenComplete(() => {
+      print('createFolderAsync completed')
+    });
   }
 }
