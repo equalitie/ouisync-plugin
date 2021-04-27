@@ -39,6 +39,18 @@ android {
         targetSdkVersion 30
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        ndk{
+            if (localProperties.containsKey('ndk.abiFilters')) {
+                abiFilters = []
+                abiFilters.addAll(
+                        localProperties
+                                .getProperty('ndk.abiFilters')
+                                .split(',')
+                                .collect{it as String}
+                )
+            }
+        }
     }
 
     buildTypes {
