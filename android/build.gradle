@@ -1,6 +1,14 @@
 group 'com.example.ouisync_plugin'
 version '1.0-SNAPSHOT'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
 buildscript {
     ext.kotlin_version = '1.3.50'
     repositories {
@@ -26,12 +34,24 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 30
-
+    ndkVersion '22.0.7026061'
+    
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
         minSdkVersion 16
+        ndk{
+            if (localProperties.containsKey('ndk.abiFilters')) {
+                abiFilters = []
+                abiFilters.addAll(
+                        localProperties
+                                .getProperty('ndk.abiFilters')
+                                .split(',')
+                                .collect{it as String}
+                )
+            }
+        }
     }
     externalNativeBuild {
         cmake {
