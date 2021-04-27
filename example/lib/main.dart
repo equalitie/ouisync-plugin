@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'package:ouisync_plugin/ouisync_plugin.dart';
+import 'package:ouisync_plugin/ouisync.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,7 +16,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState(); 
-    NativeCallback.setupNativeCallbacks();
+    OuiSync.setupCallbacks();
   }
 
   @override
@@ -35,7 +34,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> createFolder(String repoDir, String newFolderRelativePath)  async {
-    await NativeCallback.createDirAsync(repoDir, newFolderRelativePath)
+    await OuiSync.newFolder(repoDir, newFolderRelativePath)
     .catchError((onError) {
       print('Error on createDirAsync call: $onError');
     })

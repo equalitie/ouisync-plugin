@@ -66,32 +66,35 @@ final nCreateDirAsync = nativeOuiSyncLib.lookupFunction<
   )
 >('createDir');
 
-class NativeCallback {
-  static void setupNativeCallbacks() {
+class OuiSync {
+  static void setupCallbacks() {
     nRegisterPostCObject(NativeApi.postCObject);
-    print('Native callbacks setup ok');
+    print('Callbacks setup ok');
   }
 
-  static void initializeOuisyncRepository(String repoDir) async {
-    nInitializeOuisyncRepository.call(repoDir.toNativeUtf8());
+  static void initializeRepository(String repositoryName) async {
+    nInitializeOuisyncRepository.call(repositoryName.toNativeUtf8());
+    print('Repository $repositoryName initialized');
   } 
 
-  static Future<dynamic> createDirAsync(String repoPath, String newFolderPath) async {
-    return singleResponseFuture((port) => nCreateDirAsync.call(port.nativePort, repoPath.toNativeUtf8(), newFolderPath.toNativeUtf8()));
+  static Future<dynamic> newFolder(String repositoryPath, String newFolderPath) async {
+    print('Create new folder $newFolderPath in repository $repositoryPath');
+    return singleResponseFuture((port) => nCreateDirAsync.call(port.nativePort, repositoryPath.toNativeUtf8(), newFolderPath.toNativeUtf8()));
   }
 
-  static Future<dynamic> getAttributesAsync(String repoPath, List<String> pathList) {
-    final Pointer<Pointer<Utf8>> pointerPathList = calloc(pathList.length);
-    final List<Pointer<Utf8>> utf8PathList = pathList.map((e) => e.toNativeUtf8()).toList();
+  static Future<dynamic> getObjectAttributes(String repositoryPath, List<String> objectsPathList) {
+    final Pointer<Pointer<Utf8>> pointerPathList = calloc(objectsPathList.length);
+    final List<Pointer<Utf8>> utf8PathList = objectsPathList.map((e) => e.toNativeUtf8()).toList();
 
-    for (var i = 0; i < pathList.length; i++) {
+    for (var i = 0; i < objectsPathList.length; i++) {
       pointerPathList[i] = utf8PathList[i];
     }
 
-    return singleResponseFuture((port) => nGetAttributesAsync.call(port.nativePort, repoPath.toNativeUtf8(), pointerPathList, pathList.length));
+    print('Get object attributes (${objectsPathList.length} objects)');
+    return singleResponseFuture((port) => nGetAttributesAsync.call(port.nativePort, repositoryPath.toNativeUtf8(), pointerPathList, objectsPathList.length));
   }
 
-  static Future<List<dynamic>> readDirAsync(String repoPath, String folderPath) async {
-    return singleResponseFuture((port) => nReadDirAsync(port.nativePort, repoPath.toNativeUtf8(), folderPath.toNativeUtf8()));
+  static Future<List<dynamic>> readFolder(String repositoryPath, String folderPath) async {
+    return singleResponseFuture((port) => nReadDirAsync(port.nativePort, repositoryPath.toNativeUtf8(), folderPath.toNativeUtf8()));
   }
 }
