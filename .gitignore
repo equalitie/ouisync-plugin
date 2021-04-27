@@ -7,3 +7,4 @@
 build/
 .vscode/settings.json
 ios/ouisync_bin/
+.vscode/launch.json
