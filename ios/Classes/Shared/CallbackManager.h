@@ -6,6 +6,11 @@
 
 #include <stdint.h>
 
+#include <string>
+#include <vector>
+
+using namespace std;
+
 // dart_api.h
 typedef int64_t Dart_Port;
 
@@ -91,9 +96,17 @@ extern "C" {
 #endif
     void RegisterDart_PostCObject(Dart_PostCObjectType _dartPostCObject);
     void callbackToDartInt32(Dart_Port callbackPort, int32_t value);
-    void callbackToDartStrArray(Dart_Port callbackPort, int length, char** values);
+    void callbackToDartStr(Dart_Port callbackPort, const string& value);
+
+    void callbackToDartStrArray(Dart_Port callbackPort, const vector<string>& strings);
+    void callbackToDartInt32Array(Dart_Port callbackPort, int length, int** values);
 #ifdef __cplusplus
 }
+
+class CallbackManager {
+
+};
+
 #endif
 
 #endif /* CallbackManager_h */
