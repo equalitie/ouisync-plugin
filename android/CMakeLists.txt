@@ -4,6 +4,13 @@ get_filename_component(ROOT_DIR ../ ABSOLUTE)
 
 set (SOURCE_DIR ${ROOT_DIR}/ios/Classes)
 set (CALLBACK_MANAGER_DIR ${ROOT_DIR}/ios/Classes/Shared)
+set (NATIVE_DIR ${ROOT_DIR}/ios/ouisync/src)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcoroutines-ts -stdlib=libc++ -std=c++17")
+
+add_subdirectory(
+    ${ROOT_DIR}/ios/ouisync ${ROOT_DIR}/ios/ouisync_bin
+)
 
 add_library( 
     native_ouisync
@@ -16,14 +23,5 @@ add_library(
     ${SOURCE_DIR}/localRepository.cpp
 )
 
-target_include_directories(native_ouisync PUBLIC ${CALLBACK_MANAGER_DIR})
-
-find_library( # Sets the name of the path variable.
-          android-lib
-
-          # Specifies the name of the NDK library that
-          # you want CMake to locate.
-          android )
-
-target_link_libraries(native_ouisync log)
-target_link_libraries(native_ouisync ${android-lib})
+target_include_directories(native_ouisync PUBLIC ${CALLBACK_MANAGER_DIR} ${NATIVE_DIR})
+target_link_libraries(native_ouisync PUBLIC libouisync)
