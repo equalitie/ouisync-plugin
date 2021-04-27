@@ -1,0 +1,4 @@
+[submodule "ios/ouisync"]
+	path = ios/ouisync
+	url = https://github.com/equalitie/ouisync
+	branch = master
