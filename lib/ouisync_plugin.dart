@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:ffi/ffi.dart';
@@ -206,9 +207,33 @@ class Error implements Exception {
 // Private helpers to simplify working with the native API:
 
 DynamicLibrary _defaultLib() {
-  // TODO: this depends on the platform
-  return DynamicLibrary.open('libouisync.so');
+  final name = "ouisync";
+
+  if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (Platform.isLinux) {
+      return DynamicLibrary.open("build/test/lib$name.so");
+    }
+
+    if (Platform.isMacOS) {
+      return DynamicLibrary.open("build/test/$name.dylib");
+    }
+
+    if (Platform.isWindows) {
+      return DynamicLibrary.open("build/test/$name.dll");
+    }
+  }
+
+  if (Platform.isAndroid) {
+    return DynamicLibrary.open('libouisync.so');
+  }
+
+  if (Platform.isIOS) {
+    return DynamicLibrary.process();
+  }
+
+  throw Exception('unsupported platform ${Platform.operatingSystem}');
 }
+
 
 // Call the function passing it a [_Pool] which will be released when the function returns.
 Future<T> _withPool<T>(Future<T> Function(_Pool) fun) async {
