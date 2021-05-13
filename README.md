@@ -1,15 +1,9 @@
-# ouisync_plugin
+# Ouisync Plugin
 
-A new flutter plugin project.
+A flutter plugin providing high-level dart API for the ouisync native library.
 
-## Getting Started
+## Quick start
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+- Generate the bindings:
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
+    `> dart run ffigen`
