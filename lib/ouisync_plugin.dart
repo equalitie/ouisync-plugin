@@ -51,8 +51,8 @@ class Repository {
 
   Future<bool> exists(String path) async => await type(path) != null;
 
-  Future<void> move(String src, String dst) => _withPool((pool) => _invoke<void>(
-      (port, error) => bindings.repository_move_entry(handle,
+  Future<void> move(String src, String dst) => _withPool((pool) =>
+      _invoke<void>((port, error) => bindings.repository_move_entry(handle,
           pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port, error)));
 }
 
@@ -100,12 +100,12 @@ class Directory with IterableMixin<DirEntry> {
               .directory_open(
                   repo.handle, pool.toNativeUtf8(path), port, error))));
 
-  static Future<void> create(Repository repo, String path) => _withPool((pool) =>
-      _invoke<void>((port, error) => repo.bindings.directory_create(
+  static Future<void> create(Repository repo, String path) => _withPool(
+      (pool) => _invoke<void>((port, error) => repo.bindings.directory_create(
           repo.handle, pool.toNativeUtf8(path), port, error)));
 
-  static Future<void> remove(Repository repo, String path) => _withPool((pool) =>
-      _invoke<void>((port, error) => repo.bindings.directory_remove(
+  static Future<void> remove(Repository repo, String path) => _withPool(
+      (pool) => _invoke<void>((port, error) => repo.bindings.directory_remove(
           repo.handle, pool.toNativeUtf8(path), port, error)));
 
   void close() {
@@ -192,8 +192,10 @@ class File {
 
   Future<void> truncate(int size) => _invoke<void>(
       (port, error) => bindings.file_truncate(handle, size, port, error));
-}
 
+  Future<int> get length =>
+      _invoke<int>((port, error) => bindings.file_len(handle, port, error));
+}
 
 class Error implements Exception {
   final String _message;
@@ -233,7 +235,6 @@ DynamicLibrary _defaultLib() {
 
   throw Exception('unsupported platform ${Platform.operatingSystem}');
 }
-
 
 // Call the function passing it a [_Pool] which will be released when the function returns.
 Future<T> _withPool<T>(Future<T> Function(_Pool) fun) async {
@@ -314,4 +315,3 @@ class _Pool implements Allocator {
   Pointer<Int8> toNativeUtf8(String str) =>
       str.toNativeUtf8(allocator: this).cast<Int8>();
 }
-
