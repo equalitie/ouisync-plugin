@@ -9,5 +9,3 @@ build/
 .vscode/settings.json
 .vscode/launch.json
 
-lib/gen
-

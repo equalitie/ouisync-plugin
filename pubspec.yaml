@@ -38,7 +38,7 @@ flutter:
 ffigen:
   name: 'Bindings'
   description: 'Bindings to the ouisync library'
-  output: 'lib/gen/bindings.dart'
+  output: 'lib/bindings.dart'
   headers:
     entry-points:
       - '../ouisync/target/bindings.h'
