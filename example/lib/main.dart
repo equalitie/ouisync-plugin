@@ -41,15 +41,14 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Center(
-          child: Text('Num files in /: ${dir?.length ?? 0}')
-        ),
+        body: Center(child: Text('Num files in /: ${dir?.length ?? 0}')),
       ),
     );
   }
 
   void load() async {
-    final session = await Session.open(join((await getApplicationSupportDirectory()).path, 'db'));
+    final session = await Session.open(
+        join((await getApplicationSupportDirectory()).path, 'db'));
     final repo = await Repository.open(session);
     final dir = await Directory.open(repo, '/');
 
@@ -60,4 +59,3 @@ class _MyAppState extends State<MyApp> {
     });
   }
 }
-

@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:ffi/ffi.dart';
-import 'gen/bindings.dart';
+import 'bindings.dart';
 
 class Session {
   final Bindings bindings;
@@ -209,24 +209,24 @@ class Error implements Exception {
 // Private helpers to simplify working with the native API:
 
 DynamicLibrary _defaultLib() {
-  final name = "ouisync";
+  final name = 'ouisync';
 
   if (Platform.environment.containsKey('FLUTTER_TEST')) {
     if (Platform.isLinux) {
-      return DynamicLibrary.open("build/test/lib$name.so");
+      return DynamicLibrary.open('build/test/lib$name.so');
     }
 
     if (Platform.isMacOS) {
-      return DynamicLibrary.open("build/test/$name.dylib");
+      return DynamicLibrary.open('build/test/$name.dylib');
     }
 
     if (Platform.isWindows) {
-      return DynamicLibrary.open("build/test/$name.dll");
+      return DynamicLibrary.open('build/test/$name.dll');
     }
   }
 
   if (Platform.isAndroid) {
-    return DynamicLibrary.open('libouisync.so');
+    return DynamicLibrary.open('lib$name.so');
   }
 
   if (Platform.isIOS) {
