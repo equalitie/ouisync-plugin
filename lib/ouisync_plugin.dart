@@ -7,13 +7,17 @@ import 'dart:math';
 import 'package:ffi/ffi.dart';
 import 'bindings.dart';
 
+/// Entry point to the ouisync bindings. A session should be opened at the start of the application
+/// and closed at the end. There can be only one session at the time.
 class Session {
   final Bindings bindings;
 
   Session._(this.bindings);
 
-  static Future<Session> open(String store, {DynamicLibrary? lib}) async {
-    final bindings = Bindings(lib ?? _defaultLib());
+  /// Opens a new session. [store] is a path to the sqlite database to use. If it doesn't exists, it
+  /// will be created.
+  static Future<Session> open(String store) async {
+    final bindings = Bindings(_defaultLib());
 
     await _withPool((pool) => _invoke<void>((port, error) =>
         bindings.session_open(NativeApi.postCObject.cast<Void>(),
@@ -22,17 +26,24 @@ class Session {
     return Session._(bindings);
   }
 
+  /// Closes the session.
   void close() {
     bindings.session_close();
   }
 }
 
+/// A reference to a ouisync repository.
 class Repository {
   final Bindings bindings;
   final int handle;
 
   Repository._(this.bindings, this.handle);
 
+  /// Opens a repository. Currently only one repository is supported. Eventually this will change
+  /// and this method would allow to specify which repository to open.
+  ///
+  /// Important: don't forget to [close] the repository after being done with it. Failure to do so
+  /// could cause a memory leak.
   static Future<Repository> open(Session session) async {
     final bindings = session.bindings;
     return Repository._(
@@ -41,27 +52,36 @@ class Repository {
             (port, error) => bindings.repository_open(port, error)));
   }
 
+  /// Close the repository. Accessing the repository after it's been closed is undefined behaviour
+  /// (likely crash).
   void close() {
     bindings.repository_close(handle);
   }
 
-  Future<EntryType?> type(String path) async => decodeEntryType(await _withPool(
+  /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
+  /// doesn't exists.
+  Future<EntryType?> type(String path) async => _decodeEntryType(await _withPool(
       (pool) => _invoke<int>((port, error) => bindings.repository_entry_type(
           handle, pool.toNativeUtf8(path), port, error))));
 
+  /// Returns whether the entry (file or directory) at [path] exists.
   Future<bool> exists(String path) async => await type(path) != null;
 
+  /// Move/rename the file/directory from [src] to [dst].
   Future<void> move(String src, String dst) => _withPool((pool) =>
       _invoke<void>((port, error) => bindings.repository_move_entry(handle,
           pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port, error)));
 }
 
+/// Type of a filesystem entry.
 enum EntryType {
+  /// Regular file.
   file,
+  /// Directory.
   directory,
 }
 
-EntryType? decodeEntryType(int n) {
+EntryType? _decodeEntryType(int n) {
   switch (n) {
     case ENTRY_TYPE_FILE:
       return EntryType.file;
@@ -72,27 +92,44 @@ EntryType? decodeEntryType(int n) {
   }
 }
 
+/// Single entry of a directory.
 class DirEntry {
   final Bindings bindings;
   final int handle;
 
   DirEntry._(this.bindings, this.handle);
 
+  /// Name of this entry.
+  ///
+  /// Note: this is just the name, not the full path.
   String get name =>
       bindings.dir_entry_name(handle).cast<Utf8>().toDartString();
 
+  /// Type of this entry (file/directory).
   EntryType get type {
-    return decodeEntryType(bindings.dir_entry_type(handle)) ??
+    return _decodeEntryType(bindings.dir_entry_type(handle)) ??
         (throw Error('invalid dir entry type'));
   }
 }
 
+/// A reference to a directory (folder) in a [Repository].
+///
+/// This class is [Iterable], yielding the directory entries.
+///
+/// Note: Currently this is a read-only snapshot of the directory at the time is was opened.
+/// Subsequent external changes to the directory (e.g. added files) are not recognized and the
+/// directory needs to be manually reopened to do so.
 class Directory with IterableMixin<DirEntry> {
   final Bindings bindings;
   final int handle;
 
   Directory._(this.bindings, this.handle);
 
+  /// Opens a directory of [repo] at [path].
+  ///
+  /// Throws if [path] doesn't exist or is not a directory.
+  ///
+  /// Note: don't forget to [close] it when no longer needed.
   static Future<Directory> open(Repository repo, String path) async =>
       Directory._(
           repo.bindings,
@@ -100,22 +137,29 @@ class Directory with IterableMixin<DirEntry> {
               .directory_open(
                   repo.handle, pool.toNativeUtf8(path), port, error))));
 
+  /// Creates a new directory in [repo] at [path].
+  ///
+  /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<void> create(Repository repo, String path) => _withPool(
       (pool) => _invoke<void>((port, error) => repo.bindings.directory_create(
           repo.handle, pool.toNativeUtf8(path), port, error)));
 
+  /// Remove a directory from [repo] at [path]. The directory must be empty.
   static Future<void> remove(Repository repo, String path) => _withPool(
       (pool) => _invoke<void>((port, error) => repo.bindings.directory_remove(
           repo.handle, pool.toNativeUtf8(path), port, error)));
 
+  /// Closes this directory.
   void close() {
     bindings.directory_close(handle);
   }
 
+  /// Returns an [Iterator] to iterate over entries of this directory.
   @override
   Iterator<DirEntry> get iterator => DirEntriesIterator._(bindings, handle);
 }
 
+/// Iterator for a [Directory]
 class DirEntriesIterator extends Iterator<DirEntry> {
   final Bindings bindings;
   final int handle;
@@ -138,6 +182,7 @@ class DirEntriesIterator extends Iterator<DirEntry> {
   }
 }
 
+/// Reference to a file in a [Repository].
 class File {
   final Bindings bindings;
   final int handle;
@@ -146,26 +191,61 @@ class File {
 
   static const defaultChunkSize = 1024;
 
+  /// Opens an existing file from [repo] at [path].
+  ///
+  /// Throws if [path] doesn't exists or is a directory.
   static Future<File> open(Repository repo, String path) async => File._(
       repo.bindings,
       await _withPool((pool) => _invoke<int>((port, error) => repo.bindings
           .file_open(repo.handle, pool.toNativeUtf8(path), port, error))));
 
+  /// Creates a new file in [repo] at [path].
+  ///
+  /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<File> create(Repository repo, String path) async => File._(
       repo.bindings,
       await _withPool((pool) => _invoke<int>((port, error) => repo.bindings
           .file_create(repo.handle, pool.toNativeUtf8(path), port, error))));
 
+  /// Removes (deletes) a file at [path] from [repo].
   static Future<void> remove(Repository repo, String path) =>
       _withPool((pool) => _invoke<void>((port, error) => repo.bindings
           .file_remove(repo.handle, pool.toNativeUtf8(path), port, error)));
 
+  /// Flushed and closes this file.
   Future<void> close() =>
       _invoke<void>((port, error) => bindings.file_close(handle, port, error));
 
+  /// Flushes any pending writes to this file.
   Future<void> flush() =>
       _invoke<void>((port, error) => bindings.file_flush(handle, port, error));
 
+  /// Read [size] bytes from this file, starting at [offset].
+  ///
+  /// To read the whole file at once:
+  ///
+  /// ```dart
+  /// final length = await file.length;
+  /// final content = await file.read(0, length);
+  /// ```
+  ///
+  /// To read the whole file in chunks:
+  ///
+  /// ```dart
+  /// final chunkSize = 1024;
+  /// var offset = 0;
+  ///
+  /// while (true) {
+  ///   final chunk = await file.read(offset, chunkSize);
+  ///   offset += chunk.length;
+  ///
+  ///   doSomethingWithTheChunk(chunk);
+  ///
+  ///   if (chunk.length < chunkSize) {
+  ///     break;
+  ///   }
+  /// }
+  /// ```
   Future<List<int>> read(int offset, int size) async {
     var buffer = malloc<Uint8>(size);
 
@@ -178,6 +258,7 @@ class File {
     }
   }
 
+  /// Write [data] to this file starting at [offset].
   Future<void> write(int offset, List<int> data) async {
     var buffer = malloc<Uint8>(data.length);
 
@@ -190,13 +271,16 @@ class File {
     }
   }
 
+  /// Truncate the file to [size] bytes.
   Future<void> truncate(int size) => _invoke<void>(
       (port, error) => bindings.file_truncate(handle, size, port, error));
 
+  /// Returns the length of this file in bytes.
   Future<int> get length =>
       _invoke<int>((port, error) => bindings.file_len(handle, port, error));
 }
 
+/// The exception type throws from this library.
 class Error implements Exception {
   final String _message;
 
