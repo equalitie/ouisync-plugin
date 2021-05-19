@@ -18,6 +18,7 @@
 #include <iostream>
 #include <iterator>
 #include <cstdarg>
+#include <sys/stat.h>
 
 using namespace std;
 using namespace ouisync;
@@ -136,6 +137,174 @@ void createDir(Dart_Port callbackPort, const char* repo_dir, const char* c_new_d
     });
 }
 
+void readDir(Dart_Port callbackPort, const char* repo_dir, const char* c_directory_to_read) 
+{
+    auto repo_i = g_repos.find(repo_dir);
+
+    if (repo_i == g_repos.end()) {
+        vector<string> error;
+        string return_no_such_repo = str(boost::format("No such repo %s has been initialized") % repo_dir);
+
+        error.push_back("ERROR");
+        error.push_back(return_no_such_repo);
+        callbackToDartStrArray(callbackPort, error);
+
+        return;
+    }
+
+    auto& repo = *repo_i->second;
+
+    repo.post([
+        callbackPort,
+        &repo,
+        directory_to_read = fs::path(c_directory_to_read)
+    ] () -> net::awaitable<void> {
+        vector<string> files;
+        try {
+            files = co_await repo._ouisync_repo.readdir(path_range(directory_to_read));
+            callbackToDartStrArray(callbackPort, files);
+        } catch (const exception& e) {
+            string return_exception_reddir = str(
+                boost::format(
+                    "There was an exception while reading the directory %s contents: %s at %s:%s:%d"
+                ) % directory_to_read % e.what() % __FILE__ % __FUNCTION__ % __LINE__
+            );
+
+            files.push_back("ERROR");
+            files.push_back(return_exception_reddir);
+            callbackToDartStrArray(callbackPort, files);
+        }
+    });
+}
+
+//TODO: removeDir
+void removeDir(Dart_Port callbackPort, const char* repo_dir, const char* directory_to_remove) 
+{
+
+}
+
+void createFile(Dart_Port callbackPort, const char* repo_dir, const char* c_new_file_path)
+{
+    auto repo_i = g_repos.find(repo_dir);
+    if (repo_i == g_repos.end()) {
+        callbackToDartStr(callbackPort, "No such repo");
+        return;
+    }
+
+    auto& repo = *repo_i->second;
+
+    repo.post([
+        callbackPort,
+        &repo,
+        new_file = fs::path(c_new_file_path)
+    ] () -> net::awaitable<void> {
+        try {
+            mode_t mode = S_IFREG; //0100000   regular file
+            dev_t dev = 111;
+            co_await repo._ouisync_repo.mknod(path_range(new_file), mode, dev); 
+
+            callbackToDartStr(callbackPort, "OK");      
+        } catch (const exception& e) {
+            callbackToDartStr(callbackPort, e.what());
+        }
+    });
+}
+
+void writeFile(Dart_Port callbackPort, const char* repo_dir, const char* file_path, const char* buffer, size_t size, off_t offset)
+{
+    auto repo_i = g_repos.find(repo_dir);
+    if (repo_i == g_repos.end()) {
+        callbackToDartInt32(callbackPort, -1);
+        return;
+    }
+
+    auto& repo = *repo_i->second;
+    
+    repo.post([
+        callbackPort,
+        &repo,
+        file = fs::path(file_path),
+        buffer = std::vector<char>(buffer, buffer+size),
+        size,
+        offset
+    ] () -> net::awaitable<void> {
+        try {
+            size_t written = 0;
+            uint32_t sum_write = 0;
+
+            while (written < size) {
+                auto w = co_await repo._ouisync_repo.write(path_range(file), buffer.data() + written, size - written, offset + written);
+                for (size_t i = 0; i < w; i++)
+                {
+                    sum_write += buffer[written+i];
+                }
+                written += w;
+            }
+            debug("Total written: %d", sum_write);
+            callbackToDartInt32(callbackPort, written);
+        } catch (const exception& e) {
+            callbackToDartInt32(callbackPort, -11);
+        }
+    });
+}
+
+//TODO: readFile
+void readFile(Dart_Port callbackPort, const char* repo_dir, const char* file_path, char* buffer, size_t size, off_t offset)
+{
+    auto repo_i = g_repos.find(repo_dir);
+    if (repo_i == g_repos.end()) {
+        string return_no_such_repo = str(boost::format("No such repo %s has been initialized") % repo_dir);
+        callbackToDartStr(callbackPort, return_no_such_repo);
+        return;
+    }
+
+    auto& repo = *repo_i->second;
+    
+    repo.post([
+        callbackPort,
+        &repo,
+        file = fs::path(file_path),
+        buffer,
+        size,
+        offset
+    ] () -> net::awaitable<void> {
+        try {
+            size_t sum_read = 0;
+            size_t read = 0;
+
+            debug("Buffer size: %d", size);
+            debug("Offset: %d", offset);
+
+            while (read < size) {
+                read = co_await repo._ouisync_repo.read(path_range(file), buffer+read, size - read, offset + read);
+                sum_read += read; 
+                
+                debug("Bytes read %d ", read);
+                debug("Bytes left %d ", size - sum_read);
+
+                if (read == 0) {
+                    debug("No more bytes to read; breaking", read);
+                    break;
+                }
+            }
+
+            debug("Out of the loop; total bytes read: %d", sum_read);
+
+            string return_read_bytes = str(boost::format("read:%d") % sum_read);
+            callbackToDartStr(callbackPort, return_read_bytes);
+        } catch (const exception& e) {
+            debug("Exception reading file: %d", e.what());
+            callbackToDartStr(callbackPort, e.what());
+        }
+    });
+}
+
+//TODO: removeFile
+void removeFile(Dart_Port callbackPort, const char* repo_dir, const char* path_file_to_remove)
+{
+
+}
+
 void getAttributes(Dart_Port callbackPort, const char* repo_dir, const char  **c_paths, const int size)
 {
     // ALOG(LOG_TAG, "Getting attributes for %s in repo %s", c_path, repo_dir);
@@ -189,48 +358,6 @@ void getAttributes(Dart_Port callbackPort, const char* repo_dir, const char  **c
             object_attributes.push_back("__error__");
             object_attributes.push_back(return_exception_getatt);
             callbackToDartStrArray(callbackPort, object_attributes);
-        }
-    });
-}
-
-void readDir(Dart_Port callbackPort, const char* repo_dir, const char* c_directory_to_read) 
-{
-    // ALOG(LOG_TAG, "Reading directory %s in repo %s", c_directory_to_read, repo_dir);
-
-    auto repo_i = g_repos.find(repo_dir);
-
-    if (repo_i == g_repos.end()) {
-        string return_no_such_repo = str(boost::format("No such repo %s has been initialized") % repo_dir);
-
-        // ALOG(LOG_TAG, return_no_such_repo.c_str(), "");
-        callbackToDartStr(callbackPort, return_no_such_repo);
-
-        return;
-    }
-
-    auto& repo = *repo_i->second;
-
-    repo.post([
-        callbackPort,
-        &repo,
-        directory_to_read = fs::path(c_directory_to_read)
-    ] () -> net::awaitable<void> {
-        vector<string> files;
-        try {
-            files = co_await repo._ouisync_repo.readdir(path_range(directory_to_read));
-            callbackToDartStrArray(callbackPort, files);
-        } catch (const exception& e) {
-            string return_exception_reddir = str(
-                boost::format(
-                    "There was an exception while reading the directory %s contents: %s at %s:%s:%d"
-                ) % directory_to_read % e.what() % __FILE__ % __FUNCTION__ % __LINE__
-            );
-
-            // ALOG(LOG_TAG, return_exception_reddir.c_str(), "");
-
-            files.push_back("__error__");
-            files.push_back(return_exception_reddir);
-            callbackToDartStrArray(callbackPort, files);
         }
     });
 }

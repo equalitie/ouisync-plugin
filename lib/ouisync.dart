@@ -66,6 +66,57 @@ final nCreateDirAsync = nativeOuiSyncLib.lookupFunction<
   )
 >('createDir');
 
+final nCreateFileAsync = nativeOuiSyncLib.lookupFunction<
+  Int32 Function(
+    Int64,
+    Pointer<Utf8>,
+    Pointer<Utf8>
+  ),
+  int Function(
+    int,
+    Pointer<Utf8>,
+    Pointer<Utf8>
+  )
+>('createFile');
+
+final nWriteFileAsync = nativeOuiSyncLib.lookupFunction<
+  Int32 Function(
+    Int64,
+    Pointer<Utf8>,
+    Pointer<Utf8>,
+    Pointer<Uint8>,
+    Uint64,
+    Uint64
+  ),
+  int Function(
+    int,
+    Pointer<Utf8>,
+    Pointer<Utf8>,
+    Pointer<Uint8>,
+    int,
+    int
+  )
+>('writeFile');
+
+final nReadFileAsync = nativeOuiSyncLib.lookupFunction<
+  Int32 Function(
+    Int64,
+    Pointer<Utf8>,
+    Pointer<Utf8>,
+    Pointer<Uint8>,
+    Uint64,
+    Uint64
+  ),
+  int Function(
+    int,
+    Pointer<Utf8>,
+    Pointer<Utf8>,
+    Pointer<Uint8>,
+    int,
+    int
+  )
+>('readFile');
+
 class OuiSync {
   static void setupCallbacks() {
     nRegisterPostCObject(NativeApi.postCObject);
@@ -79,22 +130,100 @@ class OuiSync {
 
   static Future<dynamic> newFolder(String repositoryPath, String newFolderPath) async {
     print('Create new folder $newFolderPath in repository $repositoryPath');
-    return singleResponseFuture((port) => nCreateDirAsync.call(port.nativePort, repositoryPath.toNativeUtf8(), newFolderPath.toNativeUtf8()));
+    return singleResponseFuture((port) =>
+    nCreateDirAsync.call(
+      port.nativePort,
+      repositoryPath.toNativeUtf8(),
+      newFolderPath.toNativeUtf8()
+    ));
   }
 
   static Future<dynamic> getObjectAttributes(String repositoryPath, List<String> objectsPathList) {
-    final Pointer<Pointer<Utf8>> pointerPathList = calloc(objectsPathList.length);
+    final Pointer<Pointer<Utf8>> pathListPtr = calloc(objectsPathList.length);
     final List<Pointer<Utf8>> utf8PathList = objectsPathList.map((e) => e.toNativeUtf8()).toList();
 
     for (var i = 0; i < objectsPathList.length; i++) {
-      pointerPathList[i] = utf8PathList[i];
+      pathListPtr[i] = utf8PathList[i];
     }
 
     print('Get object attributes (${objectsPathList.length} objects)');
-    return singleResponseFuture((port) => nGetAttributesAsync.call(port.nativePort, repositoryPath.toNativeUtf8(), pointerPathList, objectsPathList.length));
+    return singleResponseFuture((port) => 
+    nGetAttributesAsync.call(
+      port.nativePort,
+      repositoryPath.toNativeUtf8(),
+      pathListPtr,
+      objectsPathList.length
+    ));
   }
 
   static Future<List<dynamic>> readFolder(String repositoryPath, String folderPath) async {
-    return singleResponseFuture((port) => nReadDirAsync(port.nativePort, repositoryPath.toNativeUtf8(), folderPath.toNativeUtf8()));
+    return singleResponseFuture((port) => 
+    nReadDirAsync(
+      port.nativePort,
+      repositoryPath.toNativeUtf8(),
+      folderPath.toNativeUtf8()
+    ));
+  }
+
+  static Future<dynamic> newFile(String repositoryPath, String newFilePath) async {
+    print('Create new file $newFilePath in repository $repositoryPath');
+    return singleResponseFuture((port) =>
+    nCreateFileAsync.call(
+      port.nativePort,
+      repositoryPath.toNativeUtf8(),
+      newFilePath.toNativeUtf8()
+    ));
+  }
+
+  static Future<dynamic> writeFile(String repositoryPath, String filePath, List<int> buffer, int offset) {
+    final bufferPtr = calloc<Uint8>(buffer.length);
+    bufferPtr
+      .asTypedList(buffer.length)
+      .setAll(0, buffer);
+
+    return singleResponseFuture((port) => 
+    nWriteFileAsync(
+      port.nativePort,
+      repositoryPath.toNativeUtf8(),
+      filePath.toNativeUtf8(),
+      bufferPtr,
+      buffer.length,
+      offset
+    ));
+  }
+
+  static Stream<dynamic> readFile(String repositoryPath, String filePath, int bufferSize, int totalBytes) async* {
+    
+    final bufferPtr = calloc<Uint8>(bufferSize);
+    int offset = 0;
+
+    while(true) {
+
+      var result = await singleResponseFuture((port) => 
+      nReadFileAsync(
+        port.nativePort,
+        repositoryPath.toNativeUtf8(),
+        filePath.toNativeUtf8(),
+        bufferPtr,
+        bufferSize,
+        offset
+      ));
+
+      print(result);
+
+      int readBytes = int.tryParse(result.split(':')[1]);
+      offset += readBytes;
+      
+      if (readBytes > 0) {
+        yield bufferPtr.asTypedList(readBytes);
+      }
+
+      if (readBytes < bufferSize) {
+        print('No more bytes to read.\nTotal bytes read:$offset');
+        break;
+      }
+    }
+
+    yield "EOF";
   }
 }
