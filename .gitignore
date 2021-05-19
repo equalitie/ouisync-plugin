@@ -9,3 +9,4 @@ build/
 .vscode/settings.json
 .vscode/launch.json
 ios/ouisync_bin/
+.vscode/c_cpp_properties.json
