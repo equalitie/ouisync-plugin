@@ -8,4 +8,4 @@ pubspec.lock
 build/
 .vscode/settings.json
 .vscode/launch.json
-
+ios/ouisync_bin/
