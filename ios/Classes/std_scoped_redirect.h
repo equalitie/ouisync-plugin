@@ -1,9 +1,11 @@
 #pragma once
 
+#include <android/log.h>
+
 #include <unistd.h> // dup2
 #include <thread>
 
-#define debug(...) printf("OuiSyncStdIo %s", __VA_ARGS__);
+#define debug(...) __android_log_print(ANDROID_LOG_VERBOSE, "OuiSyncStdIo", __VA_ARGS__);
 
 class StdScopedRedirect {
 public:

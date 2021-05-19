@@ -24,4 +24,4 @@ add_library(
 )
 
 target_include_directories(native_ouisync PUBLIC ${CALLBACK_MANAGER_DIR} ${NATIVE_DIR})
-target_link_libraries(native_ouisync PUBLIC libouisync)
+target_link_libraries(native_ouisync PUBLIC libouisync log)
