@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:ffi';
 import 'dart:io';
-import 'package:isolate/ports.dart';
+
 import 'package:ffi/ffi.dart';
+import 'package:isolate/ports.dart';
 
 final DynamicLibrary nativeOuiSyncLib = Platform.isAndroid
   ? DynamicLibrary.open('libnative_ouisync.so')
