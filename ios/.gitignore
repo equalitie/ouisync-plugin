@@ -29,7 +29,7 @@ xcuserdata
 *.moved-aside
 
 *.pyc
-*sync_plugin.podspec/
+*sync/
 Icon?
 .tags*
 

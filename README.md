@@ -1,15 +1,34 @@
-# ouisync_plugin
+# Ouisync Plugin
 
-A new flutter plugin project.
+A flutter plugin providing high-level dart API for the ouisync native library.
 
-## Getting Started
+## Building the native library
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+The library is built automatically as part of this plugins build process, but it needs the following prerequisities to be satisfied first:
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Checkout the library into a directory called `ouisync` next to this plugin's directory (or `git pull` the latest revision if already checked out).
+2. Install [rust](https://www.rust-lang.org/tools/install)
+3. For each of the supported platforms, add its corresponding target:
 
+        rustup target add $TARGET
+
+   Where `$TARGET` is the target triple of the platform (run `rustup target list` to list all available triples):
+
+    - android arm64:  `aarch64-linux-android`
+    - android arm32:  `armv7-linux-androideabi`
+    - android x86_64: `x86_64-linux-android`
+    - ios arm64:      `aarch64-apple-ios`
+    - etc...
+
+## Generating the low-level dart bindings module (`lib/bindings.dart`)
+
+(needs to be done every time the public API of the native library changes)
+
+    flutter pub run ffigen
+
+## Running unit tests
+
+Copy/symlink the native library to:
+ - linux: `build/test/libouisync.so`
+ - osx: `build/test/ouisync.dylb`
+ - windows: `build/test/ouisync.dll`

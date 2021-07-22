@@ -1,24 +1,21 @@
-group 'com.example.ouisync_plugin'
+group 'ie.equalit.ouisync_plugin'
 version '1.0-SNAPSHOT'
-
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
 
 buildscript {
     ext.kotlin_version = '1.3.50'
     repositories {
         google()
         jcenter()
+
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 
     dependencies {
         classpath 'com.android.tools.build:gradle:4.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.mozilla.rust-android-gradle:plugin:0.8.6"
     }
 }
 
@@ -31,36 +28,31 @@ rootProject.allprojects {
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'org.mozilla.rust-android-gradle.rust-android'
 
 android {
     compileSdkVersion 30
-    ndkVersion '22.0.7026061'
-    
+
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
         minSdkVersion 16
-        ndk{
-            if (localProperties.containsKey('ndk.abiFilters')) {
-                abiFilters = []
-                abiFilters.addAll(
-                        localProperties
-                                .getProperty('ndk.abiFilters')
-                                .split(',')
-                                .collect{it as String}
-                )
-            }
-        }
-    }
-    externalNativeBuild {
-        cmake {
-            path "CMakeLists.txt"
-            version "3.18.1"
-        }
     }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
+
+cargo {
+    module = "../../ouisync"
+    libname = "ouisync"
+    targets = ["arm", "arm64", "x86", "x86_64"]
+    // TODO: consider using "debug" / "release" depending on the current buildType (find out how to do that)
+    profile = "release"
+    extraCargoBuildArguments = ['--lib']
+}
+
+// TODO: find a way to build only the requested architectures
+preBuild.dependsOn 'cargoBuild'

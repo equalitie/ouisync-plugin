@@ -1,23 +1,52 @@
-import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'dart:convert';
+import 'package:test/test.dart';
 import 'package:ouisync_plugin/ouisync_plugin.dart';
 
 void main() {
-  const MethodChannel channel = MethodChannel('ouisync_plugin');
+  late Session session;
+  late Repository repo;
 
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() {
-    channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      return '42';
-    });
+  setUp(() async {
+    session = await Session.open(':memory:');
+    repo = await Repository.open(session);
   });
 
   tearDown(() {
-    channel.setMockMethodCallHandler(null);
+    repo.close();
+    session.close();
   });
 
-  test('getPlatformVersion', () async {
-    expect(await OuisyncPlugin.platformVersion, '42');
+  test('file write and read', () async {
+    final path = '/test.txt';
+    final origContent = 'hello world';
+
+    {
+      final file = await File.create(repo, path);
+      await file.write(0, utf8.encode(origContent));
+      await file.close();
+    }
+
+    {
+      final file = await File.open(repo, path);
+
+      try {
+        final length = await file.length;
+        final readContent = utf8.decode(await file.read(0, length));
+
+        expect(readContent, equals(origContent));
+      } finally {
+        await file.close();
+      }
+    }
+  });
+
+  test('empty directory', () async {
+    final rootDir = await Directory.open(repo, '/');
+
+    try {
+      expect(rootDir, isEmpty);
+    } finally {
+      rootDir.close();
+    }
   });
 }

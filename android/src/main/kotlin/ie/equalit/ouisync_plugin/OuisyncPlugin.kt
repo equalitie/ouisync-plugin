@@ -1,4 +1,4 @@
-package com.example.ouisync_plugin
+package ie.equalit.ouisync_plugin
 
 import androidx.annotation.NonNull
 
