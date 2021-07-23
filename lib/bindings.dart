@@ -289,13 +289,13 @@ class Bindings {
   /// Truncate the file to `len` bytes.
   void file_truncate(
     int handle,
-    int _len,
+    int len,
     int port,
     ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_truncate(
       handle,
-      _len,
+      len,
       port,
       error,
     );
@@ -629,14 +629,14 @@ typedef _dart_file_write = void Function(
 
 typedef _c_file_truncate = ffi.Void Function(
   ffi.Uint64 handle,
-  ffi.Uint64 _len,
+  ffi.Uint64 len,
   ffi.Int64 port,
   ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
 );
 
 typedef _dart_file_truncate = void Function(
   int handle,
-  int _len,
+  int len,
   int port,
   ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
 );
