@@ -41,7 +41,7 @@ ffigen:
   output: 'lib/bindings.dart'
   headers:
     entry-points:
-      - '../ouisync/target/bindings.h'
+      - './ouisync/target/bindings.h'
     include-directives:
       - '**bindings.h'
 
