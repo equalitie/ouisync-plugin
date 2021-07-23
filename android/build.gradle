@@ -37,7 +37,7 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
     }
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
     }
 }
 
@@ -46,7 +46,7 @@ dependencies {
 }
 
 cargo {
-    module = "../../ouisync"
+    module = "../ouisync"
     libname = "ouisync"
     targets = ["arm", "arm64", "x86", "x86_64"]
     // TODO: consider using "debug" / "release" depending on the current buildType (find out how to do that)
