@@ -4,8 +4,88 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
+import 'package:flutter/services.dart';
 import 'bindings.dart';
+
+/// Implementation of the MethodChannel handler for calling functions
+/// inmplemented nmatively, and viceversa. 
+class NativeChannels {
+  static final MethodChannel _channel =
+    const MethodChannel('ouisync_plugin');
+
+  static late final Repository _repository;
+  /// Provides the Repository instance to be used in any file operation that requires it.
+  /// [repository] is the instance used in the OuiSync app for accessing the repository.
+  /// 
+  /// It also sets the method handler for the calls to and from native implementations.
+  /// 
+  /// Important: This method needs to be called when the app starts
+  /// to guarantee the callbacks to the native methods works as expected.
+  static void init(Repository repository) {
+    _repository = repository;
+
+    _channel.setMethodCallHandler(_methodHandler);
+  }
+
+  /// Handler function in charge of picking the right function based in the 
+  /// [call.method].
+  /// 
+  /// [call] is the object sent from the native platform with the function name ([call.method])
+  /// and any arguments included ([call.arguments])
+  static Future<dynamic> _methodHandler(MethodCall call) async {
+    switch (call.method) {
+      case 'readOuiSyncFile':
+        try {
+          var args = call.arguments as Map<Object?, Object?>;
+
+          var path = args["path"].toString();
+          var chunkSize = args["chunkSize"] as int;
+          var offset = args["offset"] as int;
+
+          print('file: $path\nchunk size: $chunkSize\noffset: $offset');
+          
+          return await _getFileChunk(path, chunkSize, offset);
+        } catch (e) {
+          print('readOuiSyncFile method throwed an exception: $e');
+        }
+
+        break;
+      default:
+        throw Exception('No method called ${call.method} was found');
+    }
+  }
+
+  /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].   
+  static Future<Uint8List> _getFileChunk(String path, int chunkSize, int offset) async {
+    final file = await File.open(_repository, path);
+    var fileSize = await file.length;
+
+    try {
+      final chunk = await file.read(offset, chunkSize);
+      return Uint8List.fromList(chunk);  
+    } catch (e) {
+      print('_getFileChunk throwed and exception:\n'
+        'File: $path, size: $fileSize, chunk size: $chunkSize, offset: $offset\n'
+        'Message: $e');
+    } finally {
+      file.close();
+    }
+    
+    return Uint8List(0);
+  }
+
+  /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider). 
+  /// [path] is the location of the file to share, including its full name (<path>/<file-name.ext>).
+  static Future<void> shareOuiSyncFile(String path) async {
+    final dynamic result = await _channel.invokeMethod(
+      'shareFile',
+      { "path": path }
+    );
+    print('shareFile result: $result');
+  }
+}
 
 /// Entry point to the ouisync bindings. A session should be opened at the start of the application
 /// and closed at the end. There can be only one session at the time.
