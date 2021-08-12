@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -36,24 +37,36 @@ abstract class AbstractFileProvider: ContentProvider() {
             when {
                 OpenableColumns.DISPLAY_NAME == col -> {
                     b.add(getFileName(uri))
+                    Log.d(javaClass.simpleName,
+                        "OpenableColumns.DISPLAY_NAME: ${getFileName(uri)}")
                 }
                 OpenableColumns.SIZE == col -> {
                     b.add(getDataLength(uri))
+                    Log.d(javaClass.simpleName,
+                            "OpenableColumns.SIZE: ${getDataLength(uri)}")
                 }
                 else -> { // unknown, so just add null
                     b.add(null)
+                    Log.d(javaClass.simpleName,
+                            "Unknown column. NULL")
                 }
             }
         }
 
-        return cursor
+        return LegacyCompatCursorWrapper(cursor)
     }
 
     override fun getType(uri: Uri): String? {
+        Log.d(javaClass.simpleName,
+                "getType: ${URLConnection.guessContentTypeFromName(uri.toString())}")
+
         return URLConnection.guessContentTypeFromName(uri.toString())
     }
 
     protected open fun getFileName(uri: Uri): String? {
+        Log.d(javaClass.simpleName,
+                "getFileName: ${uri.lastPathSegment}")
+
         return uri.lastPathSegment
     }
 
@@ -63,6 +76,9 @@ abstract class AbstractFileProvider: ContentProvider() {
 
     @Throws(IOException::class)
     open fun copy(`in`: InputStream, dst: File?) {
+        Log.d(javaClass.simpleName,
+                "copy")
+
         val out = FileOutputStream(dst)
         val buf = ByteArray(1024)
         var len: Int
