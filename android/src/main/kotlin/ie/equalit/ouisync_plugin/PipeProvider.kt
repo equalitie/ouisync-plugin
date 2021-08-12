@@ -44,16 +44,15 @@ class PipeProvider: AbstractFileProvider() {
                     + uri.toString())
         }
         return pipe[0]
-
     }
 
-    internal class TransferThread(var context: Context, var path: String, var out: OutputStream) : Thread() {
+    internal class TransferThread(private val  context: Context, private var path: String, private var out: OutputStream) : Thread() {
         var pluginChunkListener: ((ByteArray)->Unit)? = null
 
         override fun run() {
             path.let { path ->
                 var len = 0
-                getFileChunk(context, path, 0)
+                context.executeOnUIThreadSync(path, 0, ::getFileChunk)
 
                 pluginChunkListener = { chunk ->
                     if (chunk.isNotEmpty()) {
@@ -63,7 +62,7 @@ class PipeProvider: AbstractFileProvider() {
 
                         try {
                             out.write(chunk, 0, chunk.size)
-                            getFileChunk(context, path, len)
+                            context.executeOnUIThreadSync(path, len, ::getFileChunk)
                         } catch (e: IOException) {
                             Log.e(javaClass.simpleName,
                                     "Exception transferring file", e)
@@ -80,51 +79,48 @@ class PipeProvider: AbstractFileProvider() {
             }
         }
 
-        private fun getFileChunk(context: Context?, path: String, offset: Int) {
+        private fun getFileChunk(path: String, offset: Int) {
             val arguments = HashMap<String, Any>()
             arguments["path"] = path
             arguments["chunkSize"] = CHUNK_SIZE
             arguments["offset"] = offset
 
-            val callable: Callable<Unit> = Callable {
-                OuisyncPlugin.channel.invokeMethod("readOuiSyncFile", arguments, object : MethodChannel.Result {
-                    override fun success(a: Any?) {
-                        val chunk = a as ByteArray
+            OuisyncPlugin.channel.invokeMethod("readOuiSyncFile", arguments, object : MethodChannel.Result {
+                override fun success(a: Any?) {
+                    val chunk = a as ByteArray
 
-                        Log.d("SUCCESS", "Chunk size: ${chunk.size}")
-                        pluginChunkListener?.invoke(chunk)
+                    Log.d("SUCCESS", "Chunk size: ${chunk.size}")
+                    pluginChunkListener?.invoke(chunk)
+                }
+
+                override fun error(s0: String?, s1: String?, a: Any?) {
+                    s0?.let {
+                        Log.d("ERROR", "s0: $it")
+                    }
+                    s1?.let {
+                        Log.d("ERROR", "s1: $it")
+                    }
+                    a?.let {
+                        Log.d("ERROR", "a: $it")
                     }
 
-                    override fun error(s0: String?, s1: String?, a: Any?) {
-                        s0?.let {
-                            Log.d("ERROR", "s0: $it")
-                        }
-                        s1?.let {
-                            Log.d("ERROR", "s1: $it")
-                        }
-                        a?.let {
-                            Log.d("ERROR", "a: $it")
-                        }
+                    throw Exception("readOuiSyncFile result error:\ns0: $s0\ns1: $s1\na: $a")
+                }
 
-                        throw Exception("readOuiSyncFile result error:\ns0: $s0\ns1: $s1\na: $a")
-                    }
-
-                    override fun notImplemented() {}
-                })
-            }
-
-            val task: FutureTask<Unit> = FutureTask(callable)
-            context?.executeOnUIThreadSync(task)
+                override fun notImplemented() {}
+            })
         }
     }
 }
 
-fun Context.executeOnUIThreadSync(task: FutureTask<*>) {
+fun Context.executeOnUIThreadSync(path: String, offset: Int, func: (String, Int) -> Unit) {
     if (Looper.myLooper() == Looper.getMainLooper()) {
-        task.run()
+        Log.d("EXECUTE_ON_UI", "On main loop")
+        func.invoke(path, offset)
     } else {
         Handler(this.mainLooper).post {
-            task.run()
+            func.invoke(path, offset)
+            Log.d("EXECUTE_ON_UI", "Posting to main loop")
         }
     }
 }
