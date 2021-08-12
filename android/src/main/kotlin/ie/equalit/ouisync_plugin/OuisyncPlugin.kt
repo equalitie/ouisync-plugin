@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.annotation.NonNull
 
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -13,6 +14,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.net.URLConnection
 
 /** OuisyncPlugin */
 class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -55,27 +57,53 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
     when (call.method) {
       "shareFile" -> {
-        val path = (call.arguments as HashMap<String, Any>)["path"]
-        val uri = Uri.parse(PipeProvider.CONTENT_URI.toString() + path)
-
-        var shareIntent = Intent()
-
-        shareIntent.action = Intent.ACTION_SEND
-        shareIntent.type = "*/*"
-
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
-        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-        activity?.startActivity(Intent.createChooser(shareIntent, "Share file from OuiSync"))
+        val arguments = call.arguments as HashMap<String, Any>
+        val action = Intent.ACTION_SEND
+        val title = "Share file from OuiSync"
+        startFileAction(arguments, action, title)
 
         result.success("Share file intent started")
 
+      }
+      "previewFile" -> {
+        val arguments = call.arguments as HashMap<String, Any>
+        val action = Intent.ACTION_VIEW
+        val title = "Preview file from OuiSync"
+        startFileAction(arguments, action, title)
+
+        result.success("View file intent started")
       }
       else -> {
         result.notImplemented()
       }
     }
   }
+
+  private fun startFileAction(arguments: HashMap<String, Any>, intentAction: String, title: String) {
+    val path = arguments["path"]
+    val uri = Uri.parse(PipeProvider.CONTENT_URI.toString() + path)
+    val dataType = URLConnection.guessContentTypeFromName(uri.toString()) ?: "*/*"
+
+    Log.d(javaClass.simpleName,
+            "File content type: ${URLConnection.guessContentTypeFromName(uri.toString())}")
+
+    val intent = getIntentForAction(uri, dataType, intentAction)
+    activity?.startActivity(Intent.createChooser(intent, title))
+  }
+
+  private fun getIntentForAction(
+          intentData: Uri,
+          dataType: String,
+          intentAction: String
+  ) = Intent().apply {
+        data = intentData
+        type = dataType
+        action = intentAction
+
+        putExtra(Intent.EXTRA_STREAM, intentData)
+
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
