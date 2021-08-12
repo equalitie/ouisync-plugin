@@ -18,35 +18,33 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Session? session;
-  Repository? repo;
-  Directory? dir;
+
+  final contents = <String>[];
 
   @override
   void initState() {
     super.initState();
 
-    initObjects();
+    initObjects().
+      then((value) => loadFiles());
   }
 
-  void initObjects() async {
+  Future<void> initObjects() async {
     final session = await Session.open(
         join((await getApplicationSupportDirectory()).path, 'db'));
-    final repo = await Repository.open(session);
-    final dir = await Directory.open(repo, '/');
 
-    NativeChannels.init(repo);
+    NativeChannels.init(session);
     
     setState(() {
       this.session = session;
-      this.repo = repo;
-      this.dir = dir;
     });
   }
 
+  void loadFiles() async =>
+    getFiles('/');  
+
   @override
   void dispose() async {
-    dir?.close();
-    repo?.close();
     session?.close();
 
     super.dispose();
@@ -67,47 +65,75 @@ class _MyAppState extends State<MyApp> {
   Widget body() {
     return Column(
       children: [
-        ElevatedButton(
-          onPressed: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles(withReadStream: true);
-            if (result != null) {
-              final filePath = '/${result.files.single.name}';
-              await createFile(filePath);
-              await saveFile(filePath, result.files.first.readStream!); 
-            }
-          },
-          child: Text('Add file')
+        Padding(
+          padding: EdgeInsets.all(4.0),
+          child: Row(
+            children: [
+              ElevatedButton(
+                onPressed: () async => 
+                  await addFile()
+                  .then((value) async => {
+                    await getFiles('/')
+                  }),
+                child: Text('Add file')
+              ),
+            ],
+          ),
         ),
-        ElevatedButton(
-          onPressed: () async {
-            await NativeChannels.shareOuiSyncFile('DrzmArg.png');
-          },
-          child: Text('Share file')
-        )
+        fileList(),
       ],
     );
+  }
+
+  Widget fileList() => ListView.separated(
+        separatorBuilder: (context, index) => Divider(
+            height: 1,
+            color: Colors.transparent
+        ),
+        shrinkWrap: true,
+        itemCount: contents.length,
+        itemBuilder: (context, index) {
+          final item = contents[index];
+
+          return Card(
+            child: ListTile(
+              title: Text(item),
+              onTap: () => 
+                showAlertDialog(context, item, 1)
+            )
+          );
+        }
+    );
+
+  Future<void> addFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(withReadStream: true);
+    if (result != null) {
+      final path = '/${result.files.single.name}';
+      final file = await createFile(path);
+      await saveFile(file, path, result.files.first.readStream!); 
+    }
   }
 
   Future<File> createFile(String filePath) async {
     File? newFile;
 
+    final repo = await Repository.open(session!);
+
     try {
       print('Creating file $filePath');
-      newFile = await File.create(repo!, filePath);
+      newFile = await File.create(repo, filePath);
     } catch (e) {
       print('Error creating file $filePath: $e');
-    } finally {
-      newFile!.close();
     }
 
-    return newFile;
+    return newFile!;
   } 
 
-  Future<void> saveFile(String filePath, Stream<List<int>> stream) async {
-    print('Writing file $filePath');
+  Future<void> saveFile(File file, String path, Stream<List<int>> stream) async {
+    print('Writing file $path');
     
     int offset = 0;
-    final file = await File.open(repo!, filePath);
+    // final file = await File.open(repo!, path);
 
     try {
       final streamReader = ChunkedStreamIterator(stream);
@@ -124,9 +150,69 @@ class _MyAppState extends State<MyApp> {
         offset += buffer.length;
       }
     } catch (e) {
-      print('Exception writing the fie $filePath:\n${e.toString()}');
+      print('Exception writing the fie $path:\n${e.toString()}');
     } finally {
       file.close();
     }
   }
+
+  Future<void> getFiles(path) async {
+    final repo = await Repository.open(session!);
+    final dir = await Directory.open(repo, path);
+
+    
+    final items = <String>[];
+    final iterator = dir.iterator;
+    while (iterator.moveNext()) {
+      items.add(iterator.current.name);
+    }
+    
+    setState(() {
+      contents.clear();
+      contents.addAll(items);
+    });
+
+    dir.close();
+    repo.close();
+  }
+}
+
+showAlertDialog(BuildContext context, String path, int size) {
+  Widget previewFileButton = TextButton(
+    child: Text("Preview"),
+    onPressed:  () async {
+      Navigator.of(context).pop();
+      await NativeChannels.previewOuiSyncFile(path, size);
+    },
+  );
+  Widget shareFileButton = TextButton(
+    child: Text("Share"),
+    onPressed:  () async {
+      Navigator.of(context).pop();
+      await NativeChannels.shareOuiSyncFile(path, size);
+    }
+  );
+  Widget cancelButton = TextButton(
+    child: Text("Cancel"),
+    onPressed:  () {
+      Navigator.of(context).pop();
+    },
+  ); 
+
+  AlertDialog alert = AlertDialog(
+    title: Text("OuiSync Plugin Example App"),
+    content: Text("File:\n$path"),
+    actions: [
+      previewFileButton,
+      shareFileButton,
+      cancelButton,
+    ],
+  );
+  
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
 }
