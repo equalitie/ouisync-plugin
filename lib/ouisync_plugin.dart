@@ -5,31 +5,34 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
+
 import 'bindings.dart';
 
-/// Implementation of the MethodChannel handler for calling functions
-/// inmplemented nmatively, and viceversa. 
+/// MethodChannel handler for calling functions
+/// implemented natively, and viceversa. 
 class NativeChannels {
   static final MethodChannel _channel =
     const MethodChannel('ouisync_plugin');
 
-  static late final Repository _repository;
-  /// Provides the Repository instance to be used in any file operation that requires it.
-  /// [repository] is the instance used in the OuiSync app for accessing the repository.
+  static late final Session _session;
+  /// Provides the Session instance, to be used in file operations.
+  /// [session] is the instance used in the OuiSync app for accessing the repository.
   /// 
-  /// It also sets the method handler for the calls to and from native implementations.
+  /// This methoid also sets the method handler for the calls
+  /// to and from native implementations.
   /// 
   /// Important: This method needs to be called when the app starts
   /// to guarantee the callbacks to the native methods works as expected.
-  static void init(Repository repository) {
-    _repository = repository;
+  static void init(Session session) {
+    _session = session;
 
     _channel.setMethodCallHandler(_methodHandler);
   }
 
-  /// Handler function in charge of picking the right function based in the 
+  /// Handler method in charge of picking the right function based in the 
   /// [call.method].
   /// 
   /// [call] is the object sent from the native platform with the function name ([call.method])
@@ -52,6 +55,7 @@ class NativeChannels {
         }
 
         break;
+
       default:
         throw Exception('No method called ${call.method} was found');
     }
@@ -59,7 +63,9 @@ class NativeChannels {
 
   /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].   
   static Future<Uint8List> _getFileChunk(String path, int chunkSize, int offset) async {
-    final file = await File.open(_repository, path);
+    final repo = await Repository.open(_session);
+    final file = await File.open(repo, path);
+
     var fileSize = await file.length;
 
     try {
@@ -71,19 +77,40 @@ class NativeChannels {
         'Message: $e');
     } finally {
       file.close();
+      repo.close();
     }
     
     return Uint8List(0);
   }
 
   /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider). 
+  /// 
   /// [path] is the location of the file to share, including its full name (<path>/<file-name.ext>).
-  static Future<void> shareOuiSyncFile(String path) async {
+  /// [size] is the lenght of the file.
+  static Future<void> shareOuiSyncFile(String path, int size) async {
     final dynamic result = await _channel.invokeMethod(
       'shareFile',
-      { "path": path }
+      { 
+        "path": path,
+        "size": size
+      }
     );
     print('shareFile result: $result');
+  }
+
+  /// Invokes the native method (In Android, it creates an intent using the custom PipeProvider). 
+  /// 
+  /// [path] is the location of the file to preview, including its full name (<path>/<file-name.ext>).
+  /// [size] is the lenght of the file.
+  static Future<void> previewOuiSyncFile(String path, int size) async {
+    final dynamic result = await _channel.invokeMethod(
+      'previewFile',
+      { 
+        "path": path,
+        "size": size
+      }
+    );
+    print('previewFile result: $result');
   }
 }
 
