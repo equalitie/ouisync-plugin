@@ -18,7 +18,7 @@ import java.util.concurrent.FutureTask
 
 class PipeProvider: AbstractFileProvider() {
     companion object {
-        val CONTENT_URI: Uri = Uri.parse("content://ie.equalit.ouisync_plugin.pipe/")
+        val CONTENT_URI: Uri = Uri.parse("content://ie.equalit.ouisync_plugin.pipe")
         const val CHUNK_SIZE = 64000
     }
 

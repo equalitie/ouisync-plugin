@@ -81,27 +81,25 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
   private fun startFileAction(arguments: HashMap<String, Any>, intentAction: String, title: String) {
     val path = arguments["path"]
-    val uri = Uri.parse(PipeProvider.CONTENT_URI.toString() + path)
-    val dataType = URLConnection.guessContentTypeFromName(uri.toString()) ?: "*/*"
+    val size = arguments["size"]
+    
+    val uri = Uri.parse("${PipeProvider.CONTENT_URI}$path")
 
     Log.d(javaClass.simpleName,
-            "File content type: ${URLConnection.guessContentTypeFromName(uri.toString())}")
+      "Guessed content type: ${URLConnection.guessContentTypeFromName(uri.toString())} (If null, */* is used)")
 
-    val intent = getIntentForAction(uri, dataType, intentAction)
+    val intent = getIntentForAction(uri, intentAction)
     activity?.startActivity(Intent.createChooser(intent, title))
   }
 
   private fun getIntentForAction(
           intentData: Uri,
-          dataType: String,
           intentAction: String
   ) = Intent().apply {
         data = intentData
-        type = dataType
         action = intentAction
 
         putExtra(Intent.EXTRA_STREAM, intentData)
-
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
       }
 
