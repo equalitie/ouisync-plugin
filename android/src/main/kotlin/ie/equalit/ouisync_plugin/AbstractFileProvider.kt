@@ -71,7 +71,7 @@ abstract class AbstractFileProvider: ContentProvider() {
     }
 
     protected open fun getDataLength(uri: Uri?): Long {
-        return AssetFileDescriptor.UNKNOWN_LENGTH
+        return 1//AssetFileDescriptor.UNKNOWN_LENGTH
     }
 
     @Throws(IOException::class)
