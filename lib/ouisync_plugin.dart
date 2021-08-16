@@ -86,7 +86,7 @@ class NativeChannels {
   /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider). 
   /// 
   /// [path] is the location of the file to share, including its full name (<path>/<file-name.ext>).
-  /// [size] is the lenght of the file.
+  /// [size] is the lenght of the file (bytes).
   static Future<void> shareOuiSyncFile(String path, int size) async {
     final dynamic result = await _channel.invokeMethod(
       'shareFile',
@@ -101,7 +101,7 @@ class NativeChannels {
   /// Invokes the native method (In Android, it creates an intent using the custom PipeProvider). 
   /// 
   /// [path] is the location of the file to preview, including its full name (<path>/<file-name.ext>).
-  /// [size] is the lenght of the file.
+  /// [size] is the lenght of the file (bytes).
   static Future<void> previewOuiSyncFile(String path, int size) async {
     final dynamic result = await _channel.invokeMethod(
       'previewFile',
