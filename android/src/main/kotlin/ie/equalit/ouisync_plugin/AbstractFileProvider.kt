@@ -48,7 +48,7 @@ abstract class AbstractFileProvider: ContentProvider() {
                 else -> { // unknown, so just add null
                     b.add(null)
                     Log.d(javaClass.simpleName,
-                            "Unknown column. NULL")
+                            "Unknown column $col. NULL")
                 }
             }
         }
@@ -70,8 +70,19 @@ abstract class AbstractFileProvider: ContentProvider() {
         return uri.lastPathSegment
     }
 
-    protected open fun getDataLength(uri: Uri?): Long {
-        return 1//AssetFileDescriptor.UNKNOWN_LENGTH
+    protected open fun getDataLength(uri: Uri): Long {
+        val segments = uri.pathSegments
+        if (segments[0].toLongOrNull() != null) {
+            Log.d(javaClass.simpleName,
+                "getDataLength: ${segments[0].toLong()}")
+
+            return segments[0].toLong()
+        }
+         
+        Log.d(javaClass.simpleName,
+                "getDataLength: File size couldn't be obtained. AssetFileDescriptor.UNKNOWN_LENGTH is returned")
+
+        return AssetFileDescriptor.UNKNOWN_LENGTH
     }
 
     @Throws(IOException::class)
