@@ -83,7 +83,10 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     val path = arguments["path"]
     val size = arguments["size"]
     
-    val uri = Uri.parse("${PipeProvider.CONTENT_URI}$path")
+    val uri = Uri.parse("${PipeProvider.CONTENT_URI}$size$path")
+
+    Log.d(javaClass.simpleName,
+      uri.pathSegments.toString())
 
     Log.d(javaClass.simpleName,
       "Guessed content type: ${URLConnection.guessContentTypeFromName(uri.toString())} (If null, */* is used)")
