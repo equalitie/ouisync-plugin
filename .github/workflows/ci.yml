@@ -26,10 +26,6 @@ jobs:
       # https://github.com/marketplace/actions/setup-android-ndk
       #
       # but that doesn't seem to work.
-      
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
     - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
     - run: flutter pub get
     - run: flutter build aar
