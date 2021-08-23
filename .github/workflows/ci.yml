@@ -1,0 +1,41 @@
+on: [push]
+
+name: CI
+
+jobs:
+  build_and_test:
+    name: OuiSync Flutter Plugin
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - run: rustup target add armv7-linux-androideabi
+    - run: rustup target add aarch64-linux-android
+    - run: rustup target add i686-linux-android
+    - run: rustup target add x86_64-linux-android
+      
+    - uses: actions/setup-java@v1
+      with:
+        java-version: '12.x'
+    - uses: subosito/flutter-action@v1
+      with:
+          channel: 'stable'
+    - uses: nttld/setup-ndk@v1
+      with:
+          ndk-version: r21e
+      # Note: we should be able to get the NDK directory value from
+      #
+      # ${{ steps.setup-ndk.outputs.ndk-path }}
+      #
+      # as described here
+      #
+      # https://github.com/marketplace/actions/setup-android-ndk
+      #
+      # but that doesn't seem to work.
+    - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
+    - run: flutter pub get
+    - run: flutter build aar
