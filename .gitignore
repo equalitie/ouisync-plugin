@@ -10,6 +10,7 @@ ios/ouisync_bin/
 .vscode/launch.json
 .vscode/c_cpp_properties.json
 pubspec.lock
+.idea/
 .idea/vcs.xml
 .idea/libraries/Flutter_Plugins.xml
 .idea/workspace.xml
