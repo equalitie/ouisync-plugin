@@ -12,3 +12,4 @@ ios/ouisync_bin/
 pubspec.lock
 .idea/vcs.xml
 .idea/libraries/Flutter_Plugins.xml
+.idea/workspace.xml
