@@ -12,18 +12,18 @@ import 'package:flutter/services.dart';
 import 'bindings.dart';
 
 /// MethodChannel handler for calling functions
-/// implemented natively, and viceversa. 
+/// implemented natively, and viceversa.
 class NativeChannels {
-  static final MethodChannel _channel =
-    const MethodChannel('ouisync_plugin');
+  static final MethodChannel _channel = const MethodChannel('ouisync_plugin');
 
   static late final Session _session;
+
   /// Provides the Session instance, to be used in file operations.
   /// [session] is the instance used in the OuiSync app for accessing the repository.
-  /// 
+  ///
   /// This methoid also sets the method handler for the calls
   /// to and from native implementations.
-  /// 
+  ///
   /// Important: This method needs to be called when the app starts
   /// to guarantee the callbacks to the native methods works as expected.
   static void init(Session session) {
@@ -32,9 +32,9 @@ class NativeChannels {
     _channel.setMethodCallHandler(_methodHandler);
   }
 
-  /// Handler method in charge of picking the right function based in the 
+  /// Handler method in charge of picking the right function based in the
   /// [call.method].
-  /// 
+  ///
   /// [call] is the object sent from the native platform with the function name ([call.method])
   /// and any arguments included ([call.arguments])
   static Future<dynamic> _methodHandler(MethodCall call) async {
@@ -48,7 +48,7 @@ class NativeChannels {
           var offset = args["offset"] as int;
 
           print('file: $path\nchunk size: $chunkSize\noffset: $offset');
-          
+
           return await _getFileChunk(path, chunkSize, offset);
         } catch (e) {
           print('readOuiSyncFile method throwed an exception: $e');
@@ -61,8 +61,9 @@ class NativeChannels {
     }
   }
 
-  /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].   
-  static Future<Uint8List> _getFileChunk(String path, int chunkSize, int offset) async {
+  /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].
+  static Future<Uint8List> _getFileChunk(
+      String path, int chunkSize, int offset) async {
     final repo = await Repository.open(_session);
     final file = await File.open(repo, path);
 
@@ -70,46 +71,36 @@ class NativeChannels {
 
     try {
       final chunk = await file.read(offset, chunkSize);
-      return Uint8List.fromList(chunk);  
+      return Uint8List.fromList(chunk);
     } catch (e) {
       print('_getFileChunk throwed and exception:\n'
-        'File: $path, size: $fileSize, chunk size: $chunkSize, offset: $offset\n'
-        'Message: $e');
+          'File: $path, size: $fileSize, chunk size: $chunkSize, offset: $offset\n'
+          'Message: $e');
     } finally {
       file.close();
       repo.close();
     }
-    
+
     return Uint8List(0);
   }
 
-  /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider). 
-  /// 
+  /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider).
+  ///
   /// [path] is the location of the file to share, including its full name (<path>/<file-name.ext>).
   /// [size] is the lenght of the file (bytes).
   static Future<void> shareOuiSyncFile(String path, int size) async {
-    final dynamic result = await _channel.invokeMethod(
-      'shareFile',
-      { 
-        "path": path,
-        "size": size
-      }
-    );
+    final dynamic result =
+        await _channel.invokeMethod('shareFile', {"path": path, "size": size});
     print('shareFile result: $result');
   }
 
-  /// Invokes the native method (In Android, it creates an intent using the custom PipeProvider). 
-  /// 
+  /// Invokes the native method (In Android, it creates an intent using the custom PipeProvider).
+  ///
   /// [path] is the location of the file to preview, including its full name (<path>/<file-name.ext>).
   /// [size] is the lenght of the file (bytes).
   static Future<void> previewOuiSyncFile(String path, int size) async {
-    final dynamic result = await _channel.invokeMethod(
-      'previewFile',
-      { 
-        "path": path,
-        "size": size
-      }
-    );
+    final dynamic result = await _channel
+        .invokeMethod('previewFile', {"path": path, "size": size});
     print('previewFile result: $result');
   }
 }
@@ -167,9 +158,10 @@ class Repository {
 
   /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
   /// doesn't exists.
-  Future<EntryType?> type(String path) async => _decodeEntryType(await _withPool(
-      (pool) => _invoke<int>((port, error) => bindings.repository_entry_type(
-          handle, pool.toNativeUtf8(path), port, error))));
+  Future<EntryType?> type(String path) async =>
+      _decodeEntryType(await _withPool((pool) => _invoke<int>((port, error) =>
+          bindings.repository_entry_type(
+              handle, pool.toNativeUtf8(path), port, error))));
 
   /// Returns whether the entry (file or directory) at [path] exists.
   Future<bool> exists(String path) async => await type(path) != null;
@@ -178,12 +170,38 @@ class Repository {
   Future<void> move(String src, String dst) => _withPool((pool) =>
       _invoke<void>((port, error) => bindings.repository_move_entry(handle,
           pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port, error)));
+
+  /// Subscribe to change notifications from this repository. The returned handle can be used to
+  /// cancel the subscription.
+  Subscription subscribe(void Function() callback) {
+    final recvPort = ReceivePort();
+    final subscriptionHandle =
+        bindings.repository_subscribe(handle, recvPort.sendPort.nativePort);
+
+    return Subscription._(bindings, subscriptionHandle, recvPort);
+  }
+}
+
+/// A handle to a change notification subscription.
+class Subscription {
+  final Bindings bindings;
+  final int handle;
+  final ReceivePort port;
+
+  Subscription._(this.bindings, this.handle, this.port);
+
+  /// Cancel the subscription. No more notification events are received after this.
+  void cancel() {
+    bindings.subscription_cancel(handle);
+    port.close();
+  }
 }
 
 /// Type of a filesystem entry.
 enum EntryType {
   /// Regular file.
   file,
+
   /// Directory.
   directory,
 }
