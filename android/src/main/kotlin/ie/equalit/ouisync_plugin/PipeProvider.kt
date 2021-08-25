@@ -32,10 +32,11 @@ class PipeProvider: AbstractFileProvider() {
 
         try {
             pipe = ParcelFileDescriptor.createPipe()
-
+            val path = getPathFromUri(uri)
+            
             TransferThread(
                     context!!,
-                    "/${uri.lastPathSegment}",
+                    path,
                     ParcelFileDescriptor.AutoCloseOutputStream(pipe[1])
             ).start()
         } catch (e: IOException) {
@@ -44,6 +45,23 @@ class PipeProvider: AbstractFileProvider() {
                     + uri.toString())
         }
         return pipe[0]
+    }
+
+    private fun getPathFromUri(uri: Uri): String {
+        val segments = uri.pathSegments
+        var index = 0;
+        var path = ""
+
+        for (segment in segments) {
+            if (index > 0) {
+                path += "/$segment"
+            }
+            index++
+        }
+
+        Log.d(javaClass.simpleName,
+            "Path from Uri: $path")
+        return path
     }
 
     internal class TransferThread(private val  context: Context, private var path: String, private var out: OutputStream) : Thread() {
