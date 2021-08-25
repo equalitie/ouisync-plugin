@@ -402,6 +402,38 @@ class Bindings {
   late final _dart_repository_move_entry _repository_move_entry =
       _repository_move_entry_ptr.asFunction<_dart_repository_move_entry>();
 
+  /// Subscribe to change notifications from the repository.
+  int repository_subscribe(
+    int handle,
+    int port,
+  ) {
+    return _repository_subscribe(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_subscribe_ptr =
+      _lookup<ffi.NativeFunction<_c_repository_subscribe>>(
+          'repository_subscribe');
+  late final _dart_repository_subscribe _repository_subscribe =
+      _repository_subscribe_ptr.asFunction<_dart_repository_subscribe>();
+
+  /// Cancel the repository change notifications subscription.
+  void subscription_cancel(
+    int handle,
+  ) {
+    return _subscription_cancel(
+      handle,
+    );
+  }
+
+  late final _subscription_cancel_ptr =
+      _lookup<ffi.NativeFunction<_c_subscription_cancel>>(
+          'subscription_cancel');
+  late final _dart_subscription_cancel _subscription_cancel =
+      _subscription_cancel_ptr.asFunction<_dart_subscription_cancel>();
+
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
@@ -699,6 +731,24 @@ typedef _dart_repository_move_entry = void Function(
   ffi.Pointer<ffi.Int8> dst,
   int port,
   ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _c_repository_subscribe = ffi.Uint64 Function(
+  ffi.Uint64 handle,
+  ffi.Int64 port,
+);
+
+typedef _dart_repository_subscribe = int Function(
+  int handle,
+  int port,
+);
+
+typedef _c_subscription_cancel = ffi.Void Function(
+  ffi.Uint64 handle,
+);
+
+typedef _dart_subscription_cancel = void Function(
+  int handle,
 );
 
 typedef _c_session_open = ffi.Void Function(
