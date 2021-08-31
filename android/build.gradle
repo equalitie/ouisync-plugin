@@ -56,7 +56,7 @@ cargo {
     libname = "ouisync"
     targets = ["arm", "arm64", "x86", "x86_64"]
     // TODO: consider using "debug" / "release" depending on the current buildType (find out how to do that)
-    profile = "release"
+    profile = "debug"
     extraCargoBuildArguments = ['--lib']
 }
 
