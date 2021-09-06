@@ -40,8 +40,8 @@ android {
         minSdkVersion 21
     }
     buildTypes {
-        profile {
-
+        debug {
+            android.packagingOptions.doNotStrip '**.so'
         }
     }
 }
