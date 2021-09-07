@@ -178,7 +178,7 @@ class Repository {
     final subscriptionHandle =
         bindings.repository_subscribe(handle, recvPort.sendPort.nativePort);
 
-    return Subscription._(bindings, subscriptionHandle, recvPort);
+    return Subscription._(bindings, subscriptionHandle, recvPort, callback);
   }
 }
 
@@ -187,8 +187,11 @@ class Subscription {
   final Bindings bindings;
   final int handle;
   final ReceivePort port;
+  final void Function() callback;
 
-  Subscription._(this.bindings, this.handle, this.port);
+  Subscription._(this.bindings, this.handle, this.port, this.callback) {
+    port.listen((_) => callback());
+  }
 
   /// Cancel the subscription. No more notification events are received after this.
   void cancel() {
