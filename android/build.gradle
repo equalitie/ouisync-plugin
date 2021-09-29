@@ -1,6 +1,14 @@
 group 'ie.equalit.ouisync_plugin'
 version '1.0-SNAPSHOT'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
 buildscript {
     ext.kotlin_version = '1.3.50'
     repositories {
@@ -41,7 +49,7 @@ android {
     }
     buildTypes {
         debug {
-            android.packagingOptions.doNotStrip '**.so'
+            android.packagingOptions.doNotStrip '**.so'   
         }
     }
 }
@@ -51,12 +59,16 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.0.2'
 }
 
-cargo {
+// TODO Find out why I can't get this from the local.propierties file.
+def debugTargets = ["arm"]
+def releaseTargets = ["arm", "arm64", "x86", "x86_64"]
+
+cargo {        
     module = "../ouisync"
     libname = "ouisync"
-    targets = ["arm", "arm64", "x86", "x86_64"]
-    // TODO: consider using "debug" / "release" depending on the current buildType (find out how to do that)
-    profile = "debug"
+    // TODO: Find out how to do this in a better way.
+    targets = gradle.startParameter.taskNames.any{it.toLowerCase().contains("debug")} ? debugTargets : releaseTargets
+    profile = gradle.startParameter.taskNames.any{it.toLowerCase().contains("debug")} ? "debug" : "release"
     extraCargoBuildArguments = ['--lib']
 }
 
