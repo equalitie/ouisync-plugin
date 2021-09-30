@@ -43,13 +43,15 @@ class NativeChannels {
         try {
           var args = call.arguments as Map<Object?, Object?>;
 
+          var repo = args["repo"].toString();
           var path = args["path"].toString();
           var chunkSize = args["chunkSize"] as int;
           var offset = args["offset"] as int;
 
-          print('file: $path\nchunk size: $chunkSize\noffset: $offset');
+          print(
+              'repo: $repo\nfile: $path\nchunk size: $chunkSize\noffset: $offset');
 
-          return await _getFileChunk(path, chunkSize, offset);
+          return await _getFileChunk(repo, path, chunkSize, offset);
         } catch (e) {
           print('readOuiSyncFile method throwed an exception: $e');
         }
@@ -63,9 +65,9 @@ class NativeChannels {
 
   /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].
   static Future<Uint8List> _getFileChunk(
-      String path, int chunkSize, int offset) async {
-    final repo = await Repository.open(_session);
-    final file = await File.open(repo, path);
+      String repoPath, String filePath, int chunkSize, int offset) async {
+    final repo = await Repository.open(_session, repoPath);
+    final file = await File.open(repo, filePath);
 
     var fileSize = await file.length;
 
@@ -74,7 +76,7 @@ class NativeChannels {
       return Uint8List.fromList(chunk);
     } catch (e) {
       print('_getFileChunk throwed and exception:\n'
-          'File: $path, size: $fileSize, chunk size: $chunkSize, offset: $offset\n'
+          'repo: $repoPath, file: $filePath, size: $fileSize, chunk size: $chunkSize, offset: $offset\n'
           'Message: $e');
     } finally {
       file.close();
@@ -112,8 +114,8 @@ class Session {
 
   Session._(this.bindings);
 
-  /// Opens a new session. [store] is a path to the sqlite database to use. If it doesn't exists, it
-  /// will be created.
+  /// Opens a new session. [store] is a path to the sqlite database to store the local
+  /// configuration in. If it doesn't exists, it will be created.
   static Future<Session> open(String store) async {
     final bindings = Bindings(_defaultLib());
 
@@ -137,17 +139,17 @@ class Repository {
 
   Repository._(this.bindings, this.handle);
 
-  /// Opens a repository. Currently only one repository is supported. Eventually this will change
-  /// and this method would allow to specify which repository to open.
+  /// Opens a repository. [store] is a path to the sqlite database where the repository content
+  /// should be stored. If it doesn't exist, it will be created.
   ///
   /// Important: don't forget to [close] the repository after being done with it. Failure to do so
   /// could cause a memory leak.
-  static Future<Repository> open(Session session) async {
+  static Future<Repository> open(Session session, String store) async {
     final bindings = session.bindings;
-    return Repository._(
-        bindings,
-        await _invoke<int>(
-            (port, error) => bindings.repository_open(port, error)));
+    final handle = await _withPool((pool) => _invoke<int>((port, error) =>
+        bindings.repository_open(pool.toNativeUtf8(store), port, error)));
+
+    return Repository._(bindings, handle);
   }
 
   /// Close the repository. Accessing the repository after it's been closed is undefined behaviour

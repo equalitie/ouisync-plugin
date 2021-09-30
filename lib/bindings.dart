@@ -325,14 +325,13 @@ class Bindings {
       _file_len_ptr.asFunction<_dart_file_len>();
 
   /// Opens a repository.
-  ///
-  /// NOTE: eventually this function will allow to specify which repository to open, but currently
-  /// only one repository is supported.
   void repository_open(
+    ffi.Pointer<ffi.Int8> store,
     int port,
     ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _repository_open(
+      store,
       port,
       error,
     );
@@ -686,11 +685,13 @@ typedef _dart_file_len = void Function(
 );
 
 typedef _c_repository_open = ffi.Void Function(
+  ffi.Pointer<ffi.Int8> store,
   ffi.Int64 port,
   ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
 );
 
 typedef _dart_repository_open = void Function(
+  ffi.Pointer<ffi.Int8> store,
   int port,
   ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
 );

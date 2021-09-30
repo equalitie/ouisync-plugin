@@ -8,7 +8,7 @@ void main() {
 
   setUp(() async {
     session = await Session.open(':memory:');
-    repo = await Repository.open(session);
+    repo = await Repository.open(session, ':memory:');
   });
 
   tearDown(() {
