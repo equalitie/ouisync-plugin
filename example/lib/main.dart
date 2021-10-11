@@ -17,7 +17,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Session? session;
+  late Session session;
+  late Repository repo;
 
   final contents = <String>[];
 
@@ -25,27 +26,28 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    initObjects().
-      then((value) => loadFiles());
+    initObjects().then((value) => loadFiles());
   }
 
   Future<void> initObjects() async {
-    final session = await Session.open(
-        join((await getApplicationSupportDirectory()).path, 'db'));
+    final dataDir = (await getApplicationSupportDirectory()).path;
+    final session = await Session.open(join(dataDir, 'config.db'));
+    final repo = await Repository.open(session, join(dataDir, 'repo.db'));
 
     NativeChannels.init(session);
-    
+
     setState(() {
       this.session = session;
+      this.repo = repo;
     });
   }
 
-  void loadFiles() async =>
-    getFiles('/');  
+  void loadFiles() async => getFiles('/');
 
   @override
   void dispose() async {
-    session?.close();
+    repo.close();
+    session.close();
 
     super.dispose();
   }
@@ -70,13 +72,9 @@ class _MyAppState extends State<MyApp> {
           child: Row(
             children: [
               ElevatedButton(
-                onPressed: () async => 
-                  await addFile()
-                  .then((value) async => {
-                    await getFiles('/')
-                  }),
-                child: Text('Add file')
-              ),
+                  onPressed: () async => await addFile()
+                      .then((value) async => {await getFiles('/')}),
+                  child: Text('Add file')),
             ],
           ),
         ),
@@ -86,38 +84,32 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget fileList() => ListView.separated(
-        separatorBuilder: (context, index) => Divider(
-            height: 1,
-            color: Colors.transparent
-        ),
-        shrinkWrap: true,
-        itemCount: contents.length,
-        itemBuilder: (context, index) {
-          final item = contents[index];
+      separatorBuilder: (context, index) =>
+          Divider(height: 1, color: Colors.transparent),
+      shrinkWrap: true,
+      itemCount: contents.length,
+      itemBuilder: (context, index) {
+        final item = contents[index];
 
-          return Card(
+        return Card(
             child: ListTile(
-              title: Text(item),
-              onTap: () => 
-                showAlertDialog(context, item, 1)
-            )
-          );
-        }
-    );
+                title: Text(item),
+                onTap: () => showAlertDialog(context, item, 1)));
+      });
 
   Future<void> addFile() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(withReadStream: true);
+    FilePickerResult? result =
+        await FilePicker.platform.pickFiles(withReadStream: true);
+
     if (result != null) {
       final path = '/${result.files.single.name}';
       final file = await createFile(path);
-      await saveFile(file, path, result.files.first.readStream!); 
+      await saveFile(file, path, result.files.first.readStream!);
     }
   }
 
   Future<File> createFile(String filePath) async {
     File? newFile;
-
-    final repo = await Repository.open(session!);
 
     try {
       print('Creating file $filePath');
@@ -127,11 +119,12 @@ class _MyAppState extends State<MyApp> {
     }
 
     return newFile!;
-  } 
+  }
 
-  Future<void> saveFile(File file, String path, Stream<List<int>> stream) async {
+  Future<void> saveFile(
+      File file, String path, Stream<List<int>> stream) async {
     print('Writing file $path');
-    
+
     int offset = 0;
     // final file = await File.open(repo!, path);
 
@@ -157,47 +150,43 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> getFiles(path) async {
-    final repo = await Repository.open(session!);
     final dir = await Directory.open(repo, path);
 
-    
     final items = <String>[];
     final iterator = dir.iterator;
     while (iterator.moveNext()) {
       items.add(iterator.current.name);
     }
-    
+
     setState(() {
       contents.clear();
       contents.addAll(items);
     });
 
     dir.close();
-    repo.close();
   }
 }
 
 showAlertDialog(BuildContext context, String path, int size) {
   Widget previewFileButton = TextButton(
     child: Text("Preview"),
-    onPressed:  () async {
+    onPressed: () async {
       Navigator.of(context).pop();
       await NativeChannels.previewOuiSyncFile(path, size);
     },
   );
   Widget shareFileButton = TextButton(
-    child: Text("Share"),
-    onPressed:  () async {
-      Navigator.of(context).pop();
-      await NativeChannels.shareOuiSyncFile(path, size);
-    }
-  );
+      child: Text("Share"),
+      onPressed: () async {
+        Navigator.of(context).pop();
+        await NativeChannels.shareOuiSyncFile(path, size);
+      });
   Widget cancelButton = TextButton(
     child: Text("Cancel"),
-    onPressed:  () {
+    onPressed: () {
       Navigator.of(context).pop();
     },
-  ); 
+  );
 
   AlertDialog alert = AlertDialog(
     title: Text("OuiSync Plugin Example App"),
@@ -208,7 +197,7 @@ showAlertDialog(BuildContext context, String path, int size) {
       cancelButton,
     ],
   );
-  
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
