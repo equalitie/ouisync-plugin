@@ -60,7 +60,7 @@ dependencies {
 }
 
 // TODO Find out why I can't get this from the local.propierties file.
-def debugTargets = ["arm"]
+def debugTargets = ["arm", "arm64", "x86", "x86_64"]
 def releaseTargets = ["arm", "arm64", "x86", "x86_64"]
 
 cargo {        
