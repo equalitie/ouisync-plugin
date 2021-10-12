@@ -56,7 +56,7 @@ class Bindings {
   late final _dart_directory_open _directory_open =
       _directory_open_ptr.asFunction<_dart_directory_open>();
 
-  /// Remove (delete) the directory at the given path from the repository.
+  /// Removes the directory at the given path from the repository. The directory must be empty.
   void directory_remove(
     int repo,
     ffi.Pointer<ffi.Int8> path,
@@ -75,6 +75,28 @@ class Bindings {
       _lookup<ffi.NativeFunction<_c_directory_remove>>('directory_remove');
   late final _dart_directory_remove _directory_remove =
       _directory_remove_ptr.asFunction<_dart_directory_remove>();
+
+  /// Removes the directory at the given path including its content from the repository.
+  void directory_remove_recursively(
+    int repo,
+    ffi.Pointer<ffi.Int8> path,
+    int port,
+    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+  ) {
+    return _directory_remove_recursively(
+      repo,
+      path,
+      port,
+      error,
+    );
+  }
+
+  late final _directory_remove_recursively_ptr =
+      _lookup<ffi.NativeFunction<_c_directory_remove_recursively>>(
+          'directory_remove_recursively');
+  late final _dart_directory_remove_recursively _directory_remove_recursively =
+      _directory_remove_recursively_ptr
+          .asFunction<_dart_directory_remove_recursively>();
 
   void directory_close(
     int handle,
@@ -508,6 +530,20 @@ typedef _c_directory_remove = ffi.Void Function(
 );
 
 typedef _dart_directory_remove = void Function(
+  int repo,
+  ffi.Pointer<ffi.Int8> path,
+  int port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _c_directory_remove_recursively = ffi.Void Function(
+  ffi.Uint64 repo,
+  ffi.Pointer<ffi.Int8> path,
+  ffi.Int64 port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _dart_directory_remove_recursively = void Function(
   int repo,
   ffi.Pointer<ffi.Int8> path,
   int port,

@@ -274,10 +274,17 @@ class Directory with IterableMixin<DirEntry> {
       (pool) => _invoke<void>((port, error) => repo.bindings.directory_create(
           repo.handle, pool.toNativeUtf8(path), port, error)));
 
-  /// Remove a directory from [repo] at [path]. The directory must be empty.
-  static Future<void> remove(Repository repo, String path) => _withPool(
-      (pool) => _invoke<void>((port, error) => repo.bindings.directory_remove(
-          repo.handle, pool.toNativeUtf8(path), port, error)));
+  /// Remove a directory from [repo] at [path]. If [recursive] is false (which is the default),
+  /// the directory must be empty otherwise an exception is thrown. If [recursive] it is true, the
+  /// content of the directory is removed as well.
+  static Future<void> remove(Repository repo, String path, {recursive: false}) {
+    final fun = recursive
+        ? repo.bindings.directory_remove_recursively
+        : repo.bindings.directory_remove;
+
+    return _withPool((pool) => _invoke<void>((port, error) =>
+        fun(repo.handle, pool.toNativeUtf8(path), port, error)));
+  }
 
   /// Closes this directory.
   void close() {
