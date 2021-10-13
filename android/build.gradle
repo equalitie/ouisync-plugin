@@ -1,13 +1,8 @@
 group 'ie.equalit.ouisync_plugin'
 version '1.0-SNAPSHOT'
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
+Properties properties = new Properties()
+file("../android/local.properties").withInputStream { properties.load(it) }
 
 buildscript {
     ext.kotlin_version = '1.3.50'
@@ -59,9 +54,8 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.0.2'
 }
 
-// TODO Find out why I can't get this from the local.propierties file.
-def debugTargets = ["arm", "arm64", "x86", "x86_64"]
-def releaseTargets = ["arm", "arm64", "x86", "x86_64"]
+def debugTargets = properties.getProperty('debug.targets')?.split(',').collect{it as String}
+def releaseTargets = properties.getProperty('release.targets')?.split(',').collect{it as String}
 
 cargo {        
     module = "../ouisync"
