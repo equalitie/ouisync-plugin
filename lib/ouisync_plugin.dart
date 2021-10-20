@@ -16,7 +16,7 @@ import 'bindings.dart';
 class NativeChannels {
   static final MethodChannel _channel = const MethodChannel('ouisync_plugin');
 
-  static late final Session _session;
+  static Repository? _repository;
 
   /// Provides the Session instance, to be used in file operations.
   /// [session] is the instance used in the OuiSync app for accessing the repository.
@@ -26,10 +26,30 @@ class NativeChannels {
   ///
   /// Important: This method needs to be called when the app starts
   /// to guarantee the callbacks to the native methods works as expected.
-  static void init(Session session) {
-    _session = session;
-
+  static void init({Repository? repository}) {
     _channel.setMethodCallHandler(_methodHandler);
+
+    if (repository != null) {
+      _repository = repository;
+    }
+  }
+
+  /// Replaces the current [repository] instance with a new one.
+  /// 
+  /// This method is used when the user switch between repositories;
+  /// the [repository] passed in to this function is used for any 
+  /// required operation.
+  /// 
+  /// [repository] is the current repository in the app.
+  static void setRepository(Repository repository) {
+    if (_repository == null) {
+      _repository = repository; 
+      return;
+    }
+
+    if (repository.handle != _repository!.handle) {
+      _repository = repository; 
+    }
   }
 
   /// Handler method in charge of picking the right function based in the
@@ -48,10 +68,9 @@ class NativeChannels {
           var chunkSize = args["chunkSize"] as int;
           var offset = args["offset"] as int;
 
-          print(
-              'repo: $repo\nfile: $path\nchunk size: $chunkSize\noffset: $offset');
+          print('repo: $repo\nfile: $path\nchunk size: $chunkSize\noffset: $offset');
 
-          return await _getFileChunk(repo, path, chunkSize, offset);
+          return await _getFileChunk(_repository!, path, chunkSize, offset);
         } catch (e) {
           print('readOuiSyncFile method throwed an exception: $e');
         }
@@ -65,10 +84,12 @@ class NativeChannels {
 
   /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].
   static Future<Uint8List> _getFileChunk(
-      String repoPath, String filePath, int chunkSize, int offset) async {
-    final repo = await Repository.open(_session, repoPath);
-    final file = await File.open(repo, filePath);
-
+    Repository repository,
+    String filePath,
+    int chunkSize,
+    int offset
+  ) async {
+    final file = await File.open(repository, filePath);
     var fileSize = await file.length;
 
     try {
@@ -76,11 +97,10 @@ class NativeChannels {
       return Uint8List.fromList(chunk);
     } catch (e) {
       print('_getFileChunk throwed and exception:\n'
-          'repo: $repoPath, file: $filePath, size: $fileSize, chunk size: $chunkSize, offset: $offset\n'
+          'file: $filePath ($fileSize) chunk size: $chunkSize, offset: $offset\n'
           'Message: $e');
     } finally {
       file.close();
-      repo.close();
     }
 
     return Uint8List(0);

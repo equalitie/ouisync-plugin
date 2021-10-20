@@ -34,7 +34,7 @@ class _MyAppState extends State<MyApp> {
     final session = await Session.open(join(dataDir, 'config.db'));
     final repo = await Repository.open(session, join(dataDir, 'repo.db'));
 
-    NativeChannels.init(session);
+    NativeChannels.init(repository: repo);
 
     setState(() {
       this.session = session;
