@@ -26,6 +26,20 @@ The library is built automatically as part of this plugins build process, but it
 
     flutter pub run ffigen
 
+## How to build for specific architectures and `builType` in Android
+
+In cases in which we only want to build for specific architectures on **Android**, we make use of the `local.properties` file.
+
+In the `local.properties` file (located at: `./android/local.properties`), we can list the architectures we want to support/build, for each `builtType,` separated by '**,**' (comma), no spaces, like this:
+
+```
+debug.targets=arm,arm64,x86,x86_64
+release.targets=arm,arm64,x86,x86_64
+```
+If we want to build for **_all_** the supported architectures, this properties are not needed and can be omitted.
+
+**IMPORTANT**: **_do not_** commit `local.properties` into the repository; include it in the `.gitignore` file.
+
 ## Running unit tests
 
 Copy/symlink the native library to:
