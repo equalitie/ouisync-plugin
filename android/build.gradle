@@ -46,6 +46,8 @@ android {
         debug {
             android.packagingOptions.doNotStrip '**.so'   
         }
+        profile {
+        }
     }
 }
 
@@ -54,14 +56,35 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.0.2'
 }
 
-def debugTargets = properties.getProperty('debug.targets')?.split(',').collect{it as String}
-def releaseTargets = properties.getProperty('release.targets')?.split(',').collect{it as String}
+def abiTargets = {
+    if (project.hasProperty("target-platform")) {
+        // https://github.com/flutter/flutter/blob/37dbe030feb47cdf15f3d4c1921857dbbac8aedf/packages/flutter_tools/gradle/flutter.gradle#L78-L82
+        return project.property("target-platform").split(',').collect{
+            if (it == "android-arm") {
+                return "arm"
+            } else if (it == "android-arm64") {
+                return "arm64"
+            } else if (it == "android-x86") {
+                return "x86"
+            } else if (it == "android-x64") {
+                return "x86_64"
+            } else {
+                println("Unknown target platform: " + it)
+                System.exit(1)
+            }
+        }
+    }
+    else {
+        // NOTE: x86 is not added by default when invoking `flutter build aar`
+        // so we don't include it here neither.
+        return ["arm", "arm64", /* "x86", */ "x86_64"]
+    }
+}()
 
 cargo {        
     module = "../ouisync"
     libname = "ouisync"
-    // TODO: Find out how to do this in a better way.
-    targets = gradle.startParameter.taskNames.any{it.toLowerCase().contains("debug")} ? debugTargets : releaseTargets
+    targets = abiTargets
     profile = gradle.startParameter.taskNames.any{it.toLowerCase().contains("debug")} ? "debug" : "release"
     extraCargoBuildArguments = ['--lib']
 }

@@ -4,15 +4,16 @@ A flutter plugin providing high-level dart API for the ouisync native library.
 
 ## Building the native library
 
-The library is built automatically as part of this plugins build process, but it needs the following prerequisities to be satisfied first:
+The native library is built automatically as part of this plugins build
+process, but it needs the following prerequisities to be satisfied first:
 
-1. Checkout the library into a directory called `ouisync` next to this plugin's directory (or `git pull` the latest revision if already checked out).
-2. Install [rust](https://www.rust-lang.org/tools/install)
-3. For each of the supported platforms, add its corresponding target:
+1. Install [rust](https://www.rust-lang.org/tools/install)
+2. For each of the supported platforms, add its corresponding target:
 
         rustup target add $TARGET
 
-   Where `$TARGET` is the target triple of the platform (run `rustup target list` to list all available triples):
+Where `$TARGET` is the target triple of the platform (run `rustup target list`
+to list all available triples):
 
     - android arm64:  `aarch64-linux-android`
     - android arm32:  `armv7-linux-androideabi`
@@ -20,29 +21,23 @@ The library is built automatically as part of this plugins build process, but it
     - ios arm64:      `aarch64-apple-ios`
     - etc...
 
-## Generating the low-level dart bindings module (`lib/bindings.dart`)
+## Building the AAR
 
-(needs to be done every time the public API of the native library changes)
+Note that one doesn't need to build the `.aar` file manually as it should be
+done automatically by the upper level project. See the
+[`ouisync-app`](https://github.com/equalitie/ouisync-app/blob/master/pubspec.yaml)
+for an example.
 
-    flutter pub run ffigen
+If - however - building the standalone `.aar` file is indeed desirable, runnig:
 
-## How to build for specific architectures and `builType` in Android
+    $ flutter build aar
 
-In cases in which we only want to build for specific architectures on **Android**, we make use of the `local.properties` file.
+will create a release, debug and a profile build for `arm32`, `arm64` and
+`x86_64` architectures (32bit `x86` is omited by default).
 
-In the `local.properties` file (located at: `./android/local.properties`), we can list the architectures we want to support/build, for each `builtType,` separated by '**,**' (comma), no spaces, like this:
+To build only certain architectures or add the missing ones, add the
+`--target-platform={android-arm,android-arm64,android-x86,android-x64}` flag to
+the above command.
 
-```
-debug.targets=arm,arm64,x86,x86_64
-release.targets=arm,arm64,x86,x86_64
-```
-If we want to build for **_all_** the supported architectures, this properties are not needed and can be omitted.
-
-**IMPORTANT**: **_do not_** commit `local.properties` into the repository; include it in the `.gitignore` file.
-
-## Running unit tests
-
-Copy/symlink the native library to:
- - linux: `build/test/libouisync.so`
- - osx: `build/test/ouisync.dylb`
- - windows: `build/test/ouisync.dll`
+To avoid building the release, debug or profile versions use any combination of
+`--no-release`, `--no-debug`, `--no-profile`.
