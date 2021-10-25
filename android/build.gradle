@@ -46,6 +46,8 @@ android {
         debug {
             android.packagingOptions.doNotStrip '**.so'   
         }
+        profile {
+        }
     }
 }
 
