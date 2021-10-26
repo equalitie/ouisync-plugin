@@ -10,7 +10,7 @@ process, but it needs the following prerequisities to be satisfied first:
 1. Install [rust](https://www.rust-lang.org/tools/install)
 2. For each of the supported platforms, add its corresponding target:
 
-        rustup target add $TARGET
+        $ rustup target add $TARGET
 
 Where `$TARGET` is the target triple of the platform (run `rustup target list`
 to list all available triples):
@@ -20,6 +20,23 @@ to list all available triples):
     - android x86_64: `x86_64-linux-android`
     - ios arm64:      `aarch64-apple-ios`
     - etc...
+
+## Before using/building this plugin
+
+Before this plugin can be used, one has to first generate the `ouisync/target/bindings.h`
+header file and then the `lib/bindings.dart` file.
+
+The former is done with the command:
+
+    $ cd ouisync
+    $ cargo build --lib
+
+The latter is then done from the root folder of this repository:
+
+    $ flutter pub run ffigen
+
+Note that the above needs to be done every time the public interface of the
+`ouisync` module changes.
 
 ## Building the AAR
 
