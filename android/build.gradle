@@ -86,5 +86,4 @@ cargo {
     extraCargoBuildArguments = ['--lib']
 }
 
-// TODO: find a way to build only the requested architectures
 preBuild.dependsOn 'cargoBuild'

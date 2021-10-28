@@ -6,27 +6,34 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() async {
-  runApp(MyApp());
+  runApp(MaterialApp(home: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
-  MyApp();
-
   @override
   _MyAppState createState() => _MyAppState();
+}
+
+enum BodyType {
+  settings,
+  fileList
 }
 
 class _MyAppState extends State<MyApp> {
   late Session session;
   late Repository repo;
+  late BodyType bodyType = BodyType.fileList;
+
+  bool localDiscoveryEnabled = false;
+  bool upnpEnabled = false;
+  bool bittorrentDhtEnabled = false;
 
   final contents = <String>[];
 
   @override
   void initState() {
     super.initState();
-
-    initObjects().then((value) => loadFiles());
+    initObjects().then((value) => getFiles('/'));
   }
 
   Future<void> initObjects() async {
@@ -42,8 +49,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  void loadFiles() async => getFiles('/');
-
   @override
   void dispose() async {
     repo.close();
@@ -54,17 +59,55 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('OuiSync Plugin example app'),
-        ),
-        body: body(),
+    Widget body;
+
+    switch (bodyType) {
+      case BodyType.settings: body = makeSettingsBody(); break;
+      case BodyType.fileList: body = makeFileListBody(); break;
+    }
+
+    return Scaffold(
+      drawer: makeDrawer(context),
+      appBar: AppBar(
+        title: const Text('OuiSync Example App'),
       ),
+      body: body,
     );
   }
 
-  Widget body() {
+  Drawer makeDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            decoration: BoxDecoration(color: Colors.blue),
+            child: Center(child: Text("Select"))
+          ),
+          ListTile(
+            title: Text("File list"),
+            onTap: () {
+              setState(() {
+                bodyType = BodyType.fileList;
+              });
+              Navigator.pop(context);
+            }
+          ),
+          ListTile(
+            title: Text("Settings"),
+            onTap: () {
+              setState(() {
+                bodyType = BodyType.settings;
+              });
+              Navigator.pop(context);
+            }
+          ),
+        ]
+      )
+    );
+  }
+
+  Widget makeFileListBody() {
     return Column(
       children: [
         Padding(
@@ -79,6 +122,40 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         fileList(),
+      ],
+    );
+  }
+
+  Widget makeSettingsBody() {
+    return Column(
+      children: <Widget>[
+        SwitchListTile(
+          title: Text("Local discovery"),
+          value: localDiscoveryEnabled,
+          onChanged: (bool value) {
+            setState(() {
+              localDiscoveryEnabled = value;
+            });
+          },
+        ),
+        SwitchListTile(
+          title: Text("UPnP"),
+          value: upnpEnabled,
+          onChanged: (bool value) {
+            setState(() {
+              upnpEnabled = value;
+            });
+          },
+        ),
+        SwitchListTile(
+          title: Text("BitTorrent DHT"),
+          value: bittorrentDhtEnabled,
+          onChanged: (bool value) {
+            setState(() {
+              bittorrentDhtEnabled = value;
+            });
+          },
+        ),
       ],
     );
   }
@@ -126,7 +203,6 @@ class _MyAppState extends State<MyApp> {
     print('Writing file $path');
 
     int offset = 0;
-    // final file = await File.open(repo!, path);
 
     try {
       final streamReader = ChunkedStreamIterator(stream);
@@ -143,7 +219,7 @@ class _MyAppState extends State<MyApp> {
         offset += buffer.length;
       }
     } catch (e) {
-      print('Exception writing the fie $path:\n${e.toString()}');
+      print('Exception writing the file $path:\n${e.toString()}');
     } finally {
       file.close();
     }
