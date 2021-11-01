@@ -14,15 +14,9 @@ class MyApp extends StatefulWidget {
   _MyAppState createState() => _MyAppState();
 }
 
-enum BodyType {
-  settings,
-  fileList
-}
-
 class _MyAppState extends State<MyApp> {
   late Session session;
   late Repository repo;
-  late BodyType bodyType = BodyType.fileList;
 
   bool localDiscoveryEnabled = false;
   bool upnpEnabled = false;
@@ -59,50 +53,21 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    Widget body;
-
-    switch (bodyType) {
-      case BodyType.settings: body = makeSettingsBody(); break;
-      case BodyType.fileList: body = makeFileListBody(); break;
-    }
-
-    return Scaffold(
-      drawer: makeDrawer(context),
-      appBar: AppBar(
-        title: const Text('OuiSync Example App'),
-      ),
-      body: body,
-    );
-  }
-
-  Drawer makeDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          DrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue),
-            child: Center(child: Text("Select"))
-          ),
-          ListTile(
-            title: Text("File list"),
-            onTap: () {
-              setState(() {
-                bodyType = BodyType.fileList;
-              });
-              Navigator.pop(context);
-            }
-          ),
-          ListTile(
-            title: Text("Settings"),
-            onTap: () {
-              setState(() {
-                bodyType = BodyType.settings;
-              });
-              Navigator.pop(context);
-            }
-          ),
-        ]
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("Ouisync Example App"),
+          bottom: TabBar(
+            tabs: [ Tab(text: "Files"), Tab(text: "Settings") ]
+          )
+        ),
+        body: TabBarView(
+          children: [
+            makeFileListBody(),
+            makeSettingsBody(),
+          ],
+        )
       )
     );
   }
