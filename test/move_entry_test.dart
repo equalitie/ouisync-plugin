@@ -62,7 +62,7 @@ void main() {
     }
   });
 
-  test('Move folder fail when folder to move is not empty',
+  test('Move folder ok when folder to move is not empty',
   () async {
     // Create folder1 (/folder1) and folder2 inside folder1 (/folder1/folder2)
     {
