@@ -480,11 +480,11 @@ DynamicLibrary _defaultLib() {
     }
 
     if (Platform.isMacOS) {
-      return DynamicLibrary.open('build/test/$name.dylib');
+      return DynamicLibrary.open('build/test/lib$name.dylib');
     }
 
     if (Platform.isWindows) {
-      return DynamicLibrary.open('build/test/$name.dll');
+      return DynamicLibrary.open('build/test/lib$name.dll');
     }
   }
 
