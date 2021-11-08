@@ -202,6 +202,28 @@ class Repository {
 
     return Subscription._(bindings, subscriptionHandle, recvPort, callback);
   }
+
+  Future<bool> isDhtEnabled() async {
+    final recvPort = ReceivePort();
+    bindings.repository_is_dht_enabled(handle, recvPort.sendPort.nativePort);
+    final result = await recvPort.first;
+    recvPort.close();
+    return result;
+  }
+
+  Future<void> enableDht() async {
+    final recvPort = ReceivePort();
+    bindings.repository_enable_dht(handle, recvPort.sendPort.nativePort);
+    await recvPort.first;
+    recvPort.close();
+  }
+
+  Future<void> disableDht() async {
+    final recvPort = ReceivePort();
+    bindings.repository_disable_dht(handle, recvPort.sendPort.nativePort);
+    await recvPort.first;
+    recvPort.close();
+  }
 }
 
 /// A handle to a change notification subscription.

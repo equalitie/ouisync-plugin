@@ -18,8 +18,6 @@ class _MyAppState extends State<MyApp> {
   late Session session;
   late Repository repo;
 
-  bool localDiscoveryEnabled = false;
-  bool upnpEnabled = false;
   bool bittorrentDhtEnabled = false;
 
   final contents = <String>[];
@@ -34,6 +32,8 @@ class _MyAppState extends State<MyApp> {
     final dataDir = (await getApplicationSupportDirectory()).path;
     final session = await Session.open(join(dataDir, 'config.db'));
     final repo = await Repository.open(session, join(dataDir, 'repo.db'));
+
+    bittorrentDhtEnabled = await repo.isDhtEnabled();
 
     NativeChannels.init(repository: repo);
 
@@ -95,34 +95,28 @@ class _MyAppState extends State<MyApp> {
     return Column(
       children: <Widget>[
         SwitchListTile(
-          title: Text("Local discovery"),
-          value: localDiscoveryEnabled,
-          onChanged: (bool value) {
-            setState(() {
-              localDiscoveryEnabled = value;
-            });
-          },
-        ),
-        SwitchListTile(
-          title: Text("UPnP"),
-          value: upnpEnabled,
-          onChanged: (bool value) {
-            setState(() {
-              upnpEnabled = value;
-            });
-          },
-        ),
-        SwitchListTile(
           title: Text("BitTorrent DHT"),
           value: bittorrentDhtEnabled,
           onChanged: (bool value) {
-            setState(() {
-              bittorrentDhtEnabled = value;
-            });
+            enableDisableDht(value);
           },
         ),
       ],
     );
+  }
+
+  Future<void> enableDisableDht(bool enable) async {
+    if (enable) {
+      await repo.enableDht();
+    } else {
+      await repo.disableDht();
+    }
+
+    final isEnabled = await repo.isDhtEnabled();
+
+    setState(() {
+      bittorrentDhtEnabled = isEnabled;
+    });
   }
 
   Widget fileList() => ListView.separated(
