@@ -17,6 +17,8 @@ jobs:
     - run: rustup target add aarch64-linux-android
     - run: rustup target add i686-linux-android
     - run: rustup target add x86_64-linux-android
+    # TODO: FUSE should not be required for a library
+    #       Check if the dependencies are setup correctly for the ouisync library.
     - name: Installing FUSE 
       run: sudo apt-get install libfuse-dev
     - name: Building ouisync library  
