@@ -6,12 +6,10 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() async {
-  runApp(MyApp());
+  runApp(MaterialApp(home: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
-  MyApp();
-
   @override
   _MyAppState createState() => _MyAppState();
 }
@@ -20,19 +18,22 @@ class _MyAppState extends State<MyApp> {
   late Session session;
   late Repository repo;
 
+  bool bittorrentDhtEnabled = false;
+
   final contents = <String>[];
 
   @override
   void initState() {
     super.initState();
-
-    initObjects().then((value) => loadFiles());
+    initObjects().then((value) => getFiles('/'));
   }
 
   Future<void> initObjects() async {
     final dataDir = (await getApplicationSupportDirectory()).path;
     final session = await Session.open(join(dataDir, 'config.db'));
     final repo = await Repository.open(session, join(dataDir, 'repo.db'));
+
+    bittorrentDhtEnabled = await repo.isDhtEnabled();
 
     NativeChannels.init(repository: repo);
 
@@ -41,8 +42,6 @@ class _MyAppState extends State<MyApp> {
       this.repo = repo;
     });
   }
-
-  void loadFiles() async => getFiles('/');
 
   @override
   void dispose() async {
@@ -54,17 +53,26 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
         appBar: AppBar(
-          title: const Text('OuiSync Plugin example app'),
+          title: Text("Ouisync Example App"),
+          bottom: TabBar(
+            tabs: [ Tab(text: "Files"), Tab(text: "Settings") ]
+          )
         ),
-        body: body(),
-      ),
+        body: TabBarView(
+          children: [
+            makeFileListBody(),
+            makeSettingsBody(),
+          ],
+        )
+      )
     );
   }
 
-  Widget body() {
+  Widget makeFileListBody() {
     return Column(
       children: [
         Padding(
@@ -81,6 +89,34 @@ class _MyAppState extends State<MyApp> {
         fileList(),
       ],
     );
+  }
+
+  Widget makeSettingsBody() {
+    return Column(
+      children: <Widget>[
+        SwitchListTile(
+          title: Text("BitTorrent DHT"),
+          value: bittorrentDhtEnabled,
+          onChanged: (bool value) {
+            enableDisableDht(value);
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> enableDisableDht(bool enable) async {
+    if (enable) {
+      await repo.enableDht();
+    } else {
+      await repo.disableDht();
+    }
+
+    final isEnabled = await repo.isDhtEnabled();
+
+    setState(() {
+      bittorrentDhtEnabled = isEnabled;
+    });
   }
 
   Widget fileList() => ListView.separated(
@@ -126,7 +162,6 @@ class _MyAppState extends State<MyApp> {
     print('Writing file $path');
 
     int offset = 0;
-    // final file = await File.open(repo!, path);
 
     try {
       final streamReader = ChunkedStreamIterator(stream);
@@ -143,7 +178,7 @@ class _MyAppState extends State<MyApp> {
         offset += buffer.length;
       }
     } catch (e) {
-      print('Exception writing the fie $path:\n${e.toString()}');
+      print('Exception writing the file $path:\n${e.toString()}');
     } finally {
       file.close();
     }

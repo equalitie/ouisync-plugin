@@ -455,6 +455,55 @@ class Bindings {
   late final _dart_subscription_cancel _subscription_cancel =
       _subscription_cancel_ptr.asFunction<_dart_subscription_cancel>();
 
+  void repository_is_dht_enabled(
+    int handle,
+    int port,
+  ) {
+    return _repository_is_dht_enabled(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_is_dht_enabled_ptr =
+      _lookup<ffi.NativeFunction<_c_repository_is_dht_enabled>>(
+          'repository_is_dht_enabled');
+  late final _dart_repository_is_dht_enabled _repository_is_dht_enabled =
+      _repository_is_dht_enabled_ptr
+          .asFunction<_dart_repository_is_dht_enabled>();
+
+  void repository_enable_dht(
+    int handle,
+    int port,
+  ) {
+    return _repository_enable_dht(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_enable_dht_ptr =
+      _lookup<ffi.NativeFunction<_c_repository_enable_dht>>(
+          'repository_enable_dht');
+  late final _dart_repository_enable_dht _repository_enable_dht =
+      _repository_enable_dht_ptr.asFunction<_dart_repository_enable_dht>();
+
+  void repository_disable_dht(
+    int handle,
+    int port,
+  ) {
+    return _repository_disable_dht(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_disable_dht_ptr =
+      _lookup<ffi.NativeFunction<_c_repository_disable_dht>>(
+          'repository_disable_dht');
+  late final _dart_repository_disable_dht _repository_disable_dht =
+      _repository_disable_dht_ptr.asFunction<_dart_repository_disable_dht>();
+
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
@@ -486,6 +535,22 @@ class Bindings {
       _lookup<ffi.NativeFunction<_c_session_close>>('session_close');
   late final _dart_session_close _session_close =
       _session_close_ptr.asFunction<_dart_session_close>();
+
+  void session_get_network(
+    int port,
+    ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
+  ) {
+    return _session_get_network(
+      port,
+      error_ptr,
+    );
+  }
+
+  late final _session_get_network_ptr =
+      _lookup<ffi.NativeFunction<_c_session_get_network>>(
+          'session_get_network');
+  late final _dart_session_get_network _session_get_network =
+      _session_get_network_ptr.asFunction<_dart_session_get_network>();
 }
 
 const int ENTRY_TYPE_INVALID = 0;
@@ -788,6 +853,36 @@ typedef _dart_subscription_cancel = void Function(
   int handle,
 );
 
+typedef _c_repository_is_dht_enabled = ffi.Void Function(
+  ffi.Uint64 handle,
+  ffi.Int64 port,
+);
+
+typedef _dart_repository_is_dht_enabled = void Function(
+  int handle,
+  int port,
+);
+
+typedef _c_repository_enable_dht = ffi.Void Function(
+  ffi.Uint64 handle,
+  ffi.Int64 port,
+);
+
+typedef _dart_repository_enable_dht = void Function(
+  int handle,
+  int port,
+);
+
+typedef _c_repository_disable_dht = ffi.Void Function(
+  ffi.Uint64 handle,
+  ffi.Int64 port,
+);
+
+typedef _dart_repository_disable_dht = void Function(
+  int handle,
+  int port,
+);
+
 typedef _c_session_open = ffi.Void Function(
   ffi.Pointer<ffi.Void> post_c_object_fn,
   ffi.Pointer<ffi.Int8> store,
@@ -805,3 +900,13 @@ typedef _dart_session_open = void Function(
 typedef _c_session_close = ffi.Void Function();
 
 typedef _dart_session_close = void Function();
+
+typedef _c_session_get_network = ffi.Void Function(
+  ffi.Int64 port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
+);
+
+typedef _dart_session_get_network = void Function(
+  int port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
+);
