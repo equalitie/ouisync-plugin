@@ -23,6 +23,8 @@ jobs:
       run: cd ouisync && cargo build --release --lib --verbose
     - name: Release directory contents 
       run: ls /home/runner/work/ouisync-plugin/ouisync-plugin/ouisync/target/release/
+    - name: Creating directories for the library binary for tests
+      run: mkdir -p /home/runner/work/ouisync-plugin/ouisync-plugin/build/test
     - name: Creating symlink to the library binary for the Flutter tests
       run: ln -s /home/runner/work/ouisync-plugin/ouisync-plugin/ouisync/target/release/libouisync.so /home/runner/work/ouisync-plugin/ouisync-plugin/build/test
     - uses: actions/setup-java@v1
