@@ -18,14 +18,7 @@ jobs:
     - run: rustup target add i686-linux-android
     - run: rustup target add x86_64-linux-android
     - name: osfux
-      run: |
-        brew cask install osxfuse
-        git clone --recursive https://github.com/netheril96/securefs
-        cd securefs
-        mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..
-        cd ..
-        cmake --build build
-        cd build && ctest -V
+    - run: sudo apt-get install libfuse-dev
     - run: cd ouisync && cargo build --release --lib --verbose
     - run: ls /home/runner/work/ouisync-plugin/ouisync-plugin/ouisync/target/release/
     - uses: actions/setup-java@v1
