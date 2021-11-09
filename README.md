@@ -1,3 +1,5 @@
+[![CI](https://github.com/equalitie/ouisync-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/equalitie/ouisync-plugin/actions/workflows/ci.yml)
+
 # Ouisync Plugin
 
 A flutter plugin providing high-level dart API for the ouisync native library.
