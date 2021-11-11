@@ -38,6 +38,16 @@ jobs:
     - uses: nttld/setup-ndk@v1
       with:
           ndk-version: r21e
+      # Note: we should be able to get the NDK directory value from
+      #
+      # ${{ steps.setup-ndk.outputs.ndk-path }}
+      #
+      # as described here
+      #
+      # https://github.com/marketplace/actions/setup-android-ndk
+      #
+      # but that doesn't seem to work.
+    - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
     - run: flutter pub get
     - run: flutter test
     - run: flutter build aar --release --no-debug --no-profile
