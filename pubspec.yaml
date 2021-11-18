@@ -1,7 +1,6 @@
 name: ouisync_plugin
 description: A flutter plugin providing high-level dart API for the ouisync native library
 version: 0.0.1
-author: null
 homepage: null
 
 environment:
@@ -16,6 +15,7 @@ dependencies:
 
 dev_dependencies:
   ffigen: ^2.4.2
+  lints: ^1.0.1
   pedantic: ^1.11.0
   test: ^1.17.4
 

@@ -35,20 +35,20 @@ class NativeChannels {
   }
 
   /// Replaces the current [repository] instance with a new one.
-  /// 
+  ///
   /// This method is used when the user switch between repositories;
-  /// the [repository] passed in to this function is used for any 
+  /// the [repository] passed in to this function is used for any
   /// required operation.
-  /// 
+  ///
   /// [repository] is the current repository in the app.
   static void setRepository(Repository repository) {
     if (_repository == null) {
-      _repository = repository; 
+      _repository = repository;
       return;
     }
 
     if (repository.handle != _repository!.handle) {
-      _repository = repository; 
+      _repository = repository;
     }
   }
 
@@ -68,7 +68,8 @@ class NativeChannels {
           var chunkSize = args["chunkSize"] as int;
           var offset = args["offset"] as int;
 
-          print('repo: $repo\nfile: $path\nchunk size: $chunkSize\noffset: $offset');
+          print(
+              'repo: $repo\nfile: $path\nchunk size: $chunkSize\noffset: $offset');
 
           return await _getFileChunk(_repository!, path, chunkSize, offset);
         } catch (e) {
@@ -84,11 +85,7 @@ class NativeChannels {
 
   /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].
   static Future<Uint8List> _getFileChunk(
-    Repository repository,
-    String filePath,
-    int chunkSize,
-    int offset
-  ) async {
+      Repository repository, String filePath, int chunkSize, int offset) async {
     final file = await File.open(repository, filePath);
     var fileSize = await file.length;
 
@@ -224,6 +221,19 @@ class Repository {
     await recvPort.first;
     recvPort.close();
   }
+
+  /// Create a share token for this repository. Can optionally specify repository name which will
+  /// be included in the token and suggested to the recipient.
+  Future<String> createShareToken({String? name}) => _withPool((pool) =>
+      _invoke<String>((port, error) => bindings.repository_create_share_token(
+          handle,
+          name != null ? pool.toNativeUtf8(name) : nullptr,
+          port,
+          error)));
+
+  Future<void> acceptShareToken(String token) => _withPool((pool) =>
+      _invoke<void>((port, error) => bindings.repository_accept_share_token(
+          handle, pool.toNativeUtf8(token), port, error)));
 }
 
 /// A handle to a change notification subscription.
@@ -319,7 +329,8 @@ class Directory with IterableMixin<DirEntry> {
   /// Remove a directory from [repo] at [path]. If [recursive] is false (which is the default),
   /// the directory must be empty otherwise an exception is thrown. If [recursive] it is true, the
   /// content of the directory is removed as well.
-  static Future<void> remove(Repository repo, String path, {recursive: false}) {
+  static Future<void> remove(Repository repo, String path,
+      {recursive = false}) {
     final fun = recursive
         ? repo.bindings.directory_remove_recursively
         : repo.bindings.directory_remove;

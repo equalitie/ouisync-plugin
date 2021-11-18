@@ -504,6 +504,64 @@ class Bindings {
   late final _dart_repository_disable_dht _repository_disable_dht =
       _repository_disable_dht_ptr.asFunction<_dart_repository_disable_dht>();
 
+  void repository_create_share_token(
+    int handle,
+    ffi.Pointer<ffi.Int8> name,
+    int port,
+    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+  ) {
+    return _repository_create_share_token(
+      handle,
+      name,
+      port,
+      error,
+    );
+  }
+
+  late final _repository_create_share_token_ptr =
+      _lookup<ffi.NativeFunction<_c_repository_create_share_token>>(
+          'repository_create_share_token');
+  late final _dart_repository_create_share_token
+      _repository_create_share_token = _repository_create_share_token_ptr
+          .asFunction<_dart_repository_create_share_token>();
+
+  void repository_accept_share_token(
+    int handle,
+    ffi.Pointer<ffi.Int8> token,
+    int port,
+    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+  ) {
+    return _repository_accept_share_token(
+      handle,
+      token,
+      port,
+      error,
+    );
+  }
+
+  late final _repository_accept_share_token_ptr =
+      _lookup<ffi.NativeFunction<_c_repository_accept_share_token>>(
+          'repository_accept_share_token');
+  late final _dart_repository_accept_share_token
+      _repository_accept_share_token = _repository_accept_share_token_ptr
+          .asFunction<_dart_repository_accept_share_token>();
+
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Int8> share_token_suggested_name(
+    ffi.Pointer<ffi.Int8> token,
+  ) {
+    return _share_token_suggested_name(
+      token,
+    );
+  }
+
+  late final _share_token_suggested_name_ptr =
+      _lookup<ffi.NativeFunction<_c_share_token_suggested_name>>(
+          'share_token_suggested_name');
+  late final _dart_share_token_suggested_name _share_token_suggested_name =
+      _share_token_suggested_name_ptr
+          .asFunction<_dart_share_token_suggested_name>();
+
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
@@ -535,22 +593,6 @@ class Bindings {
       _lookup<ffi.NativeFunction<_c_session_close>>('session_close');
   late final _dart_session_close _session_close =
       _session_close_ptr.asFunction<_dart_session_close>();
-
-  void session_get_network(
-    int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
-  ) {
-    return _session_get_network(
-      port,
-      error_ptr,
-    );
-  }
-
-  late final _session_get_network_ptr =
-      _lookup<ffi.NativeFunction<_c_session_get_network>>(
-          'session_get_network');
-  late final _dart_session_get_network _session_get_network =
-      _session_get_network_ptr.asFunction<_dart_session_get_network>();
 }
 
 const int ENTRY_TYPE_INVALID = 0;
@@ -883,6 +925,42 @@ typedef _dart_repository_disable_dht = void Function(
   int port,
 );
 
+typedef _c_repository_create_share_token = ffi.Void Function(
+  ffi.Uint64 handle,
+  ffi.Pointer<ffi.Int8> name,
+  ffi.Int64 port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _dart_repository_create_share_token = void Function(
+  int handle,
+  ffi.Pointer<ffi.Int8> name,
+  int port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _c_repository_accept_share_token = ffi.Void Function(
+  ffi.Uint64 handle,
+  ffi.Pointer<ffi.Int8> token,
+  ffi.Int64 port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _dart_repository_accept_share_token = void Function(
+  int handle,
+  ffi.Pointer<ffi.Int8> token,
+  int port,
+  ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
+);
+
+typedef _c_share_token_suggested_name = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> token,
+);
+
+typedef _dart_share_token_suggested_name = ffi.Pointer<ffi.Int8> Function(
+  ffi.Pointer<ffi.Int8> token,
+);
+
 typedef _c_session_open = ffi.Void Function(
   ffi.Pointer<ffi.Void> post_c_object_fn,
   ffi.Pointer<ffi.Int8> store,
@@ -900,13 +978,3 @@ typedef _dart_session_open = void Function(
 typedef _c_session_close = ffi.Void Function();
 
 typedef _dart_session_close = void Function();
-
-typedef _c_session_get_network = ffi.Void Function(
-  ffi.Int64 port,
-  ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
-);
-
-typedef _dart_session_get_network = void Function(
-  int port,
-  ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
-);
