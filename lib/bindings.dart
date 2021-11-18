@@ -547,20 +547,21 @@ class Bindings {
           .asFunction<_dart_repository_accept_share_token>();
 
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
-  ffi.Pointer<ffi.Int8> share_token_suggested_name(
+  ffi.Pointer<ffi.Int8> extract_suggested_name_from_share_token(
     ffi.Pointer<ffi.Int8> token,
   ) {
-    return _share_token_suggested_name(
+    return _extract_suggested_name_from_share_token(
       token,
     );
   }
 
-  late final _share_token_suggested_name_ptr =
-      _lookup<ffi.NativeFunction<_c_share_token_suggested_name>>(
-          'share_token_suggested_name');
-  late final _dart_share_token_suggested_name _share_token_suggested_name =
-      _share_token_suggested_name_ptr
-          .asFunction<_dart_share_token_suggested_name>();
+  late final _extract_suggested_name_from_share_token_ptr =
+      _lookup<ffi.NativeFunction<_c_extract_suggested_name_from_share_token>>(
+          'extract_suggested_name_from_share_token');
+  late final _dart_extract_suggested_name_from_share_token
+      _extract_suggested_name_from_share_token =
+      _extract_suggested_name_from_share_token_ptr
+          .asFunction<_dart_extract_suggested_name_from_share_token>();
 
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
@@ -953,11 +954,13 @@ typedef _dart_repository_accept_share_token = void Function(
   ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
 );
 
-typedef _c_share_token_suggested_name = ffi.Pointer<ffi.Int8> Function(
+typedef _c_extract_suggested_name_from_share_token = ffi.Pointer<ffi.Int8>
+    Function(
   ffi.Pointer<ffi.Int8> token,
 );
 
-typedef _dart_share_token_suggested_name = ffi.Pointer<ffi.Int8> Function(
+typedef _dart_extract_suggested_name_from_share_token = ffi.Pointer<ffi.Int8>
+    Function(
   ffi.Pointer<ffi.Int8> token,
 );
 

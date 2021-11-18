@@ -143,6 +143,19 @@ class Session {
     return Session._(bindings);
   }
 
+  /// Extract the suggested repository name from the share token.
+  String extractSuggestedNameFromShareToken(String token) {
+    final namePtr = _withPoolSync((pool) => bindings
+        .extract_suggested_name_from_share_token(pool.toNativeUtf8(token)));
+    final name = namePtr.cast<Utf8>().toDartString();
+
+    // NOTE: we are freeing a pointer here that was allocated by the native side.
+    // See the comment inside `_ErrorHelper.check` for more details about whether this is OK.
+    malloc.free(namePtr);
+
+    return name;
+  }
+
   /// Closes the session.
   void close() {
     bindings.session_close();
@@ -510,12 +523,23 @@ DynamicLibrary _defaultLib() {
   throw Exception('unsupported platform ${Platform.operatingSystem}');
 }
 
-// Call the function passing it a [_Pool] which will be released when the function returns.
+// Call the async function passing it a [_Pool] which will be released when the function returns.
 Future<T> _withPool<T>(Future<T> Function(_Pool) fun) async {
   final pool = _Pool();
 
   try {
     return await fun(pool);
+  } finally {
+    pool.release();
+  }
+}
+
+// Call the sync function passing it a [_Pool] which will be released when the function returns.
+T _withPoolSync<T>(T Function(_Pool) fun) {
+  final pool = _Pool();
+
+  try {
+    return fun(pool);
   } finally {
     pool.release();
   }
