@@ -203,7 +203,7 @@ class Repository {
   Future<bool> isDhtEnabled() async {
     final recvPort = ReceivePort();
     bindings.repository_is_dht_enabled(handle, recvPort.sendPort.nativePort);
-    final result = await recvPort.first;
+    final result = await recvPort.first as bool;
     recvPort.close();
     return result;
   }
@@ -330,7 +330,7 @@ class Directory with IterableMixin<DirEntry> {
   /// the directory must be empty otherwise an exception is thrown. If [recursive] it is true, the
   /// content of the directory is removed as well.
   static Future<void> remove(Repository repo, String path,
-      {recursive = false}) {
+      {bool recursive = false}) {
     final fun = recursive
         ? repo.bindings.directory_remove_recursively
         : repo.bindings.directory_remove;
@@ -528,7 +528,7 @@ Future<T> _invoke<T>(void Function(int, Pointer<Pointer<Int8>>) fun) async {
 
   fun(recvPort.sendPort.nativePort, error.ptr);
 
-  final result = await recvPort.first;
+  final result = await recvPort.first as T;
 
   recvPort.close();
   error.check();

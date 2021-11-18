@@ -54,22 +54,18 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text("Ouisync Example App"),
-          bottom: TabBar(
-            tabs: [ Tab(text: "Files"), Tab(text: "Settings") ]
-          )
-        ),
-        body: TabBarView(
-          children: [
-            makeFileListBody(),
-            makeSettingsBody(),
-          ],
-        )
-      )
-    );
+        length: 2,
+        child: Scaffold(
+            appBar: AppBar(
+                title: Text("Ouisync Example App"),
+                bottom:
+                    TabBar(tabs: [Tab(text: "Files"), Tab(text: "Settings")])),
+            body: TabBarView(
+              children: [
+                makeFileListBody(),
+                makeSettingsBody(),
+              ],
+            )));
   }
 
   Widget makeFileListBody() {
@@ -184,7 +180,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  Future<void> getFiles(path) async {
+  Future<void> getFiles(String path) async {
     final dir = await Directory.open(repo, path);
 
     final items = <String>[];
@@ -202,7 +198,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-showAlertDialog(BuildContext context, String path, int size) {
+void showAlertDialog(BuildContext context, String path, int size) {
   Widget previewFileButton = TextButton(
     child: Text("Preview"),
     onPressed: () async {
@@ -233,7 +229,7 @@ showAlertDialog(BuildContext context, String path, int size) {
     ],
   );
 
-  showDialog(
+  showDialog<AlertDialog>(
     context: context,
     builder: (BuildContext context) {
       return alert;
