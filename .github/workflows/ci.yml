@@ -17,12 +17,10 @@ jobs:
     - run: rustup target add aarch64-linux-android
     - run: rustup target add i686-linux-android
     - run: rustup target add x86_64-linux-android
-    # TODO: FUSE should not be required for a library
-    #       Check if the dependencies are setup correctly for the ouisync library.
-    - name: Installing FUSE 
-      run: sudo apt-get install libfuse-dev
     - name: Building ouisync library  
       run: cd ouisync && cargo build --release --lib --verbose
+    - name: Generate bindings headers
+      run: cd ouisync && cargo run --bin bindgen
     - name: Release directory contents 
       run: ls /home/runner/work/ouisync-plugin/ouisync-plugin/ouisync/target/release/
     - name: Creating directories for the library binary for tests
@@ -32,9 +30,6 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: '12.x'
-    - uses: subosito/flutter-action@v1
-      with:
-          channel: 'stable'
     - uses: nttld/setup-ndk@v1
       with:
           ndk-version: r21e
@@ -48,6 +43,12 @@ jobs:
       #
       # but that doesn't seem to work.
     - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
+    - name: Installing llvm
+      run: sudo apt-get install libclang-dev
+    - uses: subosito/flutter-action@v1
+      with:
+          channel: 'stable'
     - run: flutter pub get
+    - run: flutter pub run ffigen
     - run: flutter test
     - run: flutter build aar --release --no-debug --no-profile
