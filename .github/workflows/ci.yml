@@ -30,9 +30,6 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: '12.x'
-    - uses: subosito/flutter-action@v1
-      with:
-          channel: 'stable'
     - uses: nttld/setup-ndk@v1
       with:
           ndk-version: r21e
@@ -46,7 +43,11 @@ jobs:
       #
       # but that doesn't seem to work.
     - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
-    - run: apt-get install libclang-dev
+    - name: Installing llvm
+      run: sudo apt-get install libclang-dev
+    - uses: subosito/flutter-action@v1
+      with:
+          channel: 'stable'
     - run: flutter pub get
     - run: flutter pub run ffigen
     - run: flutter test
