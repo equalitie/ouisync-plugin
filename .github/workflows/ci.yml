@@ -47,6 +47,6 @@ jobs:
       # but that doesn't seem to work.
     - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
     - run: flutter pub get
-    - run: flutter pub run ffigen
+    - run: flutter pub get && flutter pub run ffigen
     - run: flutter test
     - run: flutter build aar --release --no-debug --no-profile
