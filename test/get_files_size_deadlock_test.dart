@@ -56,7 +56,6 @@ void main() {
       try {
         final file = await File.create(repository, filePath);
         file.write(0, bytes.toList());
-        // file.write(0, utf8.encode(fileContents));
         file.close(); 
       } catch (e) {
         print(e.toString());
