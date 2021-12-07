@@ -8,9 +8,10 @@ environment:
   flutter: ">=2.0.6 <3.0.0"
 
 dependencies:
+  async: ^2.8.1
+  ffi: ^1.0.0
   flutter:
     sdk: flutter
-  ffi: ^1.0.0
   path: ^1.8.0
 
 dev_dependencies:
@@ -44,4 +45,3 @@ ffigen:
       - './ouisync/target/bindings.h'
     include-directives:
       - '**bindings.h'
-
