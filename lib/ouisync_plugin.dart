@@ -552,12 +552,12 @@ Future<T> _invoke<T>(void Function(int, Pointer<Pointer<Int8>>) fun) async {
 
   fun(recvPort.sendPort.nativePort, error.ptr);
 
-  final result = await recvPort.first as T;
+  final result = await recvPort.first;
 
   recvPort.close();
   error.check();
 
-  return result;
+  return result as T;
 }
 
 // Helper to translate native errors to dart exceptions.
