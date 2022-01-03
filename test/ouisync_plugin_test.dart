@@ -8,7 +8,8 @@ void main() {
 
   setUp(() async {
     session = await Session.open(':memory:');
-    repo = await Repository.open(session, ':memory:');
+    repo = await Repository.create(session,
+        store: ':memory:', password: 'test123');
   });
 
   tearDown(() {

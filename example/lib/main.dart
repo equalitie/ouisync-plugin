@@ -1,3 +1,4 @@
+import 'dart:io' as io;
 import 'package:chunked_stream/chunked_stream.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,8 @@ import 'package:path_provider/path_provider.dart';
 void main() async {
   runApp(MaterialApp(home: MyApp()));
 }
+
+const password = "correct horse battery staple";
 
 class MyApp extends StatefulWidget {
   @override
@@ -31,7 +34,13 @@ class _MyAppState extends State<MyApp> {
   Future<void> initObjects() async {
     final dataDir = (await getApplicationSupportDirectory()).path;
     final session = await Session.open(join(dataDir, 'config.db'));
-    final repo = await Repository.open(session, join(dataDir, 'repo.db'));
+
+    final store = join(dataDir, 'repo.db');
+    final storeExists = await io.File(store).exists();
+
+    final repo = storeExists
+        ? await Repository.open(session, store: store, password: password)
+        : await Repository.create(session, store: store, password: password);
 
     bittorrentDhtEnabled = await repo.isDhtEnabled();
 

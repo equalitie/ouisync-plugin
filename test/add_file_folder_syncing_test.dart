@@ -23,7 +23,8 @@ void main() {
 
   setUp(() async {
     session = await Session.open(':memory:');
-    repository = await Repository.open(session, ':memory:');
+    repository = await Repository.create(session,
+        store: ':memory:', password: 'test123');
 
     currentPath = '/';
 
@@ -40,10 +41,9 @@ void main() {
     session.close();
   });
 
-  test('Add file to directory with syncing not in directory',
-  () async {
+  test('Add file to directory with syncing not in directory', () async {
     // Create folder1 (/folder1)
-    { 
+    {
       await Directory.create(repository, folder1Path);
       print('New folder: $folder1Path');
     }
@@ -63,10 +63,9 @@ void main() {
     }
   });
 
-  test('Add file with syncing in directory',
-  () async {
+  test('Add file with syncing in directory', () async {
     // Create folder1 (/folder1)
-    { 
+    {
       await Directory.create(repository, folder1Path);
       print('New folder: $folder1Path');
 

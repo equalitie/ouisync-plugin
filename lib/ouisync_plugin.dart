@@ -169,15 +169,33 @@ class Repository {
 
   Repository._(this.bindings, this.handle);
 
-  /// Opens a repository. [store] is a path to the sqlite database where the repository content
-  /// should be stored. If it doesn't exist, it will be created.
-  ///
-  /// Important: don't forget to [close] the repository after being done with it. Failure to do so
-  /// could cause a memory leak.
-  static Future<Repository> open(Session session, String store) async {
+  /// Creates a new repository.
+  static Future<Repository> create(Session session,
+      {required String store,
+      required String password,
+      String? shareToken}) async {
     final bindings = session.bindings;
     final handle = await _withPool((pool) => _invoke<int>((port, error) =>
-        bindings.repository_open(pool.toNativeUtf8(store), port, error)));
+        bindings.repository_create(
+            pool.toNativeUtf8(store),
+            pool.toNativeUtf8(password),
+            shareToken != null ? pool.toNativeUtf8(shareToken) : nullptr,
+            port,
+            error)));
+
+    return Repository._(bindings, handle);
+  }
+
+  /// Opens an existing repository.
+  static Future<Repository> open(Session session,
+      {required String store, String? password}) async {
+    final bindings = session.bindings;
+    final handle = await _withPool((pool) => _invoke<int>((port, error) =>
+        bindings.repository_open(
+            pool.toNativeUtf8(store),
+            password != null ? pool.toNativeUtf8(password) : nullptr,
+            port,
+            error)));
 
     return Repository._(bindings, handle);
   }
@@ -235,18 +253,34 @@ class Repository {
     recvPort.close();
   }
 
-  /// Create a share token for this repository. Can optionally specify repository name which will
-  /// be included in the token and suggested to the recipient.
-  Future<String> createShareToken({String? name}) => _withPool((pool) =>
-      _invoke<String>((port, error) => bindings.repository_create_share_token(
-          handle,
-          name != null ? pool.toNativeUtf8(name) : nullptr,
-          port,
-          error)));
+  /// Create a share token providing access to this repository with the given mode. Can optionally
+  /// specify repository name which will be included in the token and suggested to the recipient.
+  Future<String> createShareToken(
+          {required AccessMode accessMode, String? name}) =>
+      _withPool((pool) => _invoke<String>((port, error) =>
+          bindings.repository_create_share_token(
+              handle,
+              _encodeAccessMode(accessMode),
+              name != null ? pool.toNativeUtf8(name) : nullptr,
+              port,
+              error)));
+}
 
-  Future<void> acceptShareToken(String token) => _withPool((pool) =>
-      _invoke<void>((port, error) => bindings.repository_accept_share_token(
-          handle, pool.toNativeUtf8(token), port, error)));
+enum AccessMode {
+  blind,
+  read,
+  write,
+}
+
+int _encodeAccessMode(AccessMode mode) {
+  switch (mode) {
+    case AccessMode.blind:
+      return ACCESS_MODE_BLIND;
+    case AccessMode.read:
+      return ACCESS_MODE_READ;
+    case AccessMode.write:
+      return ACCESS_MODE_WRITE;
+  }
 }
 
 /// A handle to a change notification subscription.

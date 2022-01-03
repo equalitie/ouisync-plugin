@@ -15,7 +15,8 @@ void main() {
 
   setUp(() async {
     session = await Session.open(':memory:');
-    repository = await Repository.open(session, ':memory:');
+    repository = await Repository.create(session,
+        store: ':memory:', password: 'test123');
   });
 
   tearDown(() {
@@ -23,15 +24,14 @@ void main() {
     session.close();
   });
 
-  test('Move folder ok when folder to move is empty',
-  () async {
+  test('Move folder ok when folder to move is empty', () async {
     // Create folder1 (/folder1) and folder2 inside folder1 (/folder1/folder2)
     {
       await Directory.create(repository, folder1Path);
       print('New folder: $folder1Path');
 
       await Directory.create(repository, folder2Path);
-      print('New folder: $folder2Path');  
+      print('New folder: $folder2Path');
     }
     // Check that root (/) contains only one entry (/file1)
     {
@@ -54,16 +54,17 @@ void main() {
     }
     // Check the contents in root for two entries: folder1 (/folder1) and folder2 (/folder2)
     {
-      final rootContentsAfterMovingFolder2 = await Directory.open(repository, '/');
+      final rootContentsAfterMovingFolder2 =
+          await Directory.open(repository, '/');
       expect(rootContentsAfterMovingFolder2.isNotEmpty, equals(true));
       expect(rootContentsAfterMovingFolder2.toList().length, equals(2));
 
-      print('Root contents after move: ${rootContentsAfterMovingFolder2.toList()}');
+      print(
+          'Root contents after move: ${rootContentsAfterMovingFolder2.toList()}');
     }
   });
 
-  test('Move folder ok when folder to move is not empty',
-  () async {
+  test('Move folder ok when folder to move is not empty', () async {
     // Create folder1 (/folder1) and folder2 inside folder1 (/folder1/folder2)
     {
       await Directory.create(repository, folder1Path);
@@ -99,11 +100,13 @@ void main() {
     }
     // Check the contents in root for two entryes: folder1 (/folder1) and folder2 (/folder2)
     {
-      final rootContentsAfterMovingFolder2 = await Directory.open(repository, '/');
+      final rootContentsAfterMovingFolder2 =
+          await Directory.open(repository, '/');
       expect(rootContentsAfterMovingFolder2.isNotEmpty, equals(true));
       expect(rootContentsAfterMovingFolder2.toList().length, equals(2));
 
-      print('Root contents after move: ${rootContentsAfterMovingFolder2.toList()}');
+      print(
+          'Root contents after move: ${rootContentsAfterMovingFolder2.toList()}');
     }
   });
 }
