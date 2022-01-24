@@ -143,19 +143,6 @@ class Session {
     return Session._(bindings);
   }
 
-  /// Extract the suggested repository name from the share token.
-  String extractSuggestedNameFromShareToken(String token) {
-    final namePtr = _withPoolSync((pool) => bindings
-        .extract_suggested_name_from_share_token(pool.toNativeUtf8(token)));
-    final name = namePtr.cast<Utf8>().toDartString();
-
-    // NOTE: we are freeing a pointer here that was allocated by the native side.
-    // See the comment inside `_ErrorHelper.check` for more details about whether this is OK.
-    malloc.free(namePtr);
-
-    return name;
-  }
-
   /// Closes the session.
   void close() {
     bindings.session_close();
@@ -173,13 +160,13 @@ class Repository {
   static Future<Repository> create(Session session,
       {required String store,
       required String password,
-      String? shareToken}) async {
+      ShareToken? shareToken}) async {
     final bindings = session.bindings;
     final handle = await _withPool((pool) => _invoke<int>((port, error) =>
         bindings.repository_create(
             pool.toNativeUtf8(store),
             pool.toNativeUtf8(password),
-            shareToken != null ? pool.toNativeUtf8(shareToken) : nullptr,
+            shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
             port,
             error)));
 
@@ -255,15 +242,46 @@ class Repository {
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
   /// specify repository name which will be included in the token and suggested to the recipient.
-  Future<String> createShareToken(
-          {required AccessMode accessMode, String? name}) =>
-      _withPool((pool) => _invoke<String>((port, error) =>
-          bindings.repository_create_share_token(
-              handle,
-              _encodeAccessMode(accessMode),
-              name != null ? pool.toNativeUtf8(name) : nullptr,
-              port,
-              error)));
+  Future<ShareToken> createShareToken(
+          {required AccessMode accessMode, String? name}) async =>
+      ShareToken._(
+          bindings,
+          await _withPool((pool) => _invoke<String>((port, error) =>
+              bindings.repository_create_share_token(
+                  handle,
+                  _encodeAccessMode(accessMode),
+                  name != null ? pool.toNativeUtf8(name) : nullptr,
+                  port,
+                  error))));
+}
+
+class ShareToken {
+  final Bindings bindings;
+  final String token;
+
+  ShareToken._(this.bindings, this.token);
+
+  ShareToken(Session session, this.token) : bindings = session.bindings;
+
+  /// Get the suggested repository name from the share token.
+  String get suggestedName {
+    final namePtr = _withPoolSync((pool) =>
+        bindings.share_token_suggested_name(pool.toNativeUtf8(token)));
+    final name = namePtr.cast<Utf8>().toDartString();
+
+    // NOTE: we are freeing a pointer here that was allocated by the native side.
+    // See the comment inside `_ErrorHelper.check` for more details about whether this is OK.
+    malloc.free(namePtr);
+
+    return name;
+  }
+
+  /// Get the access mode the share token provides.
+  AccessMode get mode => _decodeAccessMode(_withPoolSync(
+      (pool) => bindings.share_token_mode(pool.toNativeUtf8(token))))!;
+
+  @override
+  String toString() => token;
 }
 
 enum AccessMode {
@@ -280,6 +298,19 @@ int _encodeAccessMode(AccessMode mode) {
       return ACCESS_MODE_READ;
     case AccessMode.write:
       return ACCESS_MODE_WRITE;
+  }
+}
+
+AccessMode? _decodeAccessMode(int n) {
+  switch (n) {
+    case ACCESS_MODE_BLIND:
+      return AccessMode.blind;
+    case ACCESS_MODE_READ:
+      return AccessMode.read;
+    case ACCESS_MODE_WRITE:
+      return AccessMode.write;
+    default:
+      return null;
   }
 }
 

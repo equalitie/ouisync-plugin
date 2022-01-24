@@ -645,22 +645,35 @@ class Bindings {
           void Function(int, int, ffi.Pointer<ffi.Int8>, int,
               ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
 
-  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
-  ffi.Pointer<ffi.Int8> extract_suggested_name_from_share_token(
+  int share_token_mode(
     ffi.Pointer<ffi.Int8> token,
   ) {
-    return _extract_suggested_name_from_share_token(
+    return _share_token_mode(
       token,
     );
   }
 
-  late final _extract_suggested_name_from_share_tokenPtr = _lookup<
-          ffi.NativeFunction<
-              ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>>(
-      'extract_suggested_name_from_share_token');
-  late final _extract_suggested_name_from_share_token =
-      _extract_suggested_name_from_share_tokenPtr
-          .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
+  late final _share_token_modePtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function(ffi.Pointer<ffi.Int8>)>>(
+          'share_token_mode');
+  late final _share_token_mode =
+      _share_token_modePtr.asFunction<int Function(ffi.Pointer<ffi.Int8>)>();
+
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Int8> share_token_suggested_name(
+    ffi.Pointer<ffi.Int8> token,
+  ) {
+    return _share_token_suggested_name(
+      token,
+    );
+  }
+
+  late final _share_token_suggested_namePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              ffi.Pointer<ffi.Int8>)>>('share_token_suggested_name');
+  late final _share_token_suggested_name = _share_token_suggested_namePtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
 
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
