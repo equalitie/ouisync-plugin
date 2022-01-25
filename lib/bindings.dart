@@ -676,28 +676,20 @@ class Bindings {
   late final _share_token_suggested_name = _share_token_suggested_namePtr
       .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
 
-  /// IMPORTANT: the caller is responsible for deallocating `out_bytes` unless it is `null`.
-  void share_token_encode(
+  /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
+  Bytes share_token_encode(
     ffi.Pointer<ffi.Int8> token,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_bytes,
-    ffi.Pointer<ffi.Uint64> out_len,
   ) {
     return _share_token_encode(
       token,
-      out_bytes,
-      out_len,
     );
   }
 
-  late final _share_token_encodePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Int8>,
-              ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
-              ffi.Pointer<ffi.Uint64>)>>('share_token_encode');
-  late final _share_token_encode = _share_token_encodePtr.asFunction<
-      void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
-          ffi.Pointer<ffi.Uint64>)>();
+  late final _share_token_encodePtr =
+      _lookup<ffi.NativeFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>>(
+          'share_token_encode');
+  late final _share_token_encode = _share_token_encodePtr
+      .asFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>();
 
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
   ffi.Pointer<ffi.Int8> share_token_decode(
@@ -750,6 +742,13 @@ class Bindings {
   late final _session_closePtr =
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('session_close');
   late final _session_close = _session_closePtr.asFunction<void Function()>();
+}
+
+class Bytes extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint8> ptr;
+
+  @ffi.Uint64()
+  external int len;
 }
 
 /// FFI handle to a resource with shared ownership.

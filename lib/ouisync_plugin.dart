@@ -287,20 +287,16 @@ class ShareToken {
 
   /// Encode this share token into raw bytes (for example to build a QR code from).
   Uint8List encode() => _withPoolSync((pool) {
-        final bufferPtr = pool<Pointer<Uint8>>();
-        final lenPtr = pool<Uint64>();
         final tokenPtr = pool.toNativeUtf8(token);
+        final buffer = bindings.share_token_encode(tokenPtr);
 
-        bindings.share_token_encode(tokenPtr, bufferPtr, lenPtr);
-
-        if (bufferPtr.value != nullptr) {
+        if (buffer.ptr != nullptr) {
           try {
             // Creating a copy so we can deallocate the pointer.
             // TODO: is this the right way to do this?
-            return Uint8List.fromList(
-                bufferPtr.value.asTypedList(lenPtr.value));
+            return Uint8List.fromList(buffer.ptr.asTypedList(buffer.len));
           } finally {
-            freeNative(bufferPtr.value);
+            freeNative(buffer.ptr);
           }
         } else {
           return Uint8List(0);
