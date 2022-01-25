@@ -645,6 +645,7 @@ class Bindings {
           void Function(int, int, ffi.Pointer<ffi.Int8>, int,
               ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
 
+  /// Returns the access mode of the given share token.
   int share_token_mode(
     ffi.Pointer<ffi.Int8> token,
   ) {
@@ -674,6 +675,47 @@ class Bindings {
               ffi.Pointer<ffi.Int8>)>>('share_token_suggested_name');
   late final _share_token_suggested_name = _share_token_suggested_namePtr
       .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
+
+  /// IMPORTANT: the caller is responsible for deallocating `out_bytes` unless it is `null`.
+  void share_token_encode(
+    ffi.Pointer<ffi.Int8> token,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_bytes,
+    ffi.Pointer<ffi.Uint64> out_len,
+  ) {
+    return _share_token_encode(
+      token,
+      out_bytes,
+      out_len,
+    );
+  }
+
+  late final _share_token_encodePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+              ffi.Pointer<ffi.Uint64>)>>('share_token_encode');
+  late final _share_token_encode = _share_token_encodePtr.asFunction<
+      void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+          ffi.Pointer<ffi.Uint64>)>();
+
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Int8> share_token_decode(
+    ffi.Pointer<ffi.Uint8> bytes,
+    int len,
+  ) {
+    return _share_token_decode(
+      bytes,
+      len,
+    );
+  }
+
+  late final _share_token_decodePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              ffi.Pointer<ffi.Uint8>, ffi.Uint64)>>('share_token_decode');
+  late final _share_token_decode = _share_token_decodePtr.asFunction<
+      ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Uint8>, int)>();
 
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
