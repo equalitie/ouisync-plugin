@@ -143,19 +143,6 @@ class Session {
     return Session._(bindings);
   }
 
-  /// Extract the suggested repository name from the share token.
-  String extractSuggestedNameFromShareToken(String token) {
-    final namePtr = _withPoolSync((pool) => bindings
-        .extract_suggested_name_from_share_token(pool.toNativeUtf8(token)));
-    final name = namePtr.cast<Utf8>().toDartString();
-
-    // NOTE: we are freeing a pointer here that was allocated by the native side.
-    // See the comment inside `_ErrorHelper.check` for more details about whether this is OK.
-    malloc.free(namePtr);
-
-    return name;
-  }
-
   /// Closes the session.
   void close() {
     bindings.session_close();
@@ -173,13 +160,13 @@ class Repository {
   static Future<Repository> create(Session session,
       {required String store,
       required String password,
-      String? shareToken}) async {
+      ShareToken? shareToken}) async {
     final bindings = session.bindings;
     final handle = await _withPool((pool) => _invoke<int>((port, error) =>
         bindings.repository_create(
             pool.toNativeUtf8(store),
             pool.toNativeUtf8(password),
-            shareToken != null ? pool.toNativeUtf8(shareToken) : nullptr,
+            shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
             port,
             error)));
 
@@ -255,15 +242,89 @@ class Repository {
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
   /// specify repository name which will be included in the token and suggested to the recipient.
-  Future<String> createShareToken(
-          {required AccessMode accessMode, String? name}) =>
-      _withPool((pool) => _invoke<String>((port, error) =>
-          bindings.repository_create_share_token(
-              handle,
-              _encodeAccessMode(accessMode),
-              name != null ? pool.toNativeUtf8(name) : nullptr,
-              port,
-              error)));
+  Future<ShareToken> createShareToken(
+          {required AccessMode accessMode, String? name}) async =>
+      ShareToken._(
+          bindings,
+          await _withPool((pool) => _invoke<String>((port, error) =>
+              bindings.repository_create_share_token(
+                  handle,
+                  _encodeAccessMode(accessMode),
+                  name != null ? pool.toNativeUtf8(name) : nullptr,
+                  port,
+                  error))));
+}
+
+class ShareToken {
+  final Bindings bindings;
+  final String token;
+
+  ShareToken._(this.bindings, this.token);
+
+  ShareToken(Session session, this.token) : bindings = session.bindings;
+
+  /// Decode share token from raw bytes (obtained for example from a QR code).
+  /// Returns null if the decoding failed.
+  static ShareToken? decode(Session session, Uint8List bytes) =>
+      _withPoolSync((pool) {
+        final buffer = pool<Uint8>(bytes.length);
+        buffer.asTypedList(bytes.length).setAll(0, bytes);
+
+        final tokenPtr =
+            session.bindings.share_token_decode(buffer, bytes.length);
+
+        if (tokenPtr != nullptr) {
+          try {
+            final token = tokenPtr.cast<Utf8>().toDartString();
+            return ShareToken(session, token);
+          } finally {
+            freeNative(tokenPtr);
+          }
+        } else {
+          return null;
+        }
+      });
+
+  /// Encode this share token into raw bytes (for example to build a QR code from).
+  Uint8List encode() => _withPoolSync((pool) {
+        final tokenPtr = pool.toNativeUtf8(token);
+        final buffer = bindings.share_token_encode(tokenPtr);
+
+        if (buffer.ptr != nullptr) {
+          try {
+            // Creating a copy so we can deallocate the pointer.
+            // TODO: is this the right way to do this?
+            return Uint8List.fromList(buffer.ptr.asTypedList(buffer.len));
+          } finally {
+            freeNative(buffer.ptr);
+          }
+        } else {
+          return Uint8List(0);
+        }
+      });
+
+  /// Get the suggested repository name from the share token.
+  String get suggestedName {
+    final namePtr = _withPoolSync((pool) =>
+        bindings.share_token_suggested_name(pool.toNativeUtf8(token)));
+    final name = namePtr.cast<Utf8>().toDartString();
+    freeNative(namePtr);
+
+    return name;
+  }
+
+  /// Get the access mode the share token provides.
+  AccessMode get mode => _decodeAccessMode(_withPoolSync(
+      (pool) => bindings.share_token_mode(pool.toNativeUtf8(token))))!;
+
+  @override
+  String toString() => token;
+
+  @override
+  bool operator ==(Object other) => other is ShareToken && other.token == token;
+
+  @override
+  int get hashCode => token.hashCode;
 }
 
 enum AccessMode {
@@ -280,6 +341,19 @@ int _encodeAccessMode(AccessMode mode) {
       return ACCESS_MODE_READ;
     case AccessMode.write:
       return ACCESS_MODE_WRITE;
+  }
+}
+
+AccessMode? _decodeAccessMode(int n) {
+  switch (n) {
+    case ACCESS_MODE_BLIND:
+      return AccessMode.blind;
+    case ACCESS_MODE_READ:
+      return AccessMode.read;
+    case ACCESS_MODE_WRITE:
+      return AccessMode.write;
+    default:
+      return null;
   }
 }
 
@@ -603,19 +677,15 @@ class _ErrorHelper {
   void check() {
     assert(ptr != nullptr);
 
-    if (ptr.value != nullptr) {
-      final error = ptr.value.cast<Utf8>().toDartString();
-
-      // NOTE: we are freeing a pointer here that was allocated by the native side. This *should*
-      // be fine as long as both sides are using the same allocator which *should* be the case here.
-      // In case this turns out to be wrong, we should expose a native function to deallocate the
-      // string and call it here instead.
-      malloc.free(ptr.value);
-
+    try {
+      if (ptr.value != nullptr) {
+        final error = ptr.value.cast<Utf8>().toDartString();
+        freeNative(ptr.value);
+        throw Error(error);
+      }
+    } finally {
       malloc.free(ptr);
       ptr = nullptr;
-
-      throw Error(error);
     }
   }
 }
@@ -646,4 +716,12 @@ class _Pool implements Allocator {
   // string pointer. The pointer is allocated using this pool.
   Pointer<Int8> toNativeUtf8(String str) =>
       str.toNativeUtf8(allocator: this).cast<Int8>();
+}
+
+// Free a pointer that was allocated by the native side.
+void freeNative(Pointer<NativeType> ptr) {
+  // This *should* be fine as long as both sides are using the same allocator which *should* be the
+  // case (malloc). If this assumption turns out to be wrong, we should expose a native function to
+  // deallocate the string and call it here instead.
+  malloc.free(ptr);
 }
