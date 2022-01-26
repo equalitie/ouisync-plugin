@@ -22,96 +22,79 @@ class Bindings {
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _directory_create(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _directory_createPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
-              Port, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('directory_create');
-  late final _directory_create = _directory_createPtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+              Port_Result)>>('directory_create');
+  late final _directory_create = _directory_createPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   void directory_open(
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _directory_open(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _directory_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_Repository,
-              ffi.Pointer<ffi.Int8>,
-              Port_UniqueHandle_Directory,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('directory_open');
-  late final _directory_open = _directory_openPtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
+              Port_Result_UniqueHandle_Directory)>>('directory_open');
+  late final _directory_open = _directory_openPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Removes the directory at the given path from the repository. The directory must be empty.
   void directory_remove(
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _directory_remove(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _directory_removePtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
-              Port, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('directory_remove');
-  late final _directory_remove = _directory_removePtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+              Port_Result)>>('directory_remove');
+  late final _directory_remove = _directory_removePtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Removes the directory at the given path including its content from the repository.
   void directory_remove_recursively(
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _directory_remove_recursively(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _directory_remove_recursivelyPtr = _lookup<
-          ffi.NativeFunction<
-              ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
-                  Port, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>(
-      'directory_remove_recursively');
-  late final _directory_remove_recursively =
-      _directory_remove_recursivelyPtr.asFunction<
-          void Function(int, ffi.Pointer<ffi.Int8>, int,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
+              Port_Result)>>('directory_remove_recursively');
+  late final _directory_remove_recursively = _directory_remove_recursivelyPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   void directory_close(
     int handle,
@@ -191,112 +174,91 @@ class Bindings {
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_open(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _file_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_Repository,
-              ffi.Pointer<ffi.Int8>,
-              Port_SharedHandle_Mutex_FfiFile,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_open');
-  late final _file_open = _file_openPtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
+              Port_Result_SharedHandle_Mutex_FfiFile)>>('file_open');
+  late final _file_open = _file_openPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   void file_create(
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_create(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _file_createPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_Repository,
-              ffi.Pointer<ffi.Int8>,
-              Port_SharedHandle_Mutex_FfiFile,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_create');
-  late final _file_create = _file_createPtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
+              Port_Result_SharedHandle_Mutex_FfiFile)>>('file_create');
+  late final _file_create = _file_createPtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Remove (delete) the file at the given path from the repository.
   void file_remove(
     int repo,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_remove(
       repo,
       path,
       port,
-      error,
     );
   }
 
   late final _file_removePtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
-              Port, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_remove');
-  late final _file_remove = _file_removePtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+              Port_Result)>>('file_remove');
+  late final _file_remove = _file_removePtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   void file_close(
     int handle,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_close(
       handle,
       port,
-      error,
     );
   }
 
   late final _file_closePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, Port,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_close');
-  late final _file_close = _file_closePtr.asFunction<
-      void Function(int, int, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(
+              SharedHandle_Mutex_FfiFile, Port_Result)>>('file_close');
+  late final _file_close = _file_closePtr.asFunction<void Function(int, int)>();
 
   void file_flush(
     int handle,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_flush(
       handle,
       port,
-      error,
     );
   }
 
   late final _file_flushPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, Port,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_flush');
-  late final _file_flush = _file_flushPtr.asFunction<
-      void Function(int, int, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(
+              SharedHandle_Mutex_FfiFile, Port_Result)>>('file_flush');
+  late final _file_flush = _file_flushPtr.asFunction<void Function(int, int)>();
 
   /// Read at most `len` bytes from the file into `buffer`. Yields the number of bytes actually read
   /// (zero on EOF).
@@ -306,7 +268,6 @@ class Bindings {
     ffi.Pointer<ffi.Uint8> buffer,
     int len,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_read(
       handle,
@@ -314,7 +275,6 @@ class Bindings {
       buffer,
       len,
       port,
-      error,
     );
   }
 
@@ -325,11 +285,9 @@ class Bindings {
               ffi.Uint64,
               ffi.Pointer<ffi.Uint8>,
               ffi.Uint64,
-              Port_u64,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_read');
-  late final _file_read = _file_readPtr.asFunction<
-      void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+              Port_Result_u64)>>('file_read');
+  late final _file_read = _file_readPtr
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
   /// Write `len` bytes from `buffer` into the file.
   void file_write(
@@ -338,7 +296,6 @@ class Bindings {
     ffi.Pointer<ffi.Uint8> buffer,
     int len,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_write(
       handle,
@@ -346,64 +303,52 @@ class Bindings {
       buffer,
       len,
       port,
-      error,
     );
   }
 
   late final _file_writePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_Mutex_FfiFile,
-              ffi.Uint64,
-              ffi.Pointer<ffi.Uint8>,
-              ffi.Uint64,
-              Port,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_write');
-  late final _file_write = _file_writePtr.asFunction<
-      void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Uint64,
+              ffi.Pointer<ffi.Uint8>, ffi.Uint64, Port_Result)>>('file_write');
+  late final _file_write = _file_writePtr
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
   /// Truncate the file to `len` bytes.
   void file_truncate(
     int handle,
     int len,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_truncate(
       handle,
       len,
       port,
-      error,
     );
   }
 
   late final _file_truncatePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Uint64, Port,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_truncate');
-  late final _file_truncate = _file_truncatePtr.asFunction<
-      void Function(int, int, int, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Uint64,
+              Port_Result)>>('file_truncate');
+  late final _file_truncate =
+      _file_truncatePtr.asFunction<void Function(int, int, int)>();
 
   /// Retrieve the size of the file in bytes.
   void file_len(
     int handle,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _file_len(
       handle,
       port,
-      error,
     );
   }
 
   late final _file_lenPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, Port_u64,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('file_len');
-  late final _file_len = _file_lenPtr.asFunction<
-      void Function(int, int, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(
+              SharedHandle_Mutex_FfiFile, Port_Result_u64)>>('file_len');
+  late final _file_len = _file_lenPtr.asFunction<void Function(int, int)>();
 
   /// Creates a new repository.
   void repository_create(
@@ -411,14 +356,12 @@ class Bindings {
     ffi.Pointer<ffi.Int8> master_password,
     ffi.Pointer<ffi.Int8> share_token,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _repository_create(
       store,
       master_password,
       share_token,
       port,
-      error,
     );
   }
 
@@ -428,37 +371,30 @@ class Bindings {
               ffi.Pointer<ffi.Int8>,
               ffi.Pointer<ffi.Int8>,
               ffi.Pointer<ffi.Int8>,
-              Port_SharedHandle_RepositoryHolder,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('repository_create');
+              Port_Result_SharedHandle_RepositoryHolder)>>('repository_create');
   late final _repository_create = _repository_createPtr.asFunction<
       void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>,
-          ffi.Pointer<ffi.Int8>, int, ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Pointer<ffi.Int8>, int)>();
 
   /// Opens an existing repository.
   void repository_open(
     ffi.Pointer<ffi.Int8> store,
     ffi.Pointer<ffi.Int8> master_password,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _repository_open(
       store,
       master_password,
       port,
-      error,
     );
   }
 
   late final _repository_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              ffi.Pointer<ffi.Int8>,
-              ffi.Pointer<ffi.Int8>,
-              Port_SharedHandle_RepositoryHolder,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('repository_open');
+          ffi.Void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>,
+              Port_Result_SharedHandle_RepositoryHolder)>>('repository_open');
   late final _repository_open = _repository_openPtr.asFunction<
-      void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+      void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Closes a repository.
   void repository_close(
@@ -481,26 +417,20 @@ class Bindings {
     int handle,
     ffi.Pointer<ffi.Int8> path,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _repository_entry_type(
       handle,
       path,
       port,
-      error,
     );
   }
 
   late final _repository_entry_typePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_RepositoryHolder,
-              ffi.Pointer<ffi.Int8>,
-              Port_u8,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('repository_entry_type');
-  late final _repository_entry_type = _repository_entry_typePtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+          ffi.Void Function(SharedHandle_RepositoryHolder,
+              ffi.Pointer<ffi.Int8>, Port_Result_u8)>>('repository_entry_type');
+  late final _repository_entry_type = _repository_entry_typePtr
+      .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Move/rename entry from src to dst.
   void repository_move_entry(
@@ -508,14 +438,12 @@ class Bindings {
     ffi.Pointer<ffi.Int8> src,
     ffi.Pointer<ffi.Int8> dst,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _repository_move_entry(
       handle,
       src,
       dst,
       port,
-      error,
     );
   }
 
@@ -525,11 +453,9 @@ class Bindings {
               SharedHandle_RepositoryHolder,
               ffi.Pointer<ffi.Int8>,
               ffi.Pointer<ffi.Int8>,
-              Port,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('repository_move_entry');
+              Port_Result)>>('repository_move_entry');
   late final _repository_move_entry = _repository_move_entryPtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+      void Function(int, ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Subscribe to change notifications from the repository.
   int repository_subscribe(
@@ -620,30 +546,24 @@ class Bindings {
     int access_mode,
     ffi.Pointer<ffi.Int8> name,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error,
   ) {
     return _repository_create_share_token(
       handle,
       access_mode,
       name,
       port,
-      error,
     );
   }
 
   late final _repository_create_share_tokenPtr = _lookup<
-          ffi.NativeFunction<
-              ffi.Void Function(
-                  SharedHandle_RepositoryHolder,
-                  ffi.Uint8,
-                  ffi.Pointer<ffi.Int8>,
-                  Port_String,
-                  ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>(
-      'repository_create_share_token');
-  late final _repository_create_share_token =
-      _repository_create_share_tokenPtr.asFunction<
-          void Function(int, int, ffi.Pointer<ffi.Int8>, int,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SharedHandle_RepositoryHolder,
+              ffi.Uint8,
+              ffi.Pointer<ffi.Int8>,
+              Port_Result_String)>>('repository_create_share_token');
+  late final _repository_create_share_token = _repository_create_share_tokenPtr
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Returns the access mode of the given share token.
   int share_token_mode(
@@ -716,23 +636,20 @@ class Bindings {
     ffi.Pointer<ffi.Void> post_c_object_fn,
     ffi.Pointer<ffi.Int8> store,
     int port,
-    ffi.Pointer<ffi.Pointer<ffi.Int8>> error_ptr,
   ) {
     return _session_open(
       post_c_object_fn,
       store,
       port,
-      error_ptr,
     );
   }
 
   late final _session_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Int8>, Port,
-              ffi.Pointer<ffi.Pointer<ffi.Int8>>)>>('session_open');
+          ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Int8>,
+              Port_Result)>>('session_open');
   late final _session_open = _session_openPtr.asFunction<
-      void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Int8>, int,
-          ffi.Pointer<ffi.Pointer<ffi.Int8>>)>();
+      void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Closes the ouisync session.
   void session_close() {
@@ -744,6 +661,41 @@ class Bindings {
   late final _session_close = _session_closePtr.asFunction<void Function()>();
 }
 
+abstract class ErrorCode {
+  /// No error
+  static const int ok = 0;
+
+  /// Database error
+  static const int db = 1;
+
+  /// Insuficient permission to perform the intended operation
+  static const int permissionDenied = 2;
+
+  /// Malformed data
+  static const int malformedData = 3;
+
+  /// Entry already exists
+  static const int entryExists = 4;
+
+  /// Entry doesn't exist
+  static const int entryNotFound = 5;
+
+  /// Multiple matching entries found
+  static const int ambiguousEntry = 6;
+
+  /// The intended operation requires the directory to be empty but it isn't
+  static const int directoryNotEmpty = 7;
+
+  /// The indended operation is not supported
+  static const int operationNotSupported = 8;
+
+  /// Network error
+  static const int network = 9;
+
+  /// Unspecified error
+  static const int other = 65536;
+}
+
 class Bytes extends ffi.Struct {
   external ffi.Pointer<ffi.Uint8> ptr;
 
@@ -753,10 +705,13 @@ class Bytes extends ffi.Struct {
 
 /// FFI handle to a resource with shared ownership.
 typedef SharedHandle_Repository = ffi.Uint64;
+
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result = Port;
 typedef Port = ffi.Int64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_UniqueHandle_Directory = Port;
+typedef Port_Result_UniqueHandle_Directory = Port;
 
 /// FFI handle to a resource with unique ownership.
 typedef UniqueHandle_Directory = ffi.Uint64;
@@ -765,22 +720,22 @@ typedef UniqueHandle_Directory = ffi.Uint64;
 typedef RefHandle_DirEntry = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_SharedHandle_Mutex_FfiFile = Port;
+typedef Port_Result_SharedHandle_Mutex_FfiFile = Port;
 
 /// FFI handle to a resource with shared ownership.
 typedef SharedHandle_Mutex_FfiFile = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_u64 = Port;
+typedef Port_Result_u64 = Port;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_SharedHandle_RepositoryHolder = Port;
+typedef Port_Result_SharedHandle_RepositoryHolder = Port;
 
 /// FFI handle to a resource with shared ownership.
 typedef SharedHandle_RepositoryHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_u8 = Port;
+typedef Port_Result_u8 = Port;
 
 /// FFI handle to a resource with unique ownership.
 typedef UniqueHandle_JoinHandle = ffi.Uint64;
@@ -789,7 +744,7 @@ typedef UniqueHandle_JoinHandle = ffi.Uint64;
 typedef Port_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_String = Port;
+typedef Port_Result_String = Port;
 
 const int ENTRY_TYPE_INVALID = 0;
 
