@@ -136,9 +136,8 @@ class Session {
   static Future<Session> open(String store) async {
     final bindings = Bindings(_defaultLib());
 
-    await _withPool((pool) => _invoke<void>((port, error) =>
-        bindings.session_open(NativeApi.postCObject.cast<Void>(),
-            pool.toNativeUtf8(store), port, error)));
+    await _withPool((pool) => _invoke<void>((port) => bindings.session_open(
+        NativeApi.postCObject.cast<Void>(), pool.toNativeUtf8(store), port)));
 
     return Session._(bindings);
   }
@@ -162,13 +161,12 @@ class Repository {
       required String password,
       ShareToken? shareToken}) async {
     final bindings = session.bindings;
-    final handle = await _withPool((pool) => _invoke<int>((port, error) =>
+    final handle = await _withPool((pool) => _invoke<int>((port) =>
         bindings.repository_create(
             pool.toNativeUtf8(store),
             pool.toNativeUtf8(password),
             shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
-            port,
-            error)));
+            port)));
 
     return Repository._(bindings, handle);
   }
@@ -177,12 +175,9 @@ class Repository {
   static Future<Repository> open(Session session,
       {required String store, String? password}) async {
     final bindings = session.bindings;
-    final handle = await _withPool((pool) => _invoke<int>((port, error) =>
-        bindings.repository_open(
-            pool.toNativeUtf8(store),
-            password != null ? pool.toNativeUtf8(password) : nullptr,
-            port,
-            error)));
+    final handle = await _withPool((pool) => _invoke<int>((port) =>
+        bindings.repository_open(pool.toNativeUtf8(store),
+            password != null ? pool.toNativeUtf8(password) : nullptr, port)));
 
     return Repository._(bindings, handle);
   }
@@ -196,17 +191,16 @@ class Repository {
   /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
   /// doesn't exists.
   Future<EntryType?> type(String path) async =>
-      _decodeEntryType(await _withPool((pool) => _invoke<int>((port, error) =>
-          bindings.repository_entry_type(
-              handle, pool.toNativeUtf8(path), port, error))));
+      _decodeEntryType(await _withPool((pool) => _invoke<int>((port) => bindings
+          .repository_entry_type(handle, pool.toNativeUtf8(path), port))));
 
   /// Returns whether the entry (file or directory) at [path] exists.
   Future<bool> exists(String path) async => await type(path) != null;
 
   /// Move/rename the file/directory from [src] to [dst].
   Future<void> move(String src, String dst) => _withPool((pool) =>
-      _invoke<void>((port, error) => bindings.repository_move_entry(handle,
-          pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port, error)));
+      _invoke<void>((port) => bindings.repository_move_entry(
+          handle, pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
 
   /// Subscribe to change notifications from this repository. The returned handle can be used to
   /// cancel the subscription.
@@ -246,13 +240,12 @@ class Repository {
           {required AccessMode accessMode, String? name}) async =>
       ShareToken._(
           bindings,
-          await _withPool((pool) => _invoke<String>((port, error) =>
+          await _withPool((pool) => _invoke<String>((port) =>
               bindings.repository_create_share_token(
                   handle,
                   _encodeAccessMode(accessMode),
                   name != null ? pool.toNativeUtf8(name) : nullptr,
-                  port,
-                  error))));
+                  port))));
 }
 
 class ShareToken {
@@ -411,7 +404,7 @@ class DirEntry {
   /// Type of this entry (file/directory).
   EntryType get type {
     return _decodeEntryType(bindings.dir_entry_type(handle)) ??
-        (throw Error('invalid dir entry type'));
+        (throw Error(ErrorCode.other, 'invalid dir entry type'));
   }
 }
 
@@ -436,16 +429,15 @@ class Directory with IterableMixin<DirEntry> {
   static Future<Directory> open(Repository repo, String path) async =>
       Directory._(
           repo.bindings,
-          await _withPool((pool) => _invoke<int>((port, error) => repo.bindings
-              .directory_open(
-                  repo.handle, pool.toNativeUtf8(path), port, error))));
+          await _withPool((pool) => _invoke<int>((port) => repo.bindings
+              .directory_open(repo.handle, pool.toNativeUtf8(path), port))));
 
   /// Creates a new directory in [repo] at [path].
   ///
   /// Throws if [path] already exists of if the parent of [path] doesn't exists.
-  static Future<void> create(Repository repo, String path) => _withPool(
-      (pool) => _invoke<void>((port, error) => repo.bindings.directory_create(
-          repo.handle, pool.toNativeUtf8(path), port, error)));
+  static Future<void> create(Repository repo, String path) =>
+      _withPool((pool) => _invoke<void>((port) => repo.bindings
+          .directory_create(repo.handle, pool.toNativeUtf8(path), port)));
 
   /// Remove a directory from [repo] at [path]. If [recursive] is false (which is the default),
   /// the directory must be empty otherwise an exception is thrown. If [recursive] it is true, the
@@ -456,8 +448,8 @@ class Directory with IterableMixin<DirEntry> {
         ? repo.bindings.directory_remove_recursively
         : repo.bindings.directory_remove;
 
-    return _withPool((pool) => _invoke<void>((port, error) =>
-        fun(repo.handle, pool.toNativeUtf8(path), port, error)));
+    return _withPool((pool) => _invoke<void>(
+        (port) => fun(repo.handle, pool.toNativeUtf8(path), port)));
   }
 
   /// Closes this directory.
@@ -507,29 +499,29 @@ class File {
   /// Throws if [path] doesn't exists or is a directory.
   static Future<File> open(Repository repo, String path) async => File._(
       repo.bindings,
-      await _withPool((pool) => _invoke<int>((port, error) => repo.bindings
-          .file_open(repo.handle, pool.toNativeUtf8(path), port, error))));
+      await _withPool((pool) => _invoke<int>((port) => repo.bindings
+          .file_open(repo.handle, pool.toNativeUtf8(path), port))));
 
   /// Creates a new file in [repo] at [path].
   ///
   /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<File> create(Repository repo, String path) async => File._(
       repo.bindings,
-      await _withPool((pool) => _invoke<int>((port, error) => repo.bindings
-          .file_create(repo.handle, pool.toNativeUtf8(path), port, error))));
+      await _withPool((pool) => _invoke<int>((port) => repo.bindings
+          .file_create(repo.handle, pool.toNativeUtf8(path), port))));
 
   /// Removes (deletes) a file at [path] from [repo].
   static Future<void> remove(Repository repo, String path) =>
-      _withPool((pool) => _invoke<void>((port, error) => repo.bindings
-          .file_remove(repo.handle, pool.toNativeUtf8(path), port, error)));
+      _withPool((pool) => _invoke<void>((port) => repo.bindings
+          .file_remove(repo.handle, pool.toNativeUtf8(path), port)));
 
   /// Flushed and closes this file.
   Future<void> close() =>
-      _invoke<void>((port, error) => bindings.file_close(handle, port, error));
+      _invoke<void>((port) => bindings.file_close(handle, port));
 
   /// Flushes any pending writes to this file.
   Future<void> flush() =>
-      _invoke<void>((port, error) => bindings.file_flush(handle, port, error));
+      _invoke<void>((port) => bindings.file_flush(handle, port));
 
   /// Read [size] bytes from this file, starting at [offset].
   ///
@@ -561,8 +553,8 @@ class File {
     var buffer = malloc<Uint8>(size);
 
     try {
-      final actualSize = await _invoke<int>((port, error) =>
-          bindings.file_read(handle, offset, buffer, size, port, error));
+      final actualSize = await _invoke<int>(
+          (port) => bindings.file_read(handle, offset, buffer, size, port));
       return buffer.asTypedList(actualSize).toList();
     } finally {
       malloc.free(buffer);
@@ -575,30 +567,31 @@ class File {
 
     try {
       buffer.asTypedList(data.length).setAll(0, data);
-      await _invoke<void>((port, error) => bindings.file_write(
-          handle, offset, buffer, data.length, port, error));
+      await _invoke<void>((port) =>
+          bindings.file_write(handle, offset, buffer, data.length, port));
     } finally {
       malloc.free(buffer);
     }
   }
 
   /// Truncate the file to [size] bytes.
-  Future<void> truncate(int size) => _invoke<void>(
-      (port, error) => bindings.file_truncate(handle, size, port, error));
+  Future<void> truncate(int size) =>
+      _invoke<void>((port) => bindings.file_truncate(handle, size, port));
 
   /// Returns the length of this file in bytes.
   Future<int> get length =>
-      _invoke<int>((port, error) => bindings.file_len(handle, port, error));
+      _invoke<int>((port) => bindings.file_len(handle, port));
 }
 
 /// The exception type throws from this library.
 class Error implements Exception {
-  final String _message;
+  final String message;
+  final int code;
 
-  Error(this._message);
+  Error(this.code, this.message);
 
   @override
-  String toString() => _message;
+  String toString() => message;
 }
 
 // Private helpers to simplify working with the native API:
@@ -654,39 +647,28 @@ T _withPoolSync<T>(T Function(_Pool) fun) {
 }
 
 // Helper to invoke a native async function.
-Future<T> _invoke<T>(void Function(int, Pointer<Pointer<Int8>>) fun) async {
-  final error = _ErrorHelper();
+Future<T> _invoke<T>(void Function(int) fun) async {
   final recvPort = ReceivePort();
 
-  fun(recvPort.sendPort.nativePort, error.ptr);
+  try {
+    fun(recvPort.sendPort.nativePort);
 
-  final result = await recvPort.first;
+    var code = -1;
 
-  recvPort.close();
-  error.check();
-
-  return result as T;
-}
-
-// Helper to translate native errors to dart exceptions.
-class _ErrorHelper {
-  var ptr = malloc<Pointer<Int8>>();
-
-  _ErrorHelper();
-
-  void check() {
-    assert(ptr != nullptr);
-
-    try {
-      if (ptr.value != nullptr) {
-        final error = ptr.value.cast<Utf8>().toDartString();
-        freeNative(ptr.value);
-        throw Error(error);
+    // Is there a better way to retrieve the first two values of a stream?
+    await for (var item in recvPort) {
+      if (code == -1) {
+        code = item as int;
+      } else if (code == ErrorCode.ok) {
+        return item as T;
+      } else {
+        throw Error(code, item as String);
       }
-    } finally {
-      malloc.free(ptr);
-      ptr = nullptr;
     }
+
+    throw Exception('invoked native async function did not produce any result');
+  } finally {
+    recvPort.close();
   }
 }
 
@@ -722,6 +704,6 @@ class _Pool implements Allocator {
 void freeNative(Pointer<NativeType> ptr) {
   // This *should* be fine as long as both sides are using the same allocator which *should* be the
   // case (malloc). If this assumption turns out to be wrong, we should expose a native function to
-  // deallocate the string and call it here instead.
+  // deallocate the pointer and call it here instead.
   malloc.free(ptr);
 }
