@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io' as io;
 
 import 'package:ouisync_plugin/ouisync_plugin.dart';
 import 'package:test/test.dart';
 
 void main() {
+  late io.Directory temp;
   late Session session;
   late Repository repository;
 
@@ -14,7 +16,8 @@ void main() {
   final fileContent = 'hello world';
 
   setUp(() async {
-    session = await Session.open(':memory:');
+    temp = await io.Directory.systemTemp.createTemp();
+    session = await Session.open('${temp.path}/device_id.conf');
     repository = await Repository.create(session,
         store: ':memory:', password: 'test123');
   });
@@ -22,6 +25,7 @@ void main() {
   tearDown(() {
     repository.close();
     session.close();
+    temp.deleteSync(recursive: true);
   });
 
   test('Move folder ok when folder to move is empty', () async {

@@ -565,6 +565,21 @@ class Bindings {
   late final _repository_create_share_token = _repository_create_share_tokenPtr
       .asFunction<void Function(int, int, ffi.Pointer<ffi.Int8>, int)>();
 
+  int repository_access_mode(
+    int handle,
+  ) {
+    return _repository_access_mode(
+      handle,
+    );
+  }
+
+  late final _repository_access_modePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Uint8 Function(
+              SharedHandle_RepositoryHolder)>>('repository_access_mode');
+  late final _repository_access_mode =
+      _repository_access_modePtr.asFunction<int Function(int)>();
+
   /// Returns the access mode of the given share token.
   int share_token_mode(
     ffi.Pointer<ffi.Int8> token,
@@ -634,12 +649,12 @@ class Bindings {
   /// around limitations of the binding generators).
   void session_open(
     ffi.Pointer<ffi.Void> post_c_object_fn,
-    ffi.Pointer<ffi.Int8> store,
+    ffi.Pointer<ffi.Int8> device_id_config_path,
     int port,
   ) {
     return _session_open(
       post_c_object_fn,
-      store,
+      device_id_config_path,
       port,
     );
   }
@@ -691,6 +706,9 @@ abstract class ErrorCode {
 
   /// Network error
   static const int network = 9;
+
+  /// Failed to read from or write into the device ID config file
+  static const int deviceIdConfig = 10;
 
   /// Unspecified error
   static const int other = 65536;
