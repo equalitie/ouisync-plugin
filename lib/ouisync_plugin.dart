@@ -124,13 +124,15 @@ class Session {
 
   Session._(this.bindings);
 
-  /// Opens a new session. [store] is a path to the sqlite database to store the local
-  /// configuration in. If it doesn't exists, it will be created.
-  static Future<Session> open(String store) async {
+  /// Opens a new session. [deviceIdConfigPath] is a path to the file containing the device id. If
+  /// it doesn't exists, it will be created.
+  static Future<Session> open(String deviceIdConfigPath) async {
     final bindings = Bindings(_defaultLib());
 
     await _withPool((pool) => _invoke<void>((port) => bindings.session_open(
-        NativeApi.postCObject.cast<Void>(), pool.toNativeUtf8(store), port)));
+        NativeApi.postCObject.cast<Void>(),
+        pool.toNativeUtf8(deviceIdConfigPath),
+        port)));
 
     return Session._(bindings);
   }
@@ -226,6 +228,9 @@ class Repository {
     await recvPort.first;
     recvPort.close();
   }
+
+  AccessMode get accessMode =>
+      _decodeAccessMode(bindings.repository_access_mode(handle))!;
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
   /// specify repository name which will be included in the token and suggested to the recipient.

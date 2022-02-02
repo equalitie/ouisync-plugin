@@ -1,13 +1,16 @@
 import 'dart:convert';
+import 'dart:io' as io;
 import 'package:test/test.dart';
 import 'package:ouisync_plugin/ouisync_plugin.dart';
 
 void main() {
+  late io.Directory temp;
   late Session session;
   late Repository repo;
 
   setUp(() async {
-    session = await Session.open(':memory:');
+    temp = await io.Directory.systemTemp.createTemp();
+    session = await Session.open('${temp.path}/device_id.conf');
     repo = await Repository.create(session,
         store: ':memory:', password: 'test123');
   });
@@ -15,6 +18,7 @@ void main() {
   tearDown(() {
     repo.close();
     session.close();
+    temp.deleteSync(recursive: true);
   });
 
   test('file write and read', () async {
@@ -65,5 +69,9 @@ void main() {
     final decoded = ShareToken.decode(session, encoded);
 
     expect(token, equals(decoded));
+  });
+
+  test('repository access mode', () {
+    expect(repo.accessMode, equals(AccessMode.write));
   });
 }
