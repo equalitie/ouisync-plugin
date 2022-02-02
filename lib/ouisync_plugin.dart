@@ -41,15 +41,8 @@ class NativeChannels {
   /// required operation.
   ///
   /// [repository] is the current repository in the app.
-  static void setRepository(Repository repository) {
-    if (_repository == null) {
-      _repository = repository;
-      return;
-    }
-
-    if (repository.handle != _repository!.handle) {
-      _repository = repository;
-    }
+  static void setRepository(Repository? repository) {
+    _repository = repository;
   }
 
   /// Handler method in charge of picking the right function based in the
