@@ -15,6 +15,8 @@ import java.io.InputStream
 import java.net.URLConnection
 
 abstract class AbstractFileProvider: ContentProvider() {
+    private val TAG = javaClass.simpleName;
+
     companion object {
         private val OPENABLE_PROJECTION = arrayOf(
                 OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
@@ -37,18 +39,15 @@ abstract class AbstractFileProvider: ContentProvider() {
             when {
                 OpenableColumns.DISPLAY_NAME == col -> {
                     b.add(getFileName(uri))
-                    Log.d(javaClass.simpleName,
-                        "OpenableColumns.DISPLAY_NAME: ${getFileName(uri)}")
+                    Log.d(TAG, "OpenableColumns.DISPLAY_NAME: ${getFileName(uri)}")
                 }
                 OpenableColumns.SIZE == col -> {
                     b.add(getDataLength(uri))
-                    Log.d(javaClass.simpleName,
-                            "OpenableColumns.SIZE: ${getDataLength(uri)}")
+                    Log.d(TAG, "OpenableColumns.SIZE: ${getDataLength(uri)}")
                 }
                 else -> { // unknown, so just add null
                     b.add(null)
-                    Log.d(javaClass.simpleName,
-                            "Unknown column $col. NULL")
+                    Log.d(TAG, "Unknown column $col. NULL")
                 }
             }
         }
@@ -57,38 +56,32 @@ abstract class AbstractFileProvider: ContentProvider() {
     }
 
     override fun getType(uri: Uri): String? {
-        Log.d(javaClass.simpleName,
-                "getType: ${URLConnection.guessContentTypeFromName(uri.toString())}")
-
-        return URLConnection.guessContentTypeFromName(uri.toString())
+        var type = URLConnection.guessContentTypeFromName(uri.toString());
+        Log.d(TAG, "getType: $uri -> $type")
+        return type
     }
 
     protected open fun getFileName(uri: Uri): String? {
-        Log.d(javaClass.simpleName,
-                "getFileName: ${uri.lastPathSegment}")
-
+        Log.d(TAG, "getFileName: ${uri.lastPathSegment}")
         return uri.lastPathSegment
     }
 
     protected open fun getDataLength(uri: Uri): Long {
         val segments = uri.pathSegments
         if (segments[0].toLongOrNull() != null) {
-            Log.d(javaClass.simpleName,
-                "getDataLength: ${segments[0].toLong()}")
+            Log.d(TAG, "getDataLength: ${segments[0].toLong()}")
 
             return segments[0].toLong()
         }
          
-        Log.d(javaClass.simpleName,
-                "getDataLength: File size couldn't be obtained. AssetFileDescriptor.UNKNOWN_LENGTH is returned")
+        Log.d(TAG, "getDataLength: File size couldn't be obtained. AssetFileDescriptor.UNKNOWN_LENGTH is returned")
 
         return AssetFileDescriptor.UNKNOWN_LENGTH
     }
 
     @Throws(IOException::class)
     open fun copy(`in`: InputStream, dst: File?) {
-        Log.d(javaClass.simpleName,
-                "copy")
+        Log.d(TAG, "copy")
 
         val out = FileOutputStream(dst)
         val buf = ByteArray(1024)

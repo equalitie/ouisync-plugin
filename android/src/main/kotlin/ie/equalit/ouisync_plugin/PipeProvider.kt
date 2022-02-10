@@ -15,9 +15,9 @@ import java.io.OutputStream
 import java.util.concurrent.Callable
 import java.util.concurrent.FutureTask
 
-
 class PipeProvider: AbstractFileProvider() {
     companion object {
+        val TAG = javaClass.simpleName
         val CONTENT_URI: Uri = Uri.parse("content://ie.equalit.ouisync_plugin.pipe/")
         const val CHUNK_SIZE = 64000
     }
@@ -28,6 +28,9 @@ class PipeProvider: AbstractFileProvider() {
 
     @Throws(FileNotFoundException::class)
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        // pipe_id is only for debugging
+        var pipe_id = kotlin.random.Random.nextInt(1000000);
+
         var pipe: Array<ParcelFileDescriptor?>?
 
         try {
@@ -35,6 +38,7 @@ class PipeProvider: AbstractFileProvider() {
             val path = getPathFromUri(uri)
             
             TransferThread(
+                    pipe_id,
                     context!!,
                     path,
                     ParcelFileDescriptor.AutoCloseOutputStream(pipe[1])
@@ -59,12 +63,17 @@ class PipeProvider: AbstractFileProvider() {
             index++
         }
 
-        Log.d(javaClass.simpleName,
-            "Path from Uri: $path")
+        Log.d(TAG, "Path from Uri: $path")
         return path
     }
 
-    internal class TransferThread(private val  context: Context, private var path: String, private var out: OutputStream) : Thread() {
+    internal class TransferThread(
+            private val pipe_id: Int,
+            private val context: Context,
+            private var path: String,
+            private var out: OutputStream,
+        ) : Thread()
+    {
         var pluginChunkListener: ((ByteArray)->Unit)? = null
 
         override fun run() {
@@ -74,21 +83,20 @@ class PipeProvider: AbstractFileProvider() {
 
                 pluginChunkListener = { chunk ->
                     if (chunk.isNotEmpty()) {
-                        len += chunk.size
+                        Log.d(TAG, "$pipe_id: Chunk received. size: ${chunk.size} offset: $len")
 
-                        Log.d("CHUNK RECEIVED", "Chunk size: ${chunk.size} || Offset: $len")
+                        len += chunk.size
 
                         try {
                             out.write(chunk, 0, chunk.size)
-                            context.executeOnUIThreadSync(path, len, ::getFileChunk)
+                            context.executeOnUIThreadSync(pipe_id, path, len, ::getFileChunk)
                         } catch (e: IOException) {
-                            Log.e(javaClass.simpleName,
-                                    "Exception transferring file", e)
+                            Log.e(TAG, "$pipe_id: Exception writing to pipe", e)
                         }
                     }
 
                     if (chunk.isEmpty()) {
-                        Log.d("EOF", "Chunk empty, closing OutputStream")
+                        Log.d(TAG, "$pipe_id: Chunk empty, closing OutputStream")
 
                         out.flush()
                         out.close()
@@ -97,8 +105,9 @@ class PipeProvider: AbstractFileProvider() {
             }
         }
 
-        private fun getFileChunk(path: String, offset: Int) {
+        private fun getFileChunk(pipe_id: Int, path: String, offset: Int) {
             val arguments = HashMap<String, Any>()
+
             arguments["path"] = path
             arguments["chunkSize"] = CHUNK_SIZE
             arguments["offset"] = offset
@@ -107,19 +116,19 @@ class PipeProvider: AbstractFileProvider() {
                 override fun success(a: Any?) {
                     val chunk = a as ByteArray
 
-                    Log.d("SUCCESS", "Chunk size: ${chunk.size}")
                     pluginChunkListener?.invoke(chunk)
+                    Log.d(TAG, "$pipe_id: Chunk size: ${chunk.size}")
                 }
 
                 override fun error(s0: String?, s1: String?, a: Any?) {
                     s0?.let {
-                        Log.d("ERROR", "s0: $it")
+                        Log.e(TAG, "$pipe_id: s0: $it")
                     }
                     s1?.let {
-                        Log.d("ERROR", "s1: $it")
+                        Log.e(TAG, "$pipe_id: s1: $it")
                     }
                     a?.let {
-                        Log.d("ERROR", "a: $it")
+                        Log.e(TAG, "$pipe_id: a: $it")
                     }
 
                     throw Exception("readOuiSyncFile result error:\ns0: $s0\ns1: $s1\na: $a")
@@ -131,14 +140,14 @@ class PipeProvider: AbstractFileProvider() {
     }
 }
 
-fun Context.executeOnUIThreadSync(path: String, offset: Int, func: (String, Int) -> Unit) {
+fun Context.executeOnUIThreadSync(pipe_id: Int, path: String, offset: Int, func: (Int, String, Int) -> Unit) {
     if (Looper.myLooper() == Looper.getMainLooper()) {
-        Log.d("EXECUTE_ON_UI", "On main loop")
-        func.invoke(path, offset)
+        Log.d(PipeProvider.TAG, "$pipe_id: On main loop")
+        func.invoke(pipe_id, path, offset)
     } else {
+        Log.d(PipeProvider.TAG, "$pipe_id: Posting to main loop")
         Handler(this.mainLooper).post {
-            func.invoke(path, offset)
-            Log.d("EXECUTE_ON_UI", "Posting to main loop")
+            func.invoke(pipe_id, path, offset)
         }
     }
 }
