@@ -71,7 +71,7 @@ class PipeProvider: AbstractFileProvider() {
             private val pipe_id: Int,
             private val context: Context,
             private var path: String,
-            private var out: OutputStream,
+            private var out: OutputStream
         ) : Thread()
     {
         var pluginChunkListener: ((ByteArray)->Unit)? = null
