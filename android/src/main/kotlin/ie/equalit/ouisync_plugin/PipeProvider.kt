@@ -79,7 +79,6 @@ class PipeProvider: AbstractFileProvider() {
         override fun run() {
             path.let { path ->
                 var len = 0
-                context.executeOnUIThreadSync(path, 0, ::getFileChunk)
 
                 pluginChunkListener = { chunk ->
                     if (chunk.isNotEmpty()) {
@@ -92,6 +91,10 @@ class PipeProvider: AbstractFileProvider() {
                             context.executeOnUIThreadSync(pipe_id, path, len, ::getFileChunk)
                         } catch (e: IOException) {
                             Log.e(TAG, "$pipe_id: Exception writing to pipe", e)
+                            // TODO: Not 100% sure about this one. Without it I saw messages about
+                            // resources not being closed, but I haven't really seen any examples
+                            // do such explicit closing.
+                            out.close();
                         }
                     }
 
@@ -102,6 +105,8 @@ class PipeProvider: AbstractFileProvider() {
                         out.close()
                     }
                 }
+
+                context.executeOnUIThreadSync(pipe_id, path, 0, ::getFileChunk)
             }
         }
 
@@ -116,8 +121,12 @@ class PipeProvider: AbstractFileProvider() {
                 override fun success(a: Any?) {
                     val chunk = a as ByteArray
 
-                    pluginChunkListener?.invoke(chunk)
-                    Log.d(TAG, "$pipe_id: Chunk size: ${chunk.size}")
+                    // We're currently not in our custom thread, and the pluginChunkListener function is
+                    // blocking, so we need to spawn a new thread so as to not block the whole app. This
+                    // is a temporary quick fix and should be dealt with better.
+                    Thread {
+                      pluginChunkListener?.invoke(chunk)
+                    }.start()
                 }
 
                 override fun error(s0: String?, s1: String?, a: Any?) {
