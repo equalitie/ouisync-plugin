@@ -30,9 +30,11 @@ abstract class AbstractFileProvider: ContentProvider() {
             sortOrder: String?
     ): Cursor? {
         var projection = projection
+
         if (projection == null) {
             projection = OPENABLE_PROJECTION
         }
+
         val cursor = MatrixCursor(projection, 1)
         val b = cursor.newRow()
         for (col in projection!!) {
@@ -78,21 +80,6 @@ abstract class AbstractFileProvider: ContentProvider() {
 
         return AssetFileDescriptor.UNKNOWN_LENGTH
     }
-
-    @Throws(IOException::class)
-    open fun copy(`in`: InputStream, dst: File?) {
-        Log.d(TAG, "copy")
-
-        val out = FileOutputStream(dst)
-        val buf = ByteArray(1024)
-        var len: Int
-        while (`in`.read(buf).also { len = it } >= 0) {
-            out.write(buf, 0, len)
-        }
-        `in`.close()
-        out.close()
-    }
-
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
         TODO("Not yet implemented")
