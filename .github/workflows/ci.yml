@@ -45,7 +45,7 @@ jobs:
     - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
     - name: Installing llvm
       run: sudo apt-get install libclang-dev
-    - uses: subosito/flutter-action@v1
+    - uses: subosito/flutter-action@v2
       with:
           channel: 'stable'
     - run: flutter pub get
