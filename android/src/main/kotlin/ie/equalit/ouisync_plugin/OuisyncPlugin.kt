@@ -50,7 +50,6 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "ouisync_plugin")
     channel.setMethodCallHandler(this)
 
-    print("onAttachedToEngine")
     context = flutterPluginBinding.getApplicationContext()
   }
 
