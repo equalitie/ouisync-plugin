@@ -56,13 +56,11 @@ class NativeChannels {
         try {
           var args = call.arguments as Map<Object?, Object?>;
 
-          var repo = args["repo"].toString();
           var path = args["path"].toString();
           var chunkSize = args["chunkSize"] as int;
           var offset = args["offset"] as int;
 
-          print(
-              'repo: $repo\nfile: $path\nchunk size: $chunkSize\noffset: $offset');
+          print('file: $path\nchunk size: $chunkSize\noffset: $offset');
 
           return await _getFileChunk(_repository!, path, chunkSize, offset);
         } catch (e) {
