@@ -350,6 +350,21 @@ class Bindings {
               SharedHandle_Mutex_FfiFile, Port_Result_u64)>>('file_len');
   late final _file_len = _file_lenPtr.asFunction<void Function(int, int)>();
 
+  /// Subscribe to network event notifications.
+  int network_subscribe(
+    int port,
+  ) {
+    return _network_subscribe(
+      port,
+    );
+  }
+
+  late final _network_subscribePtr =
+      _lookup<ffi.NativeFunction<UniqueHandle_JoinHandle Function(Port_u8)>>(
+          'network_subscribe');
+  late final _network_subscribe =
+      _network_subscribePtr.asFunction<int Function(int)>();
+
   /// Creates a new repository.
   void repository_create(
     ffi.Pointer<ffi.Int8> store,
@@ -474,21 +489,6 @@ class Bindings {
               SharedHandle_RepositoryHolder, Port)>>('repository_subscribe');
   late final _repository_subscribe =
       _repository_subscribePtr.asFunction<int Function(int, int)>();
-
-  /// Cancel the repository change notifications subscription.
-  void subscription_cancel(
-    int handle,
-  ) {
-    return _subscription_cancel(
-      handle,
-    );
-  }
-
-  late final _subscription_cancelPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(UniqueHandle_JoinHandle)>>(
-          'subscription_cancel');
-  late final _subscription_cancel =
-      _subscription_cancelPtr.asFunction<void Function(int)>();
 
   void repository_is_dht_enabled(
     int handle,
@@ -674,6 +674,21 @@ class Bindings {
   late final _session_closePtr =
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('session_close');
   late final _session_close = _session_closePtr.asFunction<void Function()>();
+
+  /// Cancel a notification subscription.
+  void subscription_cancel(
+    int handle,
+  ) {
+    return _subscription_cancel(
+      handle,
+    );
+  }
+
+  late final _subscription_cancelPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(UniqueHandle_JoinHandle)>>(
+          'subscription_cancel');
+  late final _subscription_cancel =
+      _subscription_cancelPtr.asFunction<void Function(int)>();
 }
 
 abstract class ErrorCode {
@@ -746,6 +761,12 @@ typedef SharedHandle_Mutex_FfiFile = ffi.Uint64;
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u64 = Port;
 
+/// FFI handle to a resource with unique ownership.
+typedef UniqueHandle_JoinHandle = ffi.Uint64;
+
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_u8 = Port;
+
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_SharedHandle_RepositoryHolder = Port;
 
@@ -755,14 +776,13 @@ typedef SharedHandle_RepositoryHolder = ffi.Uint64;
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u8 = Port;
 
-/// FFI handle to a resource with unique ownership.
-typedef UniqueHandle_JoinHandle = ffi.Uint64;
-
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
+
+const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 
 const int ENTRY_TYPE_INVALID = 0;
 

@@ -135,9 +135,41 @@ class Session {
     return Session._(bindings);
   }
 
+  /// Subscribe to network event notifications.
+  Subscription subscribeToNetworkEvents(void Function(NetworkEvent) callback) {
+    final recvPort = ReceivePort();
+
+    recvPort.listen((encoded) {
+      final event = _decodeNetworkEvent(encoded);
+      if (event != null) {
+        callback(event);
+      } else {
+        print('invalid network event: $encoded');
+      }
+    });
+
+    final subscriptionHandle =
+        bindings.network_subscribe(recvPort.sendPort.nativePort);
+
+    return Subscription._(bindings, subscriptionHandle, recvPort);
+  }
+
   /// Closes the session.
   void close() {
     bindings.session_close();
+  }
+}
+
+enum NetworkEvent {
+  protocolVersionMismatch,
+}
+
+NetworkEvent? _decodeNetworkEvent(int n) {
+  switch (n) {
+    case NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
+      return NetworkEvent.protocolVersionMismatch;
+    default:
+      return null;
   }
 }
 
@@ -199,10 +231,12 @@ class Repository {
   /// cancel the subscription.
   Subscription subscribe(void Function() callback) {
     final recvPort = ReceivePort();
+    recvPort.listen((_) => callback());
+
     final subscriptionHandle =
         bindings.repository_subscribe(handle, recvPort.sendPort.nativePort);
 
-    return Subscription._(bindings, subscriptionHandle, recvPort, callback);
+    return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
   Future<bool> isDhtEnabled() async {
@@ -346,16 +380,13 @@ AccessMode? _decodeAccessMode(int n) {
   }
 }
 
-/// A handle to a change notification subscription.
+/// A handle to a subscription.
 class Subscription {
   final Bindings bindings;
   final int handle;
   final ReceivePort port;
-  final void Function() callback;
 
-  Subscription._(this.bindings, this.handle, this.port, this.callback) {
-    port.listen((_) => callback());
-  }
+  Subscription._(this.bindings, this.handle, this.port);
 
   /// Cancel the subscription. No more notification events are received after this.
   void cancel() {
