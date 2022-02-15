@@ -73,29 +73,33 @@ class PipeProvider: AbstractFileProvider() {
 
     @Throws(FileNotFoundException::class)
     private fun openPipe(path: String): ParcelFileDescriptor? {
-        TODO("Not yet implemented")
+        var pipe: Array<ParcelFileDescriptor?>?
 
+        try {
+            pipe = ParcelFileDescriptor.createPipe()
+        } catch (e: IOException) {
+            Log.e(TAG, "Exception opening pipe", e)
+            throw FileNotFoundException("Could not open pipe for: $path")
+        }
 
-        // var pipe: Array<ParcelFileDescriptor?>?
+        var reader = pipe[0]!!
+        var writer = pipe[1]!!
+        val dstFd = writer.getFd()
 
-        // try {
-        //     pipe = ParcelFileDescriptor.createPipe()
-        // } catch (e: IOException) {
-        //     Log.e(TAG, "Exception opening pipe", e)
-        //     throw FileNotFoundException("Could not open pipe for: " + path)
-        // }
+        copyFile(path, dstFd, object: MethodChannel.Result {
+            override fun success(a: Any?) {
+                writer.close()
+            }
 
-        // // pipe_id is only for debugging
-        // var pipe_id = kotlin.random.Random.nextInt(Int.MAX_VALUE);
+            override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
+                Log.e(TAG, channelMethodErrorMessage(errorCode, errorMessage, errorDetails))
+                writer.close()
+            }
 
-        // PipeTransfer(
-        //     pipe_id,
-        //     context!!,
-        //     path,
-        //     ParcelFileDescriptor.AutoCloseOutputStream(pipe[1])
-        // ).start()
+            override fun notImplemented() {}
+        })
 
-        // return pipe[0]
+        return reader
     }
 
     private fun getPathFromUri(uri: Uri): String {
@@ -126,7 +130,7 @@ class PipeProvider: AbstractFileProvider() {
 
             if (id == null) {
                 id = invokeBlocking<Int> { result -> openFile(path, result) }
-                  ?: throw Exception("file at '$path' not found")
+                  ?: throw FileNotFoundException("file not found: $path")
                 this.id = id
             }
 
@@ -150,66 +154,6 @@ class PipeProvider: AbstractFileProvider() {
             }
         }
     }
-
-    // internal class PipeTransfer(
-    //     private val pipe_id: Int,
-    //     private val context: Context,
-    //     private val path: String,
-    //     private var out: OutputStream
-    // ) {
-    //     fun start() {
-    //         readChunk(0)
-    //     }
-
-    //     private fun readChunk(offset: Long) {
-    //         readChunkInUiThread(path, PipeProvider.CHUNK_SIZE, offset, object : MethodChannel.Result {
-    //             override fun success(a: Any?) {
-    //                 val chunk = a as ByteArray
-
-    //                 // We're currently not in our custom thread, and the
-    //                 // writeChunk function is blocking, so we need to spawn a
-    //                 // new thread so as to not block the whole app. This is a
-    //                 // temporary quick fix and should be dealt with better.
-    //                 Thread {
-    //                     writeChunk(chunk, offset)
-    //                 }.start()
-    //             }
-
-    //             override fun error(s0: String?, s1: String?, a: Any?) {
-    //                 Log.e(TAG, "$pipe_id: error reading file (s0:$s0 s1:$s1 a:$a)")
-    //                 out.close();
-    //             }
-
-    //             override fun notImplemented() {}
-    //         })
-    //     }
-
-    //     private fun writeChunk(chunk: ByteArray, offset: Long) {
-    //         if (chunk.isNotEmpty()) {
-    //             Log.d(TAG, "$pipe_id: Chunk received. size: ${chunk.size} offset: $offset")
-
-    //             try {
-    //                 out.write(chunk, 0, chunk.size)
-    //             } catch (e: IOException) {
-    //                 Log.e(TAG, "$pipe_id: Exception writing to pipe", e)
-    //                 // TODO: Not 100% sure about this one. Without it I saw
-    //                 // messages about resources not being closed, but I haven't
-    //                 // really seen any examples do such explicit closing.
-    //                 out.close()
-    //                 return;
-    //             }
-
-    //             readChunk(offset + chunk.size)
-    //         }
-
-    //         if (chunk.isEmpty()) {
-    //             Log.d(TAG, "$pipe_id: Chunk empty, closing OutputStream")
-
-    //             out.flush()
-    //             out.close()
-    //         }
-    //     }
-    // }
 }
 
 private fun openFile(path: String, result: MethodChannel.Result) {
@@ -225,6 +169,11 @@ private fun closeFile(id: Int, result: MethodChannel.Result) {
 private fun readFile(id: Int, chunkSize: Int, offset: Long, result: MethodChannel.Result) {
     val arguments = hashMapOf<String, Any>("id" to id, "chunkSize" to chunkSize, "offset" to offset)
     OuisyncPlugin.channel.invokeMethod("readFile", arguments, result)
+}
+
+private fun copyFile(srcPath: String, dstFd: Int, result: MethodChannel.Result) {
+    val arguments = hashMapOf<String, Any>("srcPath" to srcPath, "dstFd" to dstFd)
+    OuisyncPlugin.channel.invokeMethod("copyFile", arguments, result)
 }
 
 // Implementation of MethodChannel.Result which blocks until the result is available.
@@ -260,8 +209,7 @@ class BlockingResult<T>: MethodChannel.Result {
     }
 
     override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
-        result = Exception(
-            "error invoking channel method (code: $errorCode, message: $errorMessage, details: $errorDetails)")
+        result = Exception(channelMethodErrorMessage(errorCode, errorMessage, errorDetails))
         semaphore.release(1)
     }
 
@@ -277,3 +225,7 @@ private fun <T> invokeBlocking(f: (MethodChannel.Result) -> Unit): T? {
 private fun runInUiThread(f: () -> Unit) {
     Handler(Looper.getMainLooper()).post { f() }
 }
+
+private fun channelMethodErrorMessage(code: String?, message: String?, details: Any?): String =
+    "error invoking channel method (code: $code, message: $message, details: $details)"
+
