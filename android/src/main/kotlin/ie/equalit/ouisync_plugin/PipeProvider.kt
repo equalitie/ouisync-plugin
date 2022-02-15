@@ -26,7 +26,6 @@ class PipeProvider: AbstractFileProvider() {
         private val TAG = PipeProvider::class.java.simpleName
     }
 
-
     private lateinit var workerThread: HandlerThread
     private lateinit var workerHandler: Handler
 
@@ -118,39 +117,38 @@ class PipeProvider: AbstractFileProvider() {
         private val path: String,
         private val size: Long
     ) : android.os.ProxyFileDescriptorCallback() {
-        private val semaphore = Semaphore(1)
+        private var id: Int? = null
 
         override fun onGetSize() = size
 
         override fun onRead(offset: Long, chunkSize: Int, outData: ByteArray): Int {
-            semaphore.acquire(1)
+            var id = this.id
 
-            var outSize: Int = 0
+            if (id == null) {
+                id = invokeBlocking<Int> { result -> openFile(path, result) }
+                  ?: throw Exception("file at '$path' not found")
+                this.id = id
+            }
 
-            readChunkInUiThread(path, chunkSize, offset, object: MethodChannel.Result {
-                override fun success(a: Any?) {
-                    val chunk = a as ByteArray
+            val chunk = invokeBlocking<ByteArray> { result ->
+                readFile(id, chunkSize, offset, result)
+            }
 
-                    outSize = chunk.size
-                    chunk.copyInto(outData)
-                    semaphore.release(1)
-                }
-
-                override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
-                    Log.e(TAG, "error reading file at $path - code: $errorCode, message: $errorMessage details: $errorDetails")
-                    semaphore.release(1)
-                }
-
-                override fun notImplemented() {}
-            })
-
-            semaphore.acquire(1)
-            semaphore.release(1)
-
-            return outSize
+            if (chunk != null) {
+                chunk.copyInto(outData)
+                return chunk.size
+            } else {
+                return 0
+            }
         }
 
-        override fun onRelease() {}
+        override fun onRelease() {
+            val id = this.id
+
+            if (id != null) {
+                invokeBlocking<Boolean> { result -> closeFile(id, result) }
+            }
+        }
     }
 
     // internal class PipeTransfer(
@@ -214,17 +212,68 @@ class PipeProvider: AbstractFileProvider() {
     // }
 }
 
-private fun readChunkInUiThread(path: String, chunkSize: Int, offset: Long, callbacks: MethodChannel.Result) {
-    Handler(Looper.getMainLooper()).post {
-        readChunk(path, chunkSize, offset, callbacks)
+private fun openFile(path: String, result: MethodChannel.Result) {
+    val arguments = hashMapOf<String, Any>("path" to path)
+    OuisyncPlugin.channel.invokeMethod("openFile", arguments, result)
+}
+
+private fun closeFile(id: Int, result: MethodChannel.Result) {
+    val arguments = hashMapOf<String, Any>("id" to id)
+    OuisyncPlugin.channel.invokeMethod("closeFile", arguments, result)
+}
+
+private fun readFile(id: Int, chunkSize: Int, offset: Long, result: MethodChannel.Result) {
+    val arguments = hashMapOf<String, Any>("id" to id, "chunkSize" to chunkSize, "offset" to offset)
+    OuisyncPlugin.channel.invokeMethod("readFile", arguments, result)
+}
+
+// Implementation of MethodChannel.Result which blocks until the result is available.
+class BlockingResult<T>: MethodChannel.Result {
+    private val semaphore = Semaphore(1)
+    private var result: Any? = null
+
+    init {
+        semaphore.acquire(1)
     }
+
+    // Wait until the result is available and returns it. If the invoked method failed, throws an
+    // exception.
+    fun wait(): T? {
+        semaphore.acquire(1)
+
+        try {
+            val result = this.result
+
+            if (result is Throwable) {
+                throw result
+            } else {
+                return result as T?
+            }
+        } finally {
+            semaphore.release(1)
+        }
+    }
+
+    override fun success(a: Any?) {
+        result = a
+        semaphore.release(1)
+    }
+
+    override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
+        result = Exception(
+            "error invoking channel method (code: $errorCode, message: $errorMessage, details: $errorDetails)")
+        semaphore.release(1)
+    }
+
+    override fun notImplemented() {}
 }
 
-private fun readChunk(path: String, chunkSize: Int, offset: Long, callbacks: MethodChannel.Result) {
-    val arguments = hashMapOf<String, Any>("path"      to path,
-                                           "chunkSize" to chunkSize,
-                                           "offset"    to offset)
-
-    OuisyncPlugin.channel.invokeMethod("readOuiSyncFile", arguments, callbacks)
+private fun <T> invokeBlocking(f: (MethodChannel.Result) -> Unit): T? {
+    val result = BlockingResult<T>()
+    runInUiThread { f(result) }
+    return result.wait()
 }
 
+private fun runInUiThread(f: () -> Unit) {
+    Handler(Looper.getMainLooper()).post { f() }
+}

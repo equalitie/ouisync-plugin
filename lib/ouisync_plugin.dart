@@ -18,6 +18,9 @@ class NativeChannels {
 
   static Repository? _repository;
 
+  // Cache of open files.
+  static final _files = FileCache();
+
   /// Provides the Session instance, to be used in file operations.
   /// [session] is the instance used in the OuiSync app for accessing the repository.
   ///
@@ -42,6 +45,10 @@ class NativeChannels {
   ///
   /// [repository] is the current repository in the app.
   static void setRepository(Repository? repository) {
+    for (var file in _files.removeAll()) {
+      file.close();
+    }
+
     _repository = repository;
   }
 
@@ -52,46 +59,77 @@ class NativeChannels {
   /// and any arguments included ([call.arguments])
   static Future<dynamic> _methodHandler(MethodCall call) async {
     switch (call.method) {
-      case 'readOuiSyncFile':
-        try {
-          var args = call.arguments as Map<Object?, Object?>;
+      case 'openFile':
+        final args = call.arguments as Map<Object?, Object?>;
+        final path = args["path"] as String;
 
-          var path = args["path"].toString();
-          var chunkSize = args["chunkSize"] as int;
-          var offset = args["offset"] as int;
+        return await _openFile(path);
 
-          print('file: $path\nchunk size: $chunkSize\noffset: $offset');
+      case 'readFile':
+        final args = call.arguments as Map<Object?, Object?>;
+        final id = args["id"] as int;
+        final chunkSize = args["chunkSize"] as int;
+        final offset = args["offset"] as int;
 
-          return await _getFileChunk(_repository!, path, chunkSize, offset);
-        } catch (e) {
-          print('readOuiSyncFile method throwed an exception: $e');
-        }
+        return await _readFile(id, chunkSize, offset);
 
-        break;
+      case 'closeFile':
+        final args = call.arguments as Map<Object?, Object?>;
+        final id = args["id"] as int;
+
+        return await _closeFile(id);
 
       default:
         throw Exception('No method called ${call.method} was found');
     }
   }
 
-  /// Read a chunk of size [chunkSize], starting at [offset], from the file at [path].
-  static Future<Uint8List> _getFileChunk(
-      Repository repository, String filePath, int chunkSize, int offset) async {
-    final file = await File.open(repository, filePath);
-    var fileSize = await file.length;
+  static Future<int?> _openFile(String path) async {
+    try {
+      final id = _files.insert(await File.open(_repository!, path));
+      print('openFile(path=$path) ok: id=$id');
+      return id;
+    } catch (e) {
+      print('openFile(path=$path) failed: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> _closeFile(int id) async {
+    final file = _files.remove(id);
+
+    if (file != null) {
+      try {
+        await file.close();
+        print('closeFile(id=$id) ok');
+        return true;
+      } catch (e) {
+        print('closeFile(id=$id) failed: $e');
+        return false;
+      }
+    } else {
+      print('closeFile(id=$id) failed: not opened');
+      return false;
+    }
+  }
+
+  static Future<Uint8List> _readFile(int id, int chunkSize, int offset) async {
+    final file = _files[id];
+
+    if (file == null) {
+      print('readFile(id=$id) failed: not opened');
+      return Uint8List(0);
+    }
 
     try {
       final chunk = await file.read(offset, chunkSize);
+      print('readFile(id=$id, chunkSize=$chunkSize, offset=$offset) ok');
       return Uint8List.fromList(chunk);
     } catch (e) {
-      print('_getFileChunk throwed and exception:\n'
-          'file: $filePath ($fileSize) chunk size: $chunkSize, offset: $offset\n'
-          'Message: $e');
-    } finally {
-      file.close();
+      print(
+          'readFile(id=$id, chunkSize=$chunkSize, offset=$offset) failed: $e');
+      return Uint8List(0);
     }
-
-    return Uint8List(0);
   }
 
   /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider).
@@ -114,6 +152,32 @@ class NativeChannels {
     print('previewFile result: $result');
   }
 }
+
+// Cache of open files.
+class FileCache {
+  final _files = HashMap<int, File>();
+  var _nextId = 0;
+
+  List<File> removeAll() {
+    var files = _files.values.toList();
+    _files.clear();
+    return files;
+  }
+
+  int insert(File file) {
+    final id = _nextId;
+    _nextId += 1;
+    _files[id] = file;
+    return id;
+  }
+
+  File? remove(int id) => _files.remove(id);
+
+  File? operator [](int id) => _files[id];
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// Entry point to the ouisync bindings. A session should be opened at the start of the application
 /// and closed at the end. There can be only one session at the time.
