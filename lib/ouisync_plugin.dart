@@ -140,7 +140,7 @@ class Session {
     final recvPort = ReceivePort();
 
     recvPort.listen((encoded) {
-      final event = _decodeNetworkEvent(encoded);
+      final event = _decodeNetworkEvent(encoded as int);
       if (event != null) {
         callback(event);
       } else {
