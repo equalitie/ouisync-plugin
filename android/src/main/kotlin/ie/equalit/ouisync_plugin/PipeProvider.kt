@@ -86,18 +86,20 @@ class PipeProvider: AbstractFileProvider() {
         var writer = pipe[1]!!
         val dstFd = writer.getFd()
 
-        copyFile(path, dstFd, object: MethodChannel.Result {
-            override fun success(a: Any?) {
-                writer.close()
-            }
+        runInUiThread {
+            copyFile(path, dstFd, object: MethodChannel.Result {
+                override fun success(a: Any?) {
+                    writer.close()
+                }
 
-            override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
-                Log.e(TAG, channelMethodErrorMessage(errorCode, errorMessage, errorDetails))
-                writer.close()
-            }
+                override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
+                    Log.e(TAG, channelMethodErrorMessage(errorCode, errorMessage, errorDetails))
+                    writer.close()
+                }
 
-            override fun notImplemented() {}
-        })
+                override fun notImplemented() {}
+           })
+        }
 
         return reader
     }
@@ -150,7 +152,7 @@ class PipeProvider: AbstractFileProvider() {
             val id = this.id
 
             if (id != null) {
-                invokeBlocking<Boolean> { result -> closeFile(id, result) }
+                invokeBlocking<Unit> { result -> closeFile(id, result) }
             }
         }
     }

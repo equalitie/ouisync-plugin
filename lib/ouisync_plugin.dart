@@ -79,58 +79,51 @@ class NativeChannels {
 
         return await _closeFile(id);
 
+      // TODO:
+      //case 'copyFile':
+      //  final args = call.arguments as Map<Object?, Object?>;
+      //  final srcPath = args["srcPath"] as String;
+      //  final dstFd = args["dstFd"] as int;
+
+      //  return await _copyFile(srcPath, dstFd);
+
       default:
         throw Exception('No method called ${call.method} was found');
     }
   }
 
   static Future<int?> _openFile(String path) async {
-    try {
-      final id = _files.insert(await File.open(_repository!, path));
-      print('openFile(path=$path) ok: id=$id');
-      return id;
-    } catch (e) {
-      print('openFile(path=$path) failed: $e');
-      return null;
-    }
+    final id = _files.insert(await File.open(_repository!, path));
+    print('openFile(path=$path) -> id=$id');
+    return id;
   }
 
-  static Future<bool> _closeFile(int id) async {
+  static Future<void> _closeFile(int id) async {
+    print('closeFile(id=$id)');
+
     final file = _files.remove(id);
 
     if (file != null) {
-      try {
-        await file.close();
-        print('closeFile(id=$id) ok');
-        return true;
-      } catch (e) {
-        print('closeFile(id=$id) failed: $e');
-        return false;
-      }
-    } else {
-      print('closeFile(id=$id) failed: not opened');
-      return false;
+      await file.close();
     }
   }
 
   static Future<Uint8List> _readFile(int id, int chunkSize, int offset) async {
+    print('readFile(id=$id, chunkSize=$chunkSize, offset=$offset)');
+
     final file = _files[id];
 
-    if (file == null) {
-      print('readFile(id=$id) failed: not opened');
-      return Uint8List(0);
-    }
-
-    try {
+    if (file != null) {
       final chunk = await file.read(offset, chunkSize);
-      print('readFile(id=$id, chunkSize=$chunkSize, offset=$offset) ok');
       return Uint8List.fromList(chunk);
-    } catch (e) {
-      print(
-          'readFile(id=$id, chunkSize=$chunkSize, offset=$offset) failed: $e');
-      return Uint8List(0);
+    } else {
+      throw Exception('failed to read file with id=$id: not opened');
     }
   }
+
+  //static Future<bool> _copyFile(String srcPath, int dstFd) async {
+  //  //final file = await File.open(_repository!, path);
+  //}
 
   /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider).
   ///
