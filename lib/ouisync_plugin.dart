@@ -154,6 +154,10 @@ class Session {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
+  String local_network_address() {
+      return bindings.network_local_addr().cast<Utf8>().toDartString();
+  }
+
   /// Closes the session.
   void close() {
     bindings.session_close();

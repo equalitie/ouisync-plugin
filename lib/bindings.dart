@@ -365,6 +365,21 @@ class Bindings {
   late final _network_subscribe =
       _network_subscribePtr.asFunction<int Function(int)>();
 
+  /// Return the local network endpoint as string. The format is
+  /// "<TCP or UDP>:<IPv4 or [IPv6]>:<PORT>". Examples:
+  ///
+  /// For IPv4: "TCP:192.168.1.1:65522"
+  /// For IPv6: "TCP:[2001:db8::1]:65522"
+  ffi.Pointer<ffi.Int8> network_local_addr() {
+    return _network_local_addr();
+  }
+
+  late final _network_local_addrPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
+          'network_local_addr');
+  late final _network_local_addr =
+      _network_local_addrPtr.asFunction<ffi.Pointer<ffi.Int8> Function()>();
+
   /// Creates a new repository.
   void repository_create(
     ffi.Pointer<ffi.Int8> store,
