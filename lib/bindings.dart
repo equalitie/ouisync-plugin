@@ -664,12 +664,12 @@ class Bindings {
   /// around limitations of the binding generators).
   void session_open(
     ffi.Pointer<ffi.Void> post_c_object_fn,
-    ffi.Pointer<ffi.Int8> device_id_config_path,
+    ffi.Pointer<ffi.Int8> configs_path,
     int port,
   ) {
     return _session_open(
       post_c_object_fn,
-      device_id_config_path,
+      configs_path,
       port,
     );
   }

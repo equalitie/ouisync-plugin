@@ -122,14 +122,15 @@ class Session {
 
   Session._(this.bindings);
 
-  /// Opens a new session. [deviceIdConfigPath] is a path to the file containing the device id. If
-  /// it doesn't exists, it will be created.
-  static Future<Session> open(String deviceIdConfigPath) async {
+  /// Opens a new session. [configsDirPath] is a path to a directory where
+  /// configuration files shall be stored. If it doesn't exists, it will be
+  /// created.
+  static Future<Session> open(String configsDirPath) async {
     final bindings = Bindings(_defaultLib());
 
     await _withPool((pool) => _invoke<void>((port) => bindings.session_open(
         NativeApi.postCObject.cast<Void>(),
-        pool.toNativeUtf8(deviceIdConfigPath),
+        pool.toNativeUtf8(configsDirPath),
         port)));
 
     return Session._(bindings);
