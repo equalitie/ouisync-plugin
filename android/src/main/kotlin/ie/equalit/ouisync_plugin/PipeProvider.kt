@@ -24,6 +24,9 @@ class PipeProvider: AbstractFileProvider() {
         val CONTENT_URI: Uri = Uri.parse("content://ie.equalit.ouisync_plugin.pipe/")
         private const val CHUNK_SIZE = 64000
         private val TAG = PipeProvider::class.java.simpleName
+
+        private val supportsProxyFileDescriptor: Boolean
+            get() = android.os.Build.VERSION.SDK_INT >= 26
     }
 
     private lateinit var workerThread: HandlerThread
@@ -43,7 +46,7 @@ class PipeProvider: AbstractFileProvider() {
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
         val path = getPathFromUri(uri);
 
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
+        if (supportsProxyFileDescriptor) {
             var size = super.getDataLength(uri);
 
             if (size == AssetFileDescriptor.UNKNOWN_LENGTH) {
@@ -82,23 +85,23 @@ class PipeProvider: AbstractFileProvider() {
             throw FileNotFoundException("Could not open pipe for: $path")
         }
 
-        var reader = pipe[0]!!
-        var writer = pipe[1]!!
-        val dstFd = writer.getFd()
+        var reader = pipe[0]
+        var writer = pipe[1]
+        var dstFd = writer!!.detachFd();
 
         runInUiThread {
-            copyFile(path, dstFd, object: MethodChannel.Result {
+            copyFileToRawFd(path, dstFd, object: MethodChannel.Result {
                 override fun success(a: Any?) {
                     writer.close()
                 }
 
-                override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
-                    Log.e(TAG, channelMethodErrorMessage(errorCode, errorMessage, errorDetails))
+                override fun error(code: String?, message: String?, details: Any?) {
+                    Log.e(TAG, channelMethodErrorMessage(code, message, details))
                     writer.close()
                 }
 
                 override fun notImplemented() {}
-           })
+            })
         }
 
         return reader
@@ -173,9 +176,9 @@ private fun readFile(id: Int, chunkSize: Int, offset: Long, result: MethodChanne
     OuisyncPlugin.channel.invokeMethod("readFile", arguments, result)
 }
 
-private fun copyFile(srcPath: String, dstFd: Int, result: MethodChannel.Result) {
+private fun copyFileToRawFd(srcPath: String, dstFd: Int, result: MethodChannel.Result) {
     val arguments = hashMapOf<String, Any>("srcPath" to srcPath, "dstFd" to dstFd)
-    OuisyncPlugin.channel.invokeMethod("copyFile", arguments, result)
+    OuisyncPlugin.channel.invokeMethod("copyFileToRawFd", arguments, result)
 }
 
 // Implementation of MethodChannel.Result which blocks until the result is available.

@@ -79,13 +79,12 @@ class NativeChannels {
 
         return await _closeFile(id);
 
-      // TODO:
-      //case 'copyFile':
-      //  final args = call.arguments as Map<Object?, Object?>;
-      //  final srcPath = args["srcPath"] as String;
-      //  final dstFd = args["dstFd"] as int;
+      case 'copyFileToRawFd':
+        final args = call.arguments as Map<Object?, Object?>;
+        final srcPath = args["srcPath"] as String;
+        final dstFd = args["dstFd"] as int;
 
-      //  return await _copyFile(srcPath, dstFd);
+        return await _copyFileToRawFd(srcPath, dstFd);
 
       default:
         throw Exception('No method called ${call.method} was found');
@@ -121,9 +120,10 @@ class NativeChannels {
     }
   }
 
-  //static Future<bool> _copyFile(String srcPath, int dstFd) async {
-  //  //final file = await File.open(_repository!, path);
-  //}
+  static Future<void> _copyFileToRawFd(String srcPath, int dstFd) async {
+    final file = await File.open(_repository!, srcPath);
+    await file.copyToRawFd(dstFd);
+  }
 
   /// Invokes the native method (In Android, it creates a share intent using the custom PipeProvider).
   ///
@@ -670,6 +670,10 @@ class File {
   /// Returns the length of this file in bytes.
   Future<int> get length =>
       _invoke<int>((port) => bindings.file_len(handle, port));
+
+  /// Copy the contents of the file into the provided raw file descriptor.
+  Future<void> copyToRawFd(int fd) =>
+      _invoke<void>((port) => bindings.file_copy_to_raw_fd(handle, fd, port));
 }
 
 /// The exception type throws from this library.
