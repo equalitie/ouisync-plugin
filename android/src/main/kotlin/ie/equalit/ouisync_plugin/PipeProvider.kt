@@ -29,21 +29,30 @@ class PipeProvider: AbstractFileProvider() {
             get() = android.os.Build.VERSION.SDK_INT >= 26
     }
 
-    private lateinit var workerThread: HandlerThread
-    private lateinit var workerHandler: Handler
+    private var _handler: Handler? = null
+
+    private val handler: Handler
+        @Synchronized get() {
+            if (_handler == null) {
+                Log.d(TAG, "Creating worker thread")
+
+                val thread = HandlerThread("${javaClass.simpleName} worker thread")
+                thread.start();
+                _handler = Handler(thread.getLooper())
+            }
+
+            return _handler!!
+        }
 
     override fun onCreate(): Boolean {
-        workerThread = HandlerThread("${javaClass.simpleName} worker thread")
-        workerThread.start()
-
-        workerHandler = Handler(workerThread.getLooper())
-
         return true
     }
 
     // TODO: Handle `mode`
     @Throws(FileNotFoundException::class)
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        Log.d(TAG, "Opening file '$uri' in mode '$mode'")
+
         val path = getPathFromUri(uri);
 
         if (supportsProxyFileDescriptor) {
@@ -57,7 +66,7 @@ class PipeProvider: AbstractFileProvider() {
             Log.d(TAG, "Using proxy file");
             return openProxyFile(path, size);
         } else {
-            Log.d(TAG, "Using pipe because SDK_INT < 26");
+            Log.d(TAG, "Using pipe because proxy file is not supported");
             return openPipe(path);
         }
     }
@@ -70,7 +79,7 @@ class PipeProvider: AbstractFileProvider() {
         return storage.openProxyFileDescriptor(
             ParcelFileDescriptor.MODE_READ_ONLY,
             ProxyCallbacks(path, size),
-            workerHandler
+            handler
         )
     }
 
