@@ -350,6 +350,29 @@ class Bindings {
               SharedHandle_Mutex_FfiFile, Port_Result_u64)>>('file_len');
   late final _file_len = _file_lenPtr.asFunction<void Function(int, int)>();
 
+  /// Copy the file contents into the provided raw file descriptor.
+  /// This function takes ownership of the file descriptor and closes it when it finishes. If the
+  /// caller needs to access the descriptor afterwards (or while the function is running), he/she
+  /// needs to `dup` it before passing it into this function.
+  void file_copy_to_raw_fd(
+    int handle,
+    int fd,
+    int port,
+  ) {
+    return _file_copy_to_raw_fd(
+      handle,
+      fd,
+      port,
+    );
+  }
+
+  late final _file_copy_to_raw_fdPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Int32,
+              Port_Result)>>('file_copy_to_raw_fd');
+  late final _file_copy_to_raw_fd =
+      _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int)>();
+
   /// Subscribe to network event notifications.
   int network_subscribe(
     int port,
