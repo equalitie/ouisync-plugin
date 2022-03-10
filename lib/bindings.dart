@@ -393,15 +393,45 @@ class Bindings {
   ///
   /// For IPv4: "TCP:192.168.1.1:65522"
   /// For IPv6: "TCP:[2001:db8::1]:65522"
-  ffi.Pointer<ffi.Int8> network_local_addr() {
-    return _network_local_addr();
+  ///
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Int8> network_listener_local_addr() {
+    return _network_listener_local_addr();
   }
 
-  late final _network_local_addrPtr =
+  late final _network_listener_local_addrPtr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
-          'network_local_addr');
-  late final _network_local_addr =
-      _network_local_addrPtr.asFunction<ffi.Pointer<ffi.Int8> Function()>();
+          'network_listener_local_addr');
+  late final _network_listener_local_addr = _network_listener_local_addrPtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+
+  /// Returns the local dht address for ipv4, if available.
+  /// See [`network_local_addr`] for the format details.
+  ///
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Int8> network_dht_local_addr_v4() {
+    return _network_dht_local_addr_v4();
+  }
+
+  late final _network_dht_local_addr_v4Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
+          'network_dht_local_addr_v4');
+  late final _network_dht_local_addr_v4 = _network_dht_local_addr_v4Ptr
+      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+
+  /// Returns the local dht address for ipv6, if available.
+  /// See [`network_local_addr`] for the format details.
+  ///
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Int8> network_dht_local_addr_v6() {
+    return _network_dht_local_addr_v6();
+  }
+
+  late final _network_dht_local_addr_v6Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
+          'network_dht_local_addr_v6');
+  late final _network_dht_local_addr_v6 = _network_dht_local_addr_v6Ptr
+      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
   /// Creates a new repository.
   void repository_create(

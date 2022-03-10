@@ -10,7 +10,7 @@ void main() {
 
   setUp(() async {
     temp = await io.Directory.systemTemp.createTemp();
-    session = await Session.open('${temp.path}/device_id.conf');
+    session = await Session.open('${temp.path}/config');
     repo = await Repository.create(session,
         store: ':memory:', password: 'test123');
   });
@@ -73,5 +73,11 @@ void main() {
 
   test('repository access mode', () {
     expect(repo.accessMode, equals(AccessMode.write));
+  });
+
+  test('local addrs', () async {
+    print('listener: ${session.listenerLocalAddress}');
+    print('dht v4:   ${session.dhtLocalAddressV4}');
+    print('dht v6:   ${session.dhtLocalAddressV6}');
   });
 }

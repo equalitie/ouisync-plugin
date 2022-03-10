@@ -212,9 +212,14 @@ class Session {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
-  String local_network_address() {
-      return bindings.network_local_addr().cast<Utf8>().toDartString();
-  }
+  String get listenerLocalAddress =>
+      bindings.network_listener_local_addr().cast<Utf8>().intoDartString();
+
+  String get dhtLocalAddressV4 =>
+      bindings.network_dht_local_addr_v4().cast<Utf8>().intoDartString();
+
+  String get dhtLocalAddressV6 =>
+      bindings.network_dht_local_addr_v6().cast<Utf8>().intoDartString();
 
   /// Closes the session.
   void close() {
@@ -799,4 +804,13 @@ void freeNative(Pointer<NativeType> ptr) {
   // case (malloc). If this assumption turns out to be wrong, we should expose a native function to
   // deallocate the pointer and call it here instead.
   malloc.free(ptr);
+}
+
+extension Utf8Pointer on Pointer<Utf8> {
+  // Similar to [toDartString] but also deallocates the original pointer.
+  String intoDartString() {
+    final string = toDartString();
+    freeNative(this);
+    return string;
+  }
 }
