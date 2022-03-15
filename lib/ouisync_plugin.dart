@@ -225,11 +225,11 @@ class Session {
   String get listenerLocalAddress =>
       bindings.network_listener_local_addr().cast<Utf8>().intoDartString();
 
-  String get dhtLocalAddressV4 =>
-      bindings.network_dht_local_addr_v4().cast<Utf8>().intoDartString();
+  String? get dhtLocalAddressV4 =>
+      bindings.network_dht_local_addr_v4().cast<Utf8>().intoNullableDartString();
 
-  String get dhtLocalAddressV6 =>
-      bindings.network_dht_local_addr_v6().cast<Utf8>().intoDartString();
+  String? get dhtLocalAddressV6 =>
+      bindings.network_dht_local_addr_v6().cast<Utf8>().intoNullableDartString();
 
   /// Closes the session.
   void close() {
@@ -944,6 +944,15 @@ void freeNative(Pointer<NativeType> ptr) {
 extension Utf8Pointer on Pointer<Utf8> {
   // Similar to [toDartString] but also deallocates the original pointer.
   String intoDartString() {
+    final string = toDartString();
+    freeNative(this);
+    return string;
+  }
+
+  String? intoNullableDartString() {
+    if (address == 0) {
+      return null;
+    }
     final string = toDartString();
     freeNative(this);
     return string;
