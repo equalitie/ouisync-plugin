@@ -231,6 +231,18 @@ class Session {
   String? get dhtLocalAddressV6 =>
       bindings.network_dht_local_addr_v6().cast<Utf8>().intoNullableDartString();
 
+  List<ConnectedPeer> get connectedPeers {
+    final peersStr = bindings.network_connected_peers().cast<Utf8>().intoDartString().split(";");
+
+    List<ConnectedPeer> peers = [];
+
+    for (var peerStr in peersStr) {
+      peers.add(ConnectedPeer(peerStr));
+    }
+
+    return peers;
+  }
+
   /// Closes the session.
   void close() {
     if (DEBUG_TRACE) {
@@ -241,14 +253,23 @@ class Session {
   }
 }
 
+class ConnectedPeer {
+  final String endpoint;
+
+  ConnectedPeer(this.endpoint);
+}
+
 enum NetworkEvent {
   protocolVersionMismatch,
+  peerSetChange,
 }
 
 NetworkEvent? _decodeNetworkEvent(int n) {
   switch (n) {
     case NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
       return NetworkEvent.protocolVersionMismatch;
+    case NETWORK_EVENT_PEER_SET_CHANGE:
+      return NetworkEvent.peerSetChange;
     default:
       return null;
   }

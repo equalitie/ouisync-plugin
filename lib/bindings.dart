@@ -394,7 +394,7 @@ class Bindings {
   /// For IPv4: "TCP:192.168.1.1:65522"
   /// For IPv6: "TCP:[2001:db8::1]:65522"
   ///
-  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
   ffi.Pointer<ffi.Int8> network_listener_local_addr() {
     return _network_listener_local_addr();
   }
@@ -403,6 +403,18 @@ class Bindings {
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
           'network_listener_local_addr');
   late final _network_listener_local_addr = _network_listener_local_addrPtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+
+  /// Return an array of peers with which we're connected. Each peer is represented as a string in
+  /// the format "<TCP or UDP>:<IPv4 or [IPv6]>:<PORT>;...".
+  ffi.Pointer<ffi.Int8> network_connected_peers() {
+    return _network_connected_peers();
+  }
+
+  late final _network_connected_peersPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
+          'network_connected_peers');
+  late final _network_connected_peers = _network_connected_peersPtr
       .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
   /// Returns the local dht address for ipv4, if available.
@@ -851,6 +863,8 @@ typedef Port_bool = Port;
 typedef Port_Result_String = Port;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
+
+const int NETWORK_EVENT_PEER_SET_CHANGE = 1;
 
 const int ENTRY_TYPE_INVALID = 0;
 
