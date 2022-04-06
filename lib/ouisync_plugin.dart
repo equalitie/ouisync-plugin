@@ -232,12 +232,22 @@ class Session {
       bindings.network_dht_local_addr_v6().cast<Utf8>().intoNullableDartString();
 
   List<ConnectedPeer> get connectedPeers {
-    final peersStr = bindings.network_connected_peers().cast<Utf8>().intoDartString().split(";");
+    final peersStr = bindings.network_connected_peers().cast<Utf8>().intoDartString();
+
+    // If `peerStr` is empty, doing a `split(';')` on it would result a list of
+    // size one where the one element would be an empty string.
+    if (peersStr.isEmpty) {
+      return [];
+    }
+
+    final peerStrs = peersStr.split(';');
 
     List<ConnectedPeer> peers = [];
 
-    for (var peerStr in peersStr) {
-      peers.add(ConnectedPeer(peerStr));
+    for (var peerStr in peerStrs) {
+      // <IP>:<PORT>:<Direction>:<State>
+      final split = peerStr.split(':');
+      peers.add(ConnectedPeer(split[0], split[1], split[2], split[3]));
     }
 
     return peers;
@@ -254,9 +264,12 @@ class Session {
 }
 
 class ConnectedPeer {
-  final String endpoint;
+  final String ip;
+  final String port;
+  final String direction;
+  final String state;
 
-  ConnectedPeer(this.endpoint);
+  ConnectedPeer(this.ip, this.port, this.direction, this.state);
 }
 
 enum NetworkEvent {
