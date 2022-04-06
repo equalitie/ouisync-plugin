@@ -234,8 +234,8 @@ class Session {
   List<ConnectedPeer> get connectedPeers {
     final peersStr = bindings.network_connected_peers().cast<Utf8>().intoDartString();
 
-    // If `peerStr` is empty, doing a `split(';')` on it would result a list of
-    // size one where the one element would be an empty string.
+    // If `peerStr` is empty, doing a `split(';')` on it would result in a list of
+    // size 1 where the one element would be an empty string.
     if (peersStr.isEmpty) {
       return [];
     }
