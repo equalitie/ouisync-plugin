@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
+import 'package:messagepack/messagepack.dart';
 
 import 'bindings.dart';
 
@@ -236,26 +237,9 @@ class Session {
       .intoNullableDartString();
 
   List<ConnectedPeer> get connectedPeers {
-    final peersStr =
-        bindings.network_connected_peers().cast<Utf8>().intoDartString();
-
-    // If `peerStr` is empty, doing a `split(';')` on it would result in a list of
-    // size 1 where the one element would be an empty string.
-    if (peersStr.isEmpty) {
-      return [];
-    }
-
-    final peerStrs = peersStr.split(';');
-
-    List<ConnectedPeer> peers = [];
-
-    for (var peerStr in peerStrs) {
-      // <IP>:<PORT>:<Direction>:<State>
-      final split = peerStr.split(':');
-      peers.add(ConnectedPeer(split[0], split[1], split[2], split[3]));
-    }
-
-    return peers;
+    final bytes = intoUint8List(bindings.network_connected_peers());
+    final unpacker = Unpacker(bytes);
+    return ConnectedPeer.decodeAll(unpacker);
   }
 
   /// Closes the session.
@@ -270,11 +254,32 @@ class Session {
 
 class ConnectedPeer {
   final String ip;
-  final String port;
+  final int port;
   final String direction;
   final String state;
 
   ConnectedPeer(this.ip, this.port, this.direction, this.state);
+
+  static ConnectedPeer decode(Unpacker unpacker) {
+    final count = unpacker.unpackListLength();
+    assert(count == 4);
+
+    final ip = unpacker.unpackString()!;
+    final port = unpacker.unpackInt()!;
+    final direction = unpacker.unpackString()!;
+    final state = unpacker.unpackString()!;
+
+    return ConnectedPeer(ip, port, direction, state);
+  }
+
+  static List<ConnectedPeer> decodeAll(Unpacker unpacker) {
+    final count = unpacker.unpackListLength();
+    return Iterable.generate(count, (_) => ConnectedPeer.decode(unpacker))
+        .toList();
+  }
+
+  @override
+  String toString() => '$ip:$port, $direction, $state';
 }
 
 enum NetworkEvent {
@@ -453,8 +458,12 @@ class Repository {
                 port))));
   }
 
-  Future<double> syncProgress() => _invoke<double>(
-      (port) => bindings.repository_sync_progress(handle, port));
+  Future<Progress> syncProgress() async {
+    final bytes = await _invoke<Uint8List>(
+        (port) => bindings.repository_sync_progress(handle, port));
+    final unpacker = Unpacker(bytes);
+    return Progress.decode(unpacker);
+  }
 }
 
 class ShareToken {
@@ -476,12 +485,8 @@ class ShareToken {
             session.bindings.share_token_decode(buffer, bytes.length);
 
         if (tokenPtr != nullptr) {
-          try {
-            final token = tokenPtr.cast<Utf8>().toDartString();
-            return ShareToken(session, token);
-          } finally {
-            freeNative(tokenPtr);
-          }
+          final token = tokenPtr.cast<Utf8>().intoDartString();
+          return ShareToken(session, token);
         } else {
           return null;
         }
@@ -491,18 +496,7 @@ class ShareToken {
   Uint8List encode() => _withPoolSync((pool) {
         final tokenPtr = pool.toNativeUtf8(token);
         final buffer = bindings.share_token_encode(tokenPtr);
-
-        if (buffer.ptr != nullptr) {
-          try {
-            // Creating a copy so we can deallocate the pointer.
-            // TODO: is this the right way to do this?
-            return Uint8List.fromList(buffer.ptr.asTypedList(buffer.len));
-          } finally {
-            freeNative(buffer.ptr);
-          }
-        } else {
-          return Uint8List(0);
-        }
+        return intoUint8List(buffer);
       });
 
   /// Get the suggested repository name from the share token.
@@ -557,6 +551,33 @@ AccessMode? _decodeAccessMode(int n) {
     default:
       return null;
   }
+}
+
+class Progress {
+  final int value;
+  final int total;
+
+  Progress(this.value, this.total);
+
+  static Progress decode(Unpacker unpacker) {
+    final count = unpacker.unpackListLength();
+    assert(count == 2);
+
+    final value = unpacker.unpackInt()!;
+    final total = unpacker.unpackInt()!;
+
+    return Progress(value, total);
+  }
+
+  @override
+  String toString() => '$value/$total';
+
+  @override
+  bool operator ==(Object other) =>
+      other is Progress && other.value == value && other.total == total;
+
+  @override
+  int get hashCode => Object.hash(value, total);
 }
 
 /// A handle to a subscription.
@@ -1002,5 +1023,21 @@ extension Utf8Pointer on Pointer<Utf8> {
     final string = toDartString();
     freeNative(this);
     return string;
+  }
+}
+
+// Converts `Bytes` (a pair of pointer + length) into `Uint8List` and deallocates the original
+// pointer.
+Uint8List intoUint8List(Bytes bytes) {
+  if (bytes.ptr != nullptr) {
+    try {
+      // Creating a copy so we can deallocate the pointer.
+      // TODO: is this the right way to do this?
+      return Uint8List.fromList(bytes.ptr.asTypedList(bytes.len));
+    } finally {
+      freeNative(bytes.ptr);
+    }
+  } else {
+    return Uint8List(0);
   }
 }

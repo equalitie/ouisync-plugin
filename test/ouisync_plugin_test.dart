@@ -80,4 +80,9 @@ void main() {
     print('dht v4:   ${session.dhtLocalAddressV4}');
     print('dht v6:   ${session.dhtLocalAddressV6}');
   });
+
+  test('repository sync progress', () async {
+    final progress = await repo.syncProgress();
+    expect(progress, equals(Progress(0, 0)));
+  });
 }
