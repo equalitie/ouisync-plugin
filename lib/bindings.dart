@@ -660,6 +660,24 @@ class Bindings {
   late final _repository_access_mode =
       _repository_access_modePtr.asFunction<int Function(int)>();
 
+  /// Returns the syncing progress as a float in the 0.0 - 1.0 range.
+  void repository_sync_progress(
+    int handle,
+    int port,
+  ) {
+    return _repository_sync_progress(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_sync_progressPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_RepositoryHolder,
+              Port_Result_f64)>>('repository_sync_progress');
+  late final _repository_sync_progress =
+      _repository_sync_progressPtr.asFunction<void Function(int, int)>();
+
   /// Returns the access mode of the given share token.
   int share_token_mode(
     ffi.Pointer<ffi.Int8> token,
@@ -861,6 +879,9 @@ typedef Port_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
+
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result_f64 = Port;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 
