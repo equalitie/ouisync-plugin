@@ -237,7 +237,7 @@ class Session {
       .intoNullableDartString();
 
   List<ConnectedPeer> get connectedPeers {
-    final bytes = intoUint8List(bindings.network_connected_peers());
+    final bytes = bindings.network_connected_peers().intoUint8List();
     final unpacker = Unpacker(bytes);
     return ConnectedPeer.decodeAll(unpacker);
   }
@@ -493,11 +493,8 @@ class ShareToken {
       });
 
   /// Encode this share token into raw bytes (for example to build a QR code from).
-  Uint8List encode() => _withPoolSync((pool) {
-        final tokenPtr = pool.toNativeUtf8(token);
-        final buffer = bindings.share_token_encode(tokenPtr);
-        return intoUint8List(buffer);
-      });
+  Uint8List encode() => _withPoolSync((pool) =>
+      bindings.share_token_encode(pool.toNativeUtf8(token)).intoUint8List());
 
   /// Get the suggested repository name from the share token.
   String get suggestedName {
@@ -1026,18 +1023,19 @@ extension Utf8Pointer on Pointer<Utf8> {
   }
 }
 
-// Converts `Bytes` (a pair of pointer + length) into `Uint8List` and deallocates the original
-// pointer.
-Uint8List intoUint8List(Bytes bytes) {
-  if (bytes.ptr != nullptr) {
-    try {
-      // Creating a copy so we can deallocate the pointer.
-      // TODO: is this the right way to do this?
-      return Uint8List.fromList(bytes.ptr.asTypedList(bytes.len));
-    } finally {
-      freeNative(bytes.ptr);
+extension BytesExtension on Bytes {
+  // Converts this `Bytes` into `Uint8List` and deallocates the original pointer.
+  Uint8List intoUint8List() {
+    if (ptr != nullptr) {
+      try {
+        // Creating a copy so we can deallocate the pointer.
+        // TODO: is this the right way to do this?
+        return Uint8List.fromList(ptr.asTypedList(len));
+      } finally {
+        freeNative(ptr);
+      }
+    } else {
+      return Uint8List(0);
     }
-  } else {
-    return Uint8List(0);
   }
 }
