@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
+import 'package:messagepack/messagepack.dart';
 
 import 'bindings.dart';
 
@@ -186,7 +187,7 @@ class Session {
   /// created.
   static Future<Session> open(String configsDirPath) async {
     if (DEBUG_TRACE) {
-        print("Session.open $configsDirPath");
+      print("Session.open $configsDirPath");
     }
 
     final bindings = Bindings(_defaultLib());
@@ -202,7 +203,7 @@ class Session {
   /// Subscribe to network event notifications.
   Subscription subscribeToNetworkEvents(void Function(NetworkEvent) callback) {
     if (DEBUG_TRACE) {
-        print("Session.subscribeToNetworkEvents");
+      print("Session.subscribeToNetworkEvents");
     }
 
     final recvPort = ReceivePort();
@@ -225,38 +226,26 @@ class Session {
   String get listenerLocalAddress =>
       bindings.network_listener_local_addr().cast<Utf8>().intoDartString();
 
-  String? get dhtLocalAddressV4 =>
-      bindings.network_dht_local_addr_v4().cast<Utf8>().intoNullableDartString();
+  String? get dhtLocalAddressV4 => bindings
+      .network_dht_local_addr_v4()
+      .cast<Utf8>()
+      .intoNullableDartString();
 
-  String? get dhtLocalAddressV6 =>
-      bindings.network_dht_local_addr_v6().cast<Utf8>().intoNullableDartString();
+  String? get dhtLocalAddressV6 => bindings
+      .network_dht_local_addr_v6()
+      .cast<Utf8>()
+      .intoNullableDartString();
 
   List<ConnectedPeer> get connectedPeers {
-    final peersStr = bindings.network_connected_peers().cast<Utf8>().intoDartString();
-
-    // If `peerStr` is empty, doing a `split(';')` on it would result in a list of
-    // size 1 where the one element would be an empty string.
-    if (peersStr.isEmpty) {
-      return [];
-    }
-
-    final peerStrs = peersStr.split(';');
-
-    List<ConnectedPeer> peers = [];
-
-    for (var peerStr in peerStrs) {
-      // <IP>:<PORT>:<Direction>:<State>
-      final split = peerStr.split(':');
-      peers.add(ConnectedPeer(split[0], split[1], split[2], split[3]));
-    }
-
-    return peers;
+    final bytes = bindings.network_connected_peers().intoUint8List();
+    final unpacker = Unpacker(bytes);
+    return ConnectedPeer.decodeAll(unpacker);
   }
 
   /// Closes the session.
   void close() {
     if (DEBUG_TRACE) {
-        print("Session.close");
+      print("Session.close");
     }
 
     bindings.session_close();
@@ -265,11 +254,32 @@ class Session {
 
 class ConnectedPeer {
   final String ip;
-  final String port;
+  final int port;
   final String direction;
   final String state;
 
   ConnectedPeer(this.ip, this.port, this.direction, this.state);
+
+  static ConnectedPeer decode(Unpacker unpacker) {
+    final count = unpacker.unpackListLength();
+    assert(count == 4);
+
+    final ip = unpacker.unpackString()!;
+    final port = unpacker.unpackInt()!;
+    final direction = unpacker.unpackString()!;
+    final state = unpacker.unpackString()!;
+
+    return ConnectedPeer(ip, port, direction, state);
+  }
+
+  static List<ConnectedPeer> decodeAll(Unpacker unpacker) {
+    final count = unpacker.unpackListLength();
+    return Iterable.generate(count, (_) => ConnectedPeer.decode(unpacker))
+        .toList();
+  }
+
+  @override
+  String toString() => '$ip:$port, $direction, $state';
 }
 
 enum NetworkEvent {
@@ -301,7 +311,7 @@ class Repository {
       required String password,
       ShareToken? shareToken}) async {
     if (DEBUG_TRACE) {
-        print("Repository.create $store");
+      print("Repository.create $store");
     }
 
     final bindings = session.bindings;
@@ -319,7 +329,7 @@ class Repository {
   static Future<Repository> open(Session session,
       {required String store, String? password}) async {
     if (DEBUG_TRACE) {
-        print("Repository.open $store");
+      print("Repository.open $store");
     }
 
     final bindings = session.bindings;
@@ -334,7 +344,7 @@ class Repository {
   /// (likely crash).
   void close() {
     if (DEBUG_TRACE) {
-        print("Repository.close");
+      print("Repository.close");
     }
 
     bindings.repository_close(handle);
@@ -344,17 +354,18 @@ class Repository {
   /// doesn't exists.
   Future<EntryType?> type(String path) async {
     if (DEBUG_TRACE) {
-        print("Repository.type $path");
+      print("Repository.type $path");
     }
 
-    return _decodeEntryType(await _withPool((pool) => _invoke<int>((port) => bindings
-          .repository_entry_type(handle, pool.toNativeUtf8(path), port))));
+    return _decodeEntryType(await _withPool((pool) => _invoke<int>((port) =>
+        bindings.repository_entry_type(
+            handle, pool.toNativeUtf8(path), port))));
   }
 
   /// Returns whether the entry (file or directory) at [path] exists.
   Future<bool> exists(String path) async {
     if (DEBUG_TRACE) {
-        print("Repository.exists $path");
+      print("Repository.exists $path");
     }
 
     return await type(path) != null;
@@ -363,19 +374,19 @@ class Repository {
   /// Move/rename the file/directory from [src] to [dst].
   Future<void> move(String src, String dst) {
     if (DEBUG_TRACE) {
-        print("Repository.move $src -> $dst");
+      print("Repository.move $src -> $dst");
     }
 
-    return _withPool((pool) =>
-      _invoke<void>((port) => bindings.repository_move_entry(
-          handle, pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
+    return _withPool((pool) => _invoke<void>((port) =>
+        bindings.repository_move_entry(
+            handle, pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
   }
 
   /// Subscribe to change notifications from this repository. The returned handle can be used to
   /// cancel the subscription.
   Subscription subscribe(void Function() callback) {
     if (DEBUG_TRACE) {
-        print("Repository.subscribe");
+      print("Repository.subscribe");
     }
 
     final recvPort = ReceivePort();
@@ -389,7 +400,7 @@ class Repository {
 
   Future<bool> isDhtEnabled() async {
     if (DEBUG_TRACE) {
-        print("Repository.isDhtEnabled");
+      print("Repository.isDhtEnabled");
     }
 
     final recvPort = ReceivePort();
@@ -401,7 +412,7 @@ class Repository {
 
   Future<void> enableDht() async {
     if (DEBUG_TRACE) {
-        print("Repository.enableDht");
+      print("Repository.enableDht");
     }
 
     final recvPort = ReceivePort();
@@ -412,7 +423,7 @@ class Repository {
 
   Future<void> disableDht() async {
     if (DEBUG_TRACE) {
-        print("Repository.disableDht");
+      print("Repository.disableDht");
     }
 
     final recvPort = ReceivePort();
@@ -423,7 +434,7 @@ class Repository {
 
   AccessMode get accessMode {
     if (DEBUG_TRACE) {
-        print("Repository.get accessMode");
+      print("Repository.get accessMode");
     }
 
     return _decodeAccessMode(bindings.repository_access_mode(handle))!;
@@ -431,19 +442,27 @@ class Repository {
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
   /// specify repository name which will be included in the token and suggested to the recipient.
-  Future<ShareToken> createShareToken({required AccessMode accessMode, String? name}) async {
+  Future<ShareToken> createShareToken(
+      {required AccessMode accessMode, String? name}) async {
     if (DEBUG_TRACE) {
-        print("Repository.createShareToken");
+      print("Repository.createShareToken");
     }
 
     return ShareToken._(
-      bindings,
-      await _withPool((pool) => _invoke<String>((port) =>
-        bindings.repository_create_share_token(
-          handle,
-          _encodeAccessMode(accessMode),
-          name != null ? pool.toNativeUtf8(name) : nullptr,
-          port))));
+        bindings,
+        await _withPool((pool) => _invoke<String>((port) =>
+            bindings.repository_create_share_token(
+                handle,
+                _encodeAccessMode(accessMode),
+                name != null ? pool.toNativeUtf8(name) : nullptr,
+                port))));
+  }
+
+  Future<Progress> syncProgress() async {
+    final bytes = await _invoke<Uint8List>(
+        (port) => bindings.repository_sync_progress(handle, port));
+    final unpacker = Unpacker(bytes);
+    return Progress.decode(unpacker);
   }
 }
 
@@ -466,34 +485,16 @@ class ShareToken {
             session.bindings.share_token_decode(buffer, bytes.length);
 
         if (tokenPtr != nullptr) {
-          try {
-            final token = tokenPtr.cast<Utf8>().toDartString();
-            return ShareToken(session, token);
-          } finally {
-            freeNative(tokenPtr);
-          }
+          final token = tokenPtr.cast<Utf8>().intoDartString();
+          return ShareToken(session, token);
         } else {
           return null;
         }
       });
 
   /// Encode this share token into raw bytes (for example to build a QR code from).
-  Uint8List encode() => _withPoolSync((pool) {
-        final tokenPtr = pool.toNativeUtf8(token);
-        final buffer = bindings.share_token_encode(tokenPtr);
-
-        if (buffer.ptr != nullptr) {
-          try {
-            // Creating a copy so we can deallocate the pointer.
-            // TODO: is this the right way to do this?
-            return Uint8List.fromList(buffer.ptr.asTypedList(buffer.len));
-          } finally {
-            freeNative(buffer.ptr);
-          }
-        } else {
-          return Uint8List(0);
-        }
-      });
+  Uint8List encode() => _withPoolSync((pool) =>
+      bindings.share_token_encode(pool.toNativeUtf8(token)).intoUint8List());
 
   /// Get the suggested repository name from the share token.
   String get suggestedName {
@@ -547,6 +548,33 @@ AccessMode? _decodeAccessMode(int n) {
     default:
       return null;
   }
+}
+
+class Progress {
+  final int value;
+  final int total;
+
+  Progress(this.value, this.total);
+
+  static Progress decode(Unpacker unpacker) {
+    final count = unpacker.unpackListLength();
+    assert(count == 2);
+
+    final value = unpacker.unpackInt()!;
+    final total = unpacker.unpackInt()!;
+
+    return Progress(value, total);
+  }
+
+  @override
+  String toString() => '$value/$total';
+
+  @override
+  bool operator ==(Object other) =>
+      other is Progress && other.value == value && other.total == total;
+
+  @override
+  int get hashCode => Object.hash(value, total);
 }
 
 /// A handle to a subscription.
@@ -624,7 +652,7 @@ class Directory with IterableMixin<DirEntry> {
   /// Note: don't forget to [close] it when no longer needed.
   static Future<Directory> open(Repository repo, String path) async {
     if (DEBUG_TRACE) {
-        print("Directory.open $path");
+      print("Directory.open $path");
     }
 
     return Directory._(
@@ -638,19 +666,20 @@ class Directory with IterableMixin<DirEntry> {
   /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<void> create(Repository repo, String path) {
     if (DEBUG_TRACE) {
-        print("Directory.create $path");
+      print("Directory.create $path");
     }
 
     return _withPool((pool) => _invoke<void>((port) => repo.bindings
-          .directory_create(repo.handle, pool.toNativeUtf8(path), port)));
+        .directory_create(repo.handle, pool.toNativeUtf8(path), port)));
   }
 
   /// Remove a directory from [repo] at [path]. If [recursive] is false (which is the default),
   /// the directory must be empty otherwise an exception is thrown. If [recursive] it is true, the
   /// content of the directory is removed as well.
-  static Future<void> remove(Repository repo, String path, {bool recursive = false}) {
+  static Future<void> remove(Repository repo, String path,
+      {bool recursive = false}) {
     if (DEBUG_TRACE) {
-        print("Directory.remove $path");
+      print("Directory.remove $path");
     }
 
     final fun = recursive
@@ -664,7 +693,7 @@ class Directory with IterableMixin<DirEntry> {
   /// Closes this directory.
   void close() {
     if (DEBUG_TRACE) {
-        print("Directory.close");
+      print("Directory.close");
     }
 
     bindings.directory_close(handle);
@@ -712,13 +741,13 @@ class File {
   /// Throws if [path] doesn't exists or is a directory.
   static Future<File> open(Repository repo, String path) async {
     if (DEBUG_TRACE) {
-        print("File.open");
+      print("File.open");
     }
 
     return File._(
-      repo.bindings,
-      await _withPool((pool) => _invoke<int>((port) => repo.bindings
-          .file_open(repo.handle, pool.toNativeUtf8(path), port))));
+        repo.bindings,
+        await _withPool((pool) => _invoke<int>((port) => repo.bindings
+            .file_open(repo.handle, pool.toNativeUtf8(path), port))));
   }
 
   /// Creates a new file in [repo] at [path].
@@ -726,29 +755,29 @@ class File {
   /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<File> create(Repository repo, String path) async {
     if (DEBUG_TRACE) {
-        print("File.create $path");
+      print("File.create $path");
     }
 
     return File._(
-      repo.bindings,
-      await _withPool((pool) => _invoke<int>((port) => repo.bindings
-          .file_create(repo.handle, pool.toNativeUtf8(path), port))));
+        repo.bindings,
+        await _withPool((pool) => _invoke<int>((port) => repo.bindings
+            .file_create(repo.handle, pool.toNativeUtf8(path), port))));
   }
 
   /// Removes (deletes) a file at [path] from [repo].
   static Future<void> remove(Repository repo, String path) {
     if (DEBUG_TRACE) {
-        print("File.remove $path");
+      print("File.remove $path");
     }
 
-    return _withPool((pool) => _invoke<void>((port) => repo.bindings
-          .file_remove(repo.handle, pool.toNativeUtf8(path), port)));
+    return _withPool((pool) => _invoke<void>((port) =>
+        repo.bindings.file_remove(repo.handle, pool.toNativeUtf8(path), port)));
   }
 
   /// Flushed and closes this file.
   Future<void> close() {
     if (DEBUG_TRACE) {
-        print("File.close");
+      print("File.close");
     }
 
     return _invoke<void>((port) => bindings.file_close(handle, port));
@@ -757,7 +786,7 @@ class File {
   /// Flushes any pending writes to this file.
   Future<void> flush() {
     if (DEBUG_TRACE) {
-        print("File.flush");
+      print("File.flush");
     }
 
     return _invoke<void>((port) => bindings.file_flush(handle, port));
@@ -791,7 +820,7 @@ class File {
   /// ```
   Future<List<int>> read(int offset, int size) async {
     if (DEBUG_TRACE) {
-        print("File.read");
+      print("File.read");
     }
 
     var buffer = malloc<Uint8>(size);
@@ -808,7 +837,7 @@ class File {
   /// Write [data] to this file starting at [offset].
   Future<void> write(int offset, List<int> data) async {
     if (DEBUG_TRACE) {
-        print("File.write");
+      print("File.write");
     }
 
     var buffer = malloc<Uint8>(data.length);
@@ -825,7 +854,7 @@ class File {
   /// Truncate the file to [size] bytes.
   Future<void> truncate(int size) {
     if (DEBUG_TRACE) {
-        print("File.truncate");
+      print("File.truncate");
     }
 
     return _invoke<void>((port) => bindings.file_truncate(handle, size, port));
@@ -834,7 +863,7 @@ class File {
   /// Returns the length of this file in bytes.
   Future<int> get length {
     if (DEBUG_TRACE) {
-        print("File.length");
+      print("File.length");
     }
 
     return _invoke<int>((port) => bindings.file_len(handle, port));
@@ -843,10 +872,11 @@ class File {
   /// Copy the contents of the file into the provided raw file descriptor.
   Future<void> copyToRawFd(int fd) {
     if (DEBUG_TRACE) {
-        print("File.copyToRawFd");
+      print("File.copyToRawFd");
     }
 
-    return _invoke<void>((port) => bindings.file_copy_to_raw_fd(handle, fd, port));
+    return _invoke<void>(
+        (port) => bindings.file_copy_to_raw_fd(handle, fd, port));
   }
 }
 
@@ -994,5 +1024,22 @@ extension Utf8Pointer on Pointer<Utf8> {
     final string = toDartString();
     freeNative(this);
     return string;
+  }
+}
+
+extension BytesExtension on Bytes {
+  // Converts this `Bytes` into `Uint8List` and deallocates the original pointer.
+  Uint8List intoUint8List() {
+    if (ptr != nullptr) {
+      try {
+        // Creating a copy so we can deallocate the pointer.
+        // TODO: is this the right way to do this?
+        return Uint8List.fromList(ptr.asTypedList(len));
+      } finally {
+        freeNative(ptr);
+      }
+    } else {
+      return Uint8List(0);
+    }
   }
 }

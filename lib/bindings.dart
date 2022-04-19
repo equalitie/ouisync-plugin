@@ -405,17 +405,15 @@ class Bindings {
   late final _network_listener_local_addr = _network_listener_local_addrPtr
       .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
-  /// Return an array of peers with which we're connected. Each peer is represented as a string in
-  /// the format "<TCP or UDP>:<IPv4 or [IPv6]>:<PORT>;...".
-  ffi.Pointer<ffi.Int8> network_connected_peers() {
+  /// Return the list of peers with which we're connected, serialized with msgpack.
+  Bytes network_connected_peers() {
     return _network_connected_peers();
   }
 
   late final _network_connected_peersPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
-          'network_connected_peers');
-  late final _network_connected_peers = _network_connected_peersPtr
-      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+      _lookup<ffi.NativeFunction<Bytes Function()>>('network_connected_peers');
+  late final _network_connected_peers =
+      _network_connected_peersPtr.asFunction<Bytes Function()>();
 
   /// Returns the local dht address for ipv4, if available.
   /// See [`network_local_addr`] for the format details.
@@ -660,6 +658,24 @@ class Bindings {
   late final _repository_access_mode =
       _repository_access_modePtr.asFunction<int Function(int)>();
 
+  /// Returns the syncing progress as a float in the 0.0 - 1.0 range.
+  void repository_sync_progress(
+    int handle,
+    int port,
+  ) {
+    return _repository_sync_progress(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_sync_progressPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_RepositoryHolder,
+              Port_Result_Vec_u8)>>('repository_sync_progress');
+  late final _repository_sync_progress =
+      _repository_sync_progressPtr.asFunction<void Function(int, int)>();
+
   /// Returns the access mode of the given share token.
   int share_token_mode(
     ffi.Pointer<ffi.Int8> token,
@@ -861,6 +877,9 @@ typedef Port_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
+
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result_Vec_u8 = Port;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 
