@@ -492,17 +492,20 @@ class Bindings {
   /// Closes a repository.
   void repository_close(
     int handle,
+    int port,
   ) {
     return _repository_close(
       handle,
+      port,
     );
   }
 
   late final _repository_closePtr = _lookup<
-          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
-      'repository_close');
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SharedHandle_RepositoryHolder, Port)>>('repository_close');
   late final _repository_close =
-      _repository_closePtr.asFunction<void Function(int)>();
+      _repository_closePtr.asFunction<void Function(int, int)>();
 
   /// Returns the type of repository entry (file, directory, ...).
   /// If the entry doesn't exists, returns `ENTRY_TYPE_INVALID`, not an error.
@@ -568,56 +571,49 @@ class Bindings {
   late final _repository_subscribe =
       _repository_subscribePtr.asFunction<int Function(int, int)>();
 
-  void repository_is_dht_enabled(
+  bool repository_is_dht_enabled(
     int handle,
-    int port,
   ) {
     return _repository_is_dht_enabled(
-      handle,
-      port,
-    );
+          handle,
+        ) !=
+        0;
   }
 
   late final _repository_is_dht_enabledPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_RepositoryHolder,
-              Port_bool)>>('repository_is_dht_enabled');
+          ffi.Uint8 Function(
+              SharedHandle_RepositoryHolder)>>('repository_is_dht_enabled');
   late final _repository_is_dht_enabled =
-      _repository_is_dht_enabledPtr.asFunction<void Function(int, int)>();
+      _repository_is_dht_enabledPtr.asFunction<int Function(int)>();
 
   void repository_enable_dht(
     int handle,
-    int port,
   ) {
     return _repository_enable_dht(
       handle,
-      port,
     );
   }
 
   late final _repository_enable_dhtPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_RepositoryHolder, Port)>>('repository_enable_dht');
+          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
+      'repository_enable_dht');
   late final _repository_enable_dht =
-      _repository_enable_dhtPtr.asFunction<void Function(int, int)>();
+      _repository_enable_dhtPtr.asFunction<void Function(int)>();
 
   void repository_disable_dht(
     int handle,
-    int port,
   ) {
     return _repository_disable_dht(
       handle,
-      port,
     );
   }
 
   late final _repository_disable_dhtPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_RepositoryHolder, Port)>>('repository_disable_dht');
+          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
+      'repository_disable_dht');
   late final _repository_disable_dht =
-      _repository_disable_dhtPtr.asFunction<void Function(int, int)>();
+      _repository_disable_dhtPtr.asFunction<void Function(int)>();
 
   void repository_create_share_token(
     int handle,
@@ -871,9 +867,6 @@ typedef SharedHandle_RepositoryHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u8 = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;

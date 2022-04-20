@@ -22,8 +22,8 @@ void main() {
         store: ':memory:', password: 'test123');
   });
 
-  tearDown(() {
-    repository.close();
+  tearDown(() async {
+    await repository.close();
     session.close();
     temp.deleteSync(recursive: true);
   });

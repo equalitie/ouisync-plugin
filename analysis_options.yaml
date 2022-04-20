@@ -6,3 +6,7 @@ analyzer:
     strict-raw-types: true
   strong-mode:
     implicit-casts: false
+
+linter:
+  rules:
+    unawaited_futures: true

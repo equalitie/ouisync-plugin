@@ -15,8 +15,8 @@ void main() {
         store: ':memory:', password: 'test123');
   });
 
-  tearDown(() {
-    repo.close();
+  tearDown(() async {
+    await repo.close();
     session.close();
     temp.deleteSync(recursive: true);
   });

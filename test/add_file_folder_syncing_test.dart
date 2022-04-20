@@ -37,9 +37,9 @@ void main() {
     });
   });
 
-  tearDown(() {
+  tearDown(() async {
     subscription.cancel();
-    repository.close();
+    await repository.close();
 
     session.close();
     temp.deleteSync(recursive: true);

@@ -342,12 +342,19 @@ class Repository {
 
   /// Close the repository. Accessing the repository after it's been closed is undefined behaviour
   /// (likely crash).
-  void close() {
+  Future<void> close() async {
     if (DEBUG_TRACE) {
       print("Repository.close");
     }
 
-    bindings.repository_close(handle);
+    final recvPort = ReceivePort();
+
+    try {
+      bindings.repository_close(handle, recvPort.sendPort.nativePort);
+      await recvPort.first;
+    } finally {
+      recvPort.close();
+    }
   }
 
   /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
@@ -398,38 +405,28 @@ class Repository {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
-  Future<bool> isDhtEnabled() async {
+  bool isDhtEnabled() {
     if (DEBUG_TRACE) {
       print("Repository.isDhtEnabled");
     }
 
-    final recvPort = ReceivePort();
-    bindings.repository_is_dht_enabled(handle, recvPort.sendPort.nativePort);
-    final result = await recvPort.first as bool;
-    recvPort.close();
-    return result;
+    return bindings.repository_is_dht_enabled(handle);
   }
 
-  Future<void> enableDht() async {
+  void enableDht() {
     if (DEBUG_TRACE) {
       print("Repository.enableDht");
     }
 
-    final recvPort = ReceivePort();
-    bindings.repository_enable_dht(handle, recvPort.sendPort.nativePort);
-    await recvPort.first;
-    recvPort.close();
+    bindings.repository_enable_dht(handle);
   }
 
-  Future<void> disableDht() async {
+  void disableDht() {
     if (DEBUG_TRACE) {
       print("Repository.disableDht");
     }
 
-    final recvPort = ReceivePort();
-    bindings.repository_disable_dht(handle, recvPort.sendPort.nativePort);
-    await recvPort.first;
-    recvPort.close();
+    bindings.repository_disable_dht(handle);
   }
 
   AccessMode get accessMode {
@@ -919,7 +916,8 @@ DynamicLibrary _defaultLib() {
   }
 
   if (Platform.isWindows) {
-    return DynamicLibrary.open('ouisync-plugin\\ouisync\\target\\release\\$name.dll');//('$name.dll');
+    return DynamicLibrary.open(
+        'ouisync-plugin\\ouisync\\target\\release\\$name.dll'); //('$name.dll');
   }
 
   throw Exception('unsupported platform ${Platform.operatingSystem}');
