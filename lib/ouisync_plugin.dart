@@ -903,7 +903,7 @@ DynamicLibrary _defaultLib() {
     }
 
     if (Platform.isWindows) {
-      return DynamicLibrary.open('build/test/lib$name.dll');
+      return DynamicLibrary.open('build/test/$name.dll');
     }
   }
 
