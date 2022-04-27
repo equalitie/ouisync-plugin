@@ -242,6 +242,9 @@ class Session {
     return ConnectedPeer.decodeAll(unpacker);
   }
 
+  int get current_protocol_version => bindings.network_current_protocol_version();
+  int get highest_seen_protocol_version => bindings.network_highest_seen_protocol_version();
+
   /// Closes the session.
   void close() {
     if (DEBUG_TRACE) {

@@ -415,6 +415,29 @@ class Bindings {
   late final _network_connected_peers =
       _network_connected_peersPtr.asFunction<Bytes Function()>();
 
+  /// Return our currently used protocol version number.
+  int network_current_protocol_version() {
+    return _network_current_protocol_version();
+  }
+
+  late final _network_current_protocol_versionPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint32 Function()>>(
+          'network_current_protocol_version');
+  late final _network_current_protocol_version =
+      _network_current_protocol_versionPtr.asFunction<int Function()>();
+
+  /// Return the highest seen protocol version number. The value returned is always higher
+  /// or equal to the value returned from network_current_protocol_version() fn.
+  int network_highest_seen_protocol_version() {
+    return _network_highest_seen_protocol_version();
+  }
+
+  late final _network_highest_seen_protocol_versionPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint32 Function()>>(
+          'network_highest_seen_protocol_version');
+  late final _network_highest_seen_protocol_version =
+      _network_highest_seen_protocol_versionPtr.asFunction<int Function()>();
+
   /// Returns the local dht address for ipv4, if available.
   /// See [`network_local_addr`] for the format details.
   ///
