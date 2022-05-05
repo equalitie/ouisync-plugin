@@ -781,6 +781,22 @@ class Bindings {
   late final _session_open = _session_openPtr.asFunction<
       void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Int8>, int)>();
 
+  /// Retrieve a serialized state monitor corresponding to the `path`.  The path is in the form
+  /// "a:b:c". An empty string returns the "root" state monitor.
+  Bytes session_get_state_monitor(
+    ffi.Pointer<ffi.Int8> path,
+  ) {
+    return _session_get_state_monitor(
+      path,
+    );
+  }
+
+  late final _session_get_state_monitorPtr =
+      _lookup<ffi.NativeFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>>(
+          'session_get_state_monitor');
+  late final _session_get_state_monitor = _session_get_state_monitorPtr
+      .asFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>();
+
   /// Closes the ouisync session.
   void session_close() {
     return _session_close();
