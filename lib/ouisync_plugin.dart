@@ -919,8 +919,7 @@ DynamicLibrary _defaultLib() {
   }
 
   if (Platform.isWindows) {
-    return DynamicLibrary.open(
-        'ouisync-plugin\\ouisync\\target\\release\\$name.dll'); //('$name.dll');
+    return DynamicLibrary.open('$name.dll');
   }
 
   throw Exception('unsupported platform ${Platform.operatingSystem}');

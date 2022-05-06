@@ -19,6 +19,6 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(ouisync_plugin_bundled_libraries
-  ""
+  "${CMAKE_CURRENT_SOURCE_DIR}/../ouisync/target/release/ouisync.dll"
   PARENT_SCOPE
 )
