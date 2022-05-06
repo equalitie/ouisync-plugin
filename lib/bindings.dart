@@ -797,6 +797,42 @@ class Bindings {
   late final _session_get_state_monitor = _session_get_state_monitorPtr
       .asFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>();
 
+  /// Subscribe to "on change" events happening inside a monitor corresponding to the `path`.  The
+  /// path is in the form "a:b:c" and an empty string represents the "root" state monitor.
+  int session_state_monitor_subscribe(
+    ffi.Pointer<ffi.Int8> path,
+    int port,
+  ) {
+    return _session_state_monitor_subscribe(
+      path,
+      port,
+    );
+  }
+
+  late final _session_state_monitor_subscribePtr = _lookup<
+      ffi.NativeFunction<
+          UniqueNullableHandle_JoinHandle Function(
+              ffi.Pointer<ffi.Int8>, Port)>>('session_state_monitor_subscribe');
+  late final _session_state_monitor_subscribe =
+      _session_state_monitor_subscribePtr
+          .asFunction<int Function(ffi.Pointer<ffi.Int8>, int)>();
+
+  /// Unsubscribe from the above "on change" StateMonitor events.
+  void session_state_monitor_unsubscribe(
+    int handle,
+  ) {
+    return _session_state_monitor_unsubscribe(
+      handle,
+    );
+  }
+
+  late final _session_state_monitor_unsubscribePtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(UniqueNullableHandle_JoinHandle)>>(
+      'session_state_monitor_unsubscribe');
+  late final _session_state_monitor_unsubscribe =
+      _session_state_monitor_unsubscribePtr.asFunction<void Function(int)>();
+
   /// Closes the ouisync session.
   void session_close() {
     return _session_close();
@@ -912,6 +948,9 @@ typedef Port_Result_String = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_Vec_u8 = Port;
+
+/// FFI handle to a resource with unique ownership that can also be null.
+typedef UniqueNullableHandle_JoinHandle = ffi.Uint64;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 

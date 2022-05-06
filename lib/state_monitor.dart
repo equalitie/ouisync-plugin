@@ -1,3 +1,6 @@
+import 'dart:ffi';
+import 'dart:async';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:collection';
 import 'package:ffi/ffi.dart';
@@ -16,7 +19,52 @@ class StateMonitor {
   Map<String, String> values;
   Map<String, ChangeId> children;
 
-  StateMonitor(
+  static StateMonitor? getRoot(Bindings bindings) {
+    return _getMonitor(bindings, <String>[]);
+  }
+
+  StateMonitor? child(String name) {
+    return _getMonitor(bindings, [...path, name]);
+  }
+
+  Subscription? subscribe() {
+    final recvPort = ReceivePort();
+
+    final subscriptionHandle =
+        bindings.session_state_monitor_subscribe(
+            stringToNativeUtf8(_pathStr(path)),
+            recvPort.sendPort.nativePort);
+
+    if (subscriptionHandle == 0) {
+      return null;
+    }
+
+    return Subscription._(
+        bindings,
+        subscriptionHandle,
+        recvPort
+    );
+  }
+
+  bool refresh() {
+    final m = _getMonitor(bindings, path);
+
+    if (m != null) {
+      change_id = m.change_id;
+      values = m.values;
+      children = m.children;
+      return true;
+    }
+
+    return false;
+  }
+
+  @override
+  String toString() {
+    return "StateMonitor{ path:${_pathStr(path)}, change_id:$change_id, values:$values, children:$children }";
+  }
+
+  StateMonitor._(
       this.path,
       this.bindings,
       this.change_id,
@@ -24,15 +72,13 @@ class StateMonitor {
       this.children,
   );
 
-  static StateMonitor? getRoot(Bindings bindings) {
-    final bytes = _getMonitorBytes(bindings, "");
-    return StateMonitor._parse(<String>[], bindings, bytes);
+  static String _pathStr(List<String> path) {
+    return path.join(':');
   }
 
-  StateMonitor? child(String name) {
-    final child_path = [...path, name];
-    final bytes = _getMonitorBytes(bindings, child_path.join(':'));
-    return StateMonitor._parse(child_path, bindings, bytes);
+  static StateMonitor? _getMonitor(Bindings bindings, List<String> path) {
+    final bytes = _getMonitorBytes(bindings, _pathStr(path));
+    return StateMonitor._parse(path, bindings, bytes);
   }
 
   static Uint8List _getMonitorBytes(Bindings bindings, String path) {
@@ -40,6 +86,10 @@ class StateMonitor {
   }
 
   static StateMonitor? _parse(List<String> path, Bindings bindings, Uint8List messagepack_data) {
+    if (messagepack_data.length == 0) {
+      return null;
+    }
+
     var unpacker = Unpacker(messagepack_data);
 
     //// Struct is encoded as a list.  Use this for debugging. Note that
@@ -56,7 +106,7 @@ class StateMonitor {
     final values = _unpackValues(unpacker);
     final children = _unpackChildren(unpacker);
 
-    return StateMonitor(
+    return StateMonitor._(
       path,
       bindings,
       change_id,
@@ -87,5 +137,24 @@ class StateMonitor {
     }
 
     return children;
+  }
+}
+
+class Subscription {
+  final Bindings _bindings;
+  final int _handle;
+  final ReceivePort _port;
+
+  late final Stream<Null> stream;
+
+  Subscription._(this._bindings, this._handle, this._port) {
+    final ctrl = StreamController<Null>();
+    _port.listen((Null) { ctrl.add(null); });
+    stream = ctrl.stream;
+  }
+
+  void close() {
+    _bindings.session_state_monitor_unsubscribe(_handle);
+    _port.close();
   }
 }
