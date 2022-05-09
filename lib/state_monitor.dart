@@ -15,7 +15,7 @@ typedef ChangeId = int;
 class StateMonitor {
   List<String> path;
   Bindings bindings;
-  ChangeId change_id;
+  ChangeId changeId;
   Map<String, String> values;
   Map<String, ChangeId> children;
 
@@ -55,7 +55,7 @@ class StateMonitor {
       return false;
     }
 
-    change_id = m.change_id;
+    changeId = m.changeId;
     values = m.values;
     children = m.children;
 
@@ -64,13 +64,13 @@ class StateMonitor {
 
   @override
   String toString() {
-    return "StateMonitor{ path:${_pathStr(path)}, change_id:$change_id, values:$values, children:$children }";
+    return "StateMonitor{ path:${_pathStr(path)}, changeId:$changeId, values:$values, children:$children }";
   }
 
   StateMonitor._(
       this.path,
       this.bindings,
-      this.change_id,
+      this.changeId,
       this.values,
       this.children,
   );
@@ -104,15 +104,15 @@ class StateMonitor {
 
     assert(unpacker.unpackListLength() == 3);
 
-    // First of the three elements: change_id
-    final change_id = unpacker.unpackInt()!;
+    // First of the three elements: changeId
+    final changeId = unpacker.unpackInt()!;
     final values = _unpackValues(unpacker);
     final children = _unpackChildren(unpacker);
 
     return StateMonitor._(
       path,
       bindings,
-      change_id,
+      changeId,
       values,
       children,
     );
