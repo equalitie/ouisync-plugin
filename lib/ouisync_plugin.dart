@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:messagepack/messagepack.dart';
 
 import 'bindings.dart';
+import 'state_monitor.dart';
+import 'internal/util.dart';
 
 const bool DEBUG_TRACE = false;
 
@@ -240,6 +242,10 @@ class Session {
     final bytes = bindings.network_connected_peers().intoUint8List();
     final unpacker = Unpacker(bytes);
     return ConnectedPeer.decodeAll(unpacker);
+  }
+
+  StateMonitor? getRootStateMonitor() {
+    return StateMonitor.getRoot(bindings);
   }
 
   int get current_protocol_version => bindings.network_current_protocol_version();
@@ -1029,17 +1035,5 @@ extension Utf8Pointer on Pointer<Utf8> {
 
 extension BytesExtension on Bytes {
   // Converts this `Bytes` into `Uint8List` and deallocates the original pointer.
-  Uint8List intoUint8List() {
-    if (ptr != nullptr) {
-      try {
-        // Creating a copy so we can deallocate the pointer.
-        // TODO: is this the right way to do this?
-        return Uint8List.fromList(ptr.asTypedList(len));
-      } finally {
-        freeNative(ptr);
-      }
-    } else {
-      return Uint8List(0);
-    }
-  }
+  Uint8List intoUint8List() => bytesIntoUint8List(this);
 }
