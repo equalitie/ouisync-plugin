@@ -49,14 +49,17 @@ class StateMonitor {
   bool refresh() {
     final m = _getMonitor(bindings, path);
 
-    if (m != null) {
-      change_id = m.change_id;
-      values = m.values;
-      children = m.children;
-      return true;
+    if (m == null) {
+      values.clear();
+      children.clear();
+      return false;
     }
 
-    return false;
+    change_id = m.change_id;
+    values = m.values;
+    children = m.children;
+
+    return true;
   }
 
   @override
