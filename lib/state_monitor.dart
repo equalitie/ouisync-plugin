@@ -147,13 +147,13 @@ class Subscription {
   final int _handle;
   final ReceivePort _port;
 
-  late final Stream<Null> stream;
+  // Broadcast Streams don't buffer, which is what we want given that the
+  // stream doesn't carry any meaningful value except for the information that
+  // a change happened.
+  late final Stream<Null> broadcastStream;
 
-  Subscription._(this._bindings, this._handle, this._port) {
-    final ctrl = StreamController<Null>();
-    _port.listen((Null) { ctrl.add(null); });
-    stream = ctrl.stream;
-  }
+  Subscription._(this._bindings, this._handle, this._port)
+    : broadcastStream = _port.asBroadcastStream().cast<Null>();
 
   void close() {
     _bindings.session_state_monitor_unsubscribe(_handle);
