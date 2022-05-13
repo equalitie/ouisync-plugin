@@ -8,16 +8,16 @@ import 'package:messagepack/messagepack.dart';
 import 'internal/util.dart';
 import 'bindings.dart';
 
-// ChangeId is incremented every time the monitor or any of it's values or
+// Version is incremented every time the monitor or any of it's values or
 // children changes.
-typedef ChangeId = int;
+typedef Version = int;
 
 class StateMonitor {
   List<String> path;
   Bindings bindings;
-  ChangeId changeId;
+  Version version;
   Map<String, String> values;
-  Map<String, ChangeId> children;
+  Map<String, Version> children;
 
   static StateMonitor? getRoot(Bindings bindings) {
     return _getMonitor(bindings, <String>[]);
@@ -55,7 +55,7 @@ class StateMonitor {
       return false;
     }
 
-    changeId = m.changeId;
+    version = m.version;
     values = m.values;
     children = m.children;
 
@@ -64,13 +64,13 @@ class StateMonitor {
 
   @override
   String toString() {
-    return "StateMonitor{ path:${_pathStr(path)}, changeId:$changeId, values:$values, children:$children }";
+    return "StateMonitor{ path:${_pathStr(path)}, version:$version, values:$values, children:$children }";
   }
 
   StateMonitor._(
       this.path,
       this.bindings,
-      this.changeId,
+      this.version,
       this.values,
       this.children,
   );
@@ -104,15 +104,14 @@ class StateMonitor {
 
     assert(unpacker.unpackListLength() == 3);
 
-    // First of the three elements: changeId
-    final changeId = unpacker.unpackInt()!;
+    final version = unpacker.unpackInt()!;
     final values = _unpackValues(unpacker);
     final children = _unpackChildren(unpacker);
 
     return StateMonitor._(
       path,
       bindings,
-      changeId,
+      version,
       values,
       children,
     );
