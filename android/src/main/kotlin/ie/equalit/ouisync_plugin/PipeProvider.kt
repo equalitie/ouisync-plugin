@@ -104,7 +104,7 @@ class PipeProvider: AbstractFileProvider() {
                     writer.close()
                 }
 
-                override fun error(code: String?, message: String?, details: Any?) {
+                override fun error(code: String, message: String?, details: Any?) {
                     Log.e(TAG, channelMethodErrorMessage(code, message, details))
                     writer.close()
                 }
@@ -222,7 +222,7 @@ class BlockingResult<T>: MethodChannel.Result {
         semaphore.release(1)
     }
 
-    override fun error(errorCode: String?, errorMessage: String?, errorDetails: Any?) {
+    override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {
         result = Exception(channelMethodErrorMessage(errorCode, errorMessage, errorDetails))
         semaphore.release(1)
     }
