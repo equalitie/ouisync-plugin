@@ -102,7 +102,10 @@ class StateMonitor {
     //print("Unpacked StateMonitor: $struct");
     //return null;
 
-    assert(unpacker.unpackListLength() == 3);
+    final listLength = unpacker.unpackListLength();
+
+    // Note: assertion happens only in the debug mode.
+    assert(listLength == 3);
 
     final version = unpacker.unpackInt()!;
     final values = _unpackValues(unpacker);
