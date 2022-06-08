@@ -144,9 +144,15 @@ class NativeChannels {
   ///
   /// [path] is the location of the file to preview, including its full name (<path>/<file-name.ext>).
   /// [size] is the lenght of the file (bytes).
-  static Future<void> previewOuiSyncFile(String path, int size) async {
+  static Future<void> previewOuiSyncFile(String path, int size, { bool useDefaultApp = false }) async {
+    var args = {"path": path, "size": size};
+
+    if (useDefaultApp == true) {
+        args["useDefaultApp"] = true;
+    }
+
     final dynamic result = await _channel
-        .invokeMethod('previewFile', {"path": path, "size": size});
+        .invokeMethod('previewFile', args);
     print('previewFile result: $result');
   }
 }

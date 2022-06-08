@@ -54,22 +54,17 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
+
     when (call.method) {
       "shareFile" -> {
         val arguments = call.arguments as HashMap<String, Any>
-        val action = Intent.ACTION_SEND
-        val title = "Share file from OuiSync"
-        startFileAction(arguments, action, title)
-
+        startFileShareAction(arguments)
         result.success("Share file intent started")
 
       }
       "previewFile" -> {
         val arguments = call.arguments as HashMap<String, Any>
-        val action = Intent.ACTION_VIEW
-        val title = "Preview file from OuiSync"
-        startFileAction(arguments, action, title)
-
+        startFilePreviewAction(arguments)
         result.success("View file intent started")
       }
       else -> {
@@ -78,22 +73,39 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     }
   }
 
-  private fun startFileAction(arguments: HashMap<String, Any>, intentAction: String, title: String) {
+  private fun startFilePreviewAction(arguments: HashMap<String, Any>) {
     val path = arguments["path"]
     val size = arguments["size"]
-    
+    val useDefaultApp = arguments["useDefaultApp"]
+
     val uri = Uri.parse("${PipeProvider.CONTENT_URI}$size$path")
 
-    Log.d(javaClass.simpleName,
-      "Uri: ${uri.toString()}")
+    Log.d(javaClass.simpleName, "Uri: ${uri.toString()}")
 
-    Log.d(javaClass.simpleName,
-      "Uri segments: ${uri.pathSegments.toString()}")
+    val intent = getIntentForAction(uri, Intent.ACTION_VIEW)
 
-    Log.d(javaClass.simpleName,
-      "Guessed content type: ${URLConnection.guessContentTypeFromName(uri.toString())} (If null, */* is used)")
+    if (useDefaultApp != null) {
+        // Note that not using Intent.createChooser let's the user choose a
+        // default app and then use that the next time the same file type is
+        // opened.
+        activity?.startActivity(intent)
+    } else {
+        val title = "Preview file from OuiSync"
+        activity?.startActivity(Intent.createChooser(intent, title))
+    }
+  }
 
-    val intent = getIntentForAction(uri, intentAction)
+  private fun startFileShareAction(arguments: HashMap<String, Any>) {
+    val path = arguments["path"]
+    val size = arguments["size"]
+    val title = "Share file from OuiSync"
+
+    val uri = Uri.parse("${PipeProvider.CONTENT_URI}$size$path")
+
+    Log.d(javaClass.simpleName, "Uri: ${uri.toString()}")
+
+    val intent = getIntentForAction(uri, Intent.ACTION_SEND)
+
     activity?.startActivity(Intent.createChooser(intent, title))
   }
 
