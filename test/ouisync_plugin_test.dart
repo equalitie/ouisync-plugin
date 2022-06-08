@@ -76,7 +76,8 @@ void main() {
   });
 
   test('local addrs', () async {
-    print('listener: ${session.listenerLocalAddress}');
+    print('listener: ${session.listenerLocalAddressV4}');
+    print('listener: ${session.listenerLocalAddressV6}');
     print('dht v4:   ${session.dhtLocalAddressV4}');
     print('dht v6:   ${session.dhtLocalAddressV6}');
   });
