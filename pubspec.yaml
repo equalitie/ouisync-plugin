@@ -42,6 +42,10 @@ ffigen:
   name: 'Bindings'
   description: 'Bindings to the ouisync library'
   output: 'lib/bindings.dart'
+  # Generation of bindings may fail if the libclang.so library is not found in
+  # default locations. In such case uncomment the below line and set it to the
+  # correct path. For a bit more info: https://pub.dev/packages/ffigen
+  #llvm-path: ['/usr/lib/llvm-14/lib/libclang.so']
   headers:
     entry-points:
       - './ouisync/target/bindings.h'
