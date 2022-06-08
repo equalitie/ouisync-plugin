@@ -225,8 +225,11 @@ class Session {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
-  String get listenerLocalAddress =>
-      bindings.network_listener_local_addr().cast<Utf8>().intoDartString();
+  String? get listenerLocalAddressV4 =>
+      bindings.network_listener_local_addr_v4().cast<Utf8>().intoNullableDartString();
+
+  String? get listenerLocalAddressV6 =>
+      bindings.network_listener_local_addr_v6().cast<Utf8>().intoNullableDartString();
 
   String? get dhtLocalAddressV4 => bindings
       .network_dht_local_addr_v4()

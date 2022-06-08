@@ -388,22 +388,39 @@ class Bindings {
   late final _network_subscribe =
       _network_subscribePtr.asFunction<int Function(int)>();
 
-  /// Return the local network endpoint as string. The format is
-  /// "<TCP or UDP>:<IPv4 or [IPv6]>:<PORT>". Examples:
+  /// Return the local network endpoint as string. The format is "<TCP or UDP>:<IPv4>:<PORT>". The
+  /// returned pointer may be null if we did not succeed at binding to an IPv4 address.
   ///
-  /// For IPv4: "TCP:192.168.1.1:65522"
-  /// For IPv6: "TCP:[2001:db8::1]:65522"
+  /// Example: "TCP:192.168.1.1:65522"
   ///
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
-  ffi.Pointer<ffi.Int8> network_listener_local_addr() {
-    return _network_listener_local_addr();
+  ffi.Pointer<ffi.Int8> network_listener_local_addr_v4() {
+    return _network_listener_local_addr_v4();
   }
 
-  late final _network_listener_local_addrPtr =
+  late final _network_listener_local_addr_v4Ptr =
       _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
-          'network_listener_local_addr');
-  late final _network_listener_local_addr = _network_listener_local_addrPtr
-      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+          'network_listener_local_addr_v4');
+  late final _network_listener_local_addr_v4 =
+      _network_listener_local_addr_v4Ptr
+          .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+
+  /// Return the local network endpoint as string. The format is "<TCP or UDP>:<[IPv6]>:<PORT>". The
+  /// returned pointer pointer may be null if we did not succeed at binding to an IPv6 address.
+  ///
+  /// Example: "TCP:[2001:db8::1]:65522"
+  ///
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
+  ffi.Pointer<ffi.Int8> network_listener_local_addr_v6() {
+    return _network_listener_local_addr_v6();
+  }
+
+  late final _network_listener_local_addr_v6Ptr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
+          'network_listener_local_addr_v6');
+  late final _network_listener_local_addr_v6 =
+      _network_listener_local_addr_v6Ptr
+          .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
   /// Return the list of peers with which we're connected, serialized with msgpack.
   Bytes network_connected_peers() {
