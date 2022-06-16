@@ -231,13 +231,23 @@ class Session {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
-  String? get listenerLocalAddressV4 => bindings
-      .network_listener_local_addr_v4()
+  String? get tcpListenerLocalAddressV4 => bindings
+      .network_tcp_listener_local_addr_v4()
       .cast<Utf8>()
       .intoNullableDartString();
 
-  String? get listenerLocalAddressV6 => bindings
-      .network_listener_local_addr_v6()
+  String? get tcpListenerLocalAddressV6 => bindings
+      .network_tcp_listener_local_addr_v6()
+      .cast<Utf8>()
+      .intoNullableDartString();
+
+  String? get quicListenerLocalAddressV4 => bindings
+      .network_quic_listener_local_addr_v4()
+      .cast<Utf8>()
+      .intoNullableDartString();
+
+  String? get quicListenerLocalAddressV6 => bindings
+      .network_quic_listener_local_addr_v6()
       .cast<Utf8>()
       .intoNullableDartString();
 
