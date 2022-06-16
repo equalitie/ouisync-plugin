@@ -144,15 +144,15 @@ class NativeChannels {
   ///
   /// [path] is the location of the file to preview, including its full name (<path>/<file-name.ext>).
   /// [size] is the lenght of the file (bytes).
-  static Future<void> previewOuiSyncFile(String path, int size, { bool useDefaultApp = false }) async {
+  static Future<void> previewOuiSyncFile(String path, int size,
+      {bool useDefaultApp = false}) async {
     var args = {"path": path, "size": size};
 
     if (useDefaultApp == true) {
-        args["useDefaultApp"] = true;
+      args["useDefaultApp"] = true;
     }
 
-    final dynamic result = await _channel
-        .invokeMethod('previewFile', args);
+    final dynamic result = await _channel.invokeMethod('previewFile', args);
     print('previewFile result: $result');
   }
 }
@@ -231,11 +231,15 @@ class Session {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
-  String? get listenerLocalAddressV4 =>
-      bindings.network_listener_local_addr_v4().cast<Utf8>().intoNullableDartString();
+  String? get listenerLocalAddressV4 => bindings
+      .network_listener_local_addr_v4()
+      .cast<Utf8>()
+      .intoNullableDartString();
 
-  String? get listenerLocalAddressV6 =>
-      bindings.network_listener_local_addr_v6().cast<Utf8>().intoNullableDartString();
+  String? get listenerLocalAddressV6 => bindings
+      .network_listener_local_addr_v6()
+      .cast<Utf8>()
+      .intoNullableDartString();
 
   String? get dhtLocalAddressV4 => bindings
       .network_dht_local_addr_v4()
@@ -257,8 +261,10 @@ class Session {
     return StateMonitor.getRoot(bindings);
   }
 
-  int get current_protocol_version => bindings.network_current_protocol_version();
-  int get highest_seen_protocol_version => bindings.network_highest_seen_protocol_version();
+  int get current_protocol_version =>
+      bindings.network_current_protocol_version();
+  int get highest_seen_protocol_version =>
+      bindings.network_highest_seen_protocol_version();
 
   /// Closes the session.
   void close() {
@@ -909,7 +915,7 @@ class Error implements Exception {
 // Private helpers to simplify working with the native API:
 
 DynamicLibrary _defaultLib() {
-  final name = 'ouisync';
+  final name = 'ouisync_ffi';
 
   if (Platform.environment.containsKey('FLUTTER_TEST')) {
     if (Platform.isLinux) {
