@@ -13,6 +13,7 @@ import 'package:messagepack/messagepack.dart';
 import 'bindings.dart';
 import 'state_monitor.dart';
 import 'internal/util.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 
 const bool DEBUG_TRACE = false;
 
@@ -928,16 +929,24 @@ DynamicLibrary _defaultLib() {
   final name = 'ouisync_ffi';
 
   if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    late final path;
+
+    if (kReleaseMode) {
+        path = 'ouisync/target/release';
+    } else {
+        path = 'ouisync/target/debug';
+    }
+
     if (Platform.isLinux) {
-      return DynamicLibrary.open('build/test/lib$name.so');
+      return DynamicLibrary.open('$path/lib$name.so');
     }
 
     if (Platform.isMacOS) {
-      return DynamicLibrary.open('build/test/lib$name.dylib');
+      return DynamicLibrary.open('$path/lib$name.dylib');
     }
 
     if (Platform.isWindows) {
-      return DynamicLibrary.open('build/test/$name.dll');
+      return DynamicLibrary.open('$path/$name.dll');
     }
   }
 

@@ -75,13 +75,6 @@ void main() {
     expect(repo.accessMode, equals(AccessMode.write));
   });
 
-  test('local addrs', () async {
-    print('listener: ${session.listenerLocalAddressV4}');
-    print('listener: ${session.listenerLocalAddressV6}');
-    print('dht v4:   ${session.dhtLocalAddressV4}');
-    print('dht v6:   ${session.dhtLocalAddressV6}');
-  });
-
   test('repository sync progress', () async {
     final progress = await repo.syncProgress();
     expect(progress, equals(Progress(0, 0)));
