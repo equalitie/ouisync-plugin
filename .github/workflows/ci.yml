@@ -16,7 +16,8 @@ jobs:
         toolchain: stable
 
     - name: Building ouisync library
-      run: cd ouisync && cargo build --release --lib # --verbose
+      # Building without `--release` because debug is required for `flutter test`
+      run: cd ouisync && cargo build --lib # --verbose
 
     - name: Generate bindings headers
       run: cd ouisync && cargo run --bin bindgen
@@ -50,4 +51,4 @@ jobs:
     - run: flutter pub get
     - run: flutter pub run ffigen
     - run: flutter test
-    - run: flutter build aar --release --no-debug --no-profile
+    - run: flutter build aar --no-release --debug --no-profile
