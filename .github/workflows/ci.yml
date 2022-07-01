@@ -10,29 +10,27 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
+
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    - run: rustup target add armv7-linux-androideabi
-    - run: rustup target add aarch64-linux-android
-    - run: rustup target add i686-linux-android
-    - run: rustup target add x86_64-linux-android
-    - name: Building ouisync library
-      run: cd ouisync && cargo build --release --lib --verbose
-    - name: Generate bindings headers
+
+    - name: Building ouisync library for the test
+      # Building without `--release` because debug is required for `flutter test`
+      run: cd ouisync && cargo build --lib # --verbose
+
+    - name: Generate ./ouisync/target/bindings.h
       run: cd ouisync && cargo run --bin bindgen
-    - name: Release directory contents
-      run: ls /home/runner/work/ouisync-plugin/ouisync-plugin/ouisync/target/release/
-    - name: Creating directories for the library binary for tests
-      run: mkdir -p /home/runner/work/ouisync-plugin/ouisync-plugin/build/test
-    - name: Creating symlink to the library binary for the Flutter tests
-      run: ln -s /home/runner/work/ouisync-plugin/ouisync-plugin/ouisync/target/release/libouisync_ffi.so /home/runner/work/ouisync-plugin/ouisync-plugin/build/test
+
     - uses: actions/setup-java@v1
       with:
         java-version: '12.x'
+
     - uses: nttld/setup-ndk@v1
       with:
           ndk-version: r21e
+
+    - name: Tell the build process where Android NDK is located
       # Note: we should be able to get the NDK directory value from
       #
       # ${{ steps.setup-ndk.outputs.ndk-path }}
@@ -42,13 +40,27 @@ jobs:
       # https://github.com/marketplace/actions/setup-android-ndk
       #
       # but that doesn't seem to work.
-    - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
+      run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
+
     - name: Installing llvm
       run: sudo apt-get install libclang-dev
+
     - uses: subosito/flutter-action@v2
       with:
           channel: 'stable'
-    - run: flutter pub get
-    - run: flutter pub run ffigen
-    - run: flutter test
-    - run: flutter build aar --release --no-debug --no-profile
+
+    - name: Get dependencies
+      run: flutter pub get
+
+    - name: Generate ./lib/bindings.dart based on ./ouisync/target/bindings.h
+      run: flutter pub run ffigen
+
+    - name: Run tests
+      run: flutter test
+
+    - run: rustup target add x86_64-linux-android # armv7-linux-androideabi aarch64-linux-android i686-linux-android
+
+    # TODO: This builds another ouisync library, can we use that for tests
+    # instead of the one built above? (to avoid compiling it twice and thus
+    # slowing down CI).
+    - run: flutter build aar --target-platform=android-x64 --no-release --debug --no-profile
