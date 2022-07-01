@@ -56,4 +56,4 @@ jobs:
       run: flutter pub run ffigen
 
     - run: flutter test
-    - run: flutter build aar --no-release --debug --no-profile
+    - run: flutter build aar --target-platform=android-x64 --no-release --debug --no-profile
