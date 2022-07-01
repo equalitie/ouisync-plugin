@@ -59,5 +59,7 @@ jobs:
       run: flutter test
 
     - run: rustup target add x86_64-linux-android # armv7-linux-androideabi aarch64-linux-android i686-linux-android
-    # Unfortunately this builds the library again
+    # TODO: This builds another ouisync library, can we use that for tests
+    # instead of the one built above? (to avoid compiling it twice and thus
+    # slowing down CI).
     - run: flutter build aar --target-platform=android-x64 --no-release --debug --no-profile
