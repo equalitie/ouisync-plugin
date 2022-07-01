@@ -926,9 +926,15 @@ class Error implements Exception {
 // Private helpers to simplify working with the native API:
 
 DynamicLibrary _defaultLib() {
+  final env = Platform.environment;
+
+  if (env.containsKey('OUISYNC_LIB')) {
+      return DynamicLibrary.open(env['OUISYNC_LIB']!);
+  }
+
   final name = 'ouisync_ffi';
 
-  if (Platform.environment.containsKey('FLUTTER_TEST')) {
+  if (env.containsKey('FLUTTER_TEST')) {
     late final path;
 
     if (kReleaseMode) {
