@@ -19,7 +19,7 @@ jobs:
       # Building without `--release` because debug is required for `flutter test`
       run: cd ouisync && cargo build --lib # --verbose
 
-    - name: Generate bindings headers
+    - name: Generate ./ouisync/target/bindings.h
       run: cd ouisync && cargo run --bin bindgen
 
     - uses: actions/setup-java@v1
@@ -30,6 +30,7 @@ jobs:
       with:
           ndk-version: r21e
 
+    - name: Tell the build process where Android NDK is located
       # Note: we should be able to get the NDK directory value from
       #
       # ${{ steps.setup-ndk.outputs.ndk-path }}
@@ -39,7 +40,7 @@ jobs:
       # https://github.com/marketplace/actions/setup-android-ndk
       #
       # but that doesn't seem to work.
-    - run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
+      run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
 
     - name: Installing llvm
       run: sudo apt-get install libclang-dev
@@ -48,7 +49,11 @@ jobs:
       with:
           channel: 'stable'
 
-    - run: flutter pub get
-    - run: flutter pub run ffigen
+    - name: Get dependencies
+      run: flutter pub get
+
+    - name: Generate ./lib/bindings.dart based on ./ouisync/target/bindings.h
+      run: flutter pub run ffigen
+
     - run: flutter test
     - run: flutter build aar --no-release --debug --no-profile
