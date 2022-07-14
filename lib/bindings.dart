@@ -581,6 +581,23 @@ class Bindings {
   late final _repository_close =
       _repository_closePtr.asFunction<void Function(int, int)>();
 
+  /// Return the RepositoryId of the repository in the low hex format.
+  /// User is responsible for deallocating the returned string.
+  ffi.Pointer<ffi.Int8> repository_low_hex_id(
+    int handle,
+  ) {
+    return _repository_low_hex_id(
+      handle,
+    );
+  }
+
+  late final _repository_low_hex_idPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              SharedHandle_RepositoryHolder)>>('repository_low_hex_id');
+  late final _repository_low_hex_id = _repository_low_hex_idPtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function(int)>();
+
   /// Returns the type of repository entry (file, directory, ...).
   /// If the entry doesn't exists, returns `ENTRY_TYPE_INVALID`, not an error.
   void repository_entry_type(

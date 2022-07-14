@@ -496,6 +496,14 @@ class Repository {
     final unpacker = Unpacker(bytes);
     return Progress.decode(unpacker);
   }
+
+  StateMonitor? stateMonitor() {
+    return StateMonitor.getRoot(bindings)?.child("Repositories")?.child(low_hex_id());
+  }
+
+  String low_hex_id() {
+    return bindings.repository_low_hex_id(handle).cast<Utf8>().intoDartString();
+  }
 }
 
 class ShareToken {
