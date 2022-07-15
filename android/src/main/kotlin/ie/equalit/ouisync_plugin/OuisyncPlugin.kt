@@ -121,6 +121,12 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
 
   override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+    // When the user requests for the app to manage it's own battery
+    // optimization permissions (e.g. when using the `flutter_background`
+    // plugin https://pub.dev/packages/flutter_background), then killing the
+    // app will not stop the native code execution and we have to do it
+    // manually.
+    channel.invokeMethod("stopSession", null)
     channel.setMethodCallHandler(null)
   }
 }

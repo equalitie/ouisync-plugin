@@ -17,9 +17,17 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 
 const bool DEBUG_TRACE = false;
 
+
 /// MethodChannel handler for calling functions
 /// implemented natively, and viceversa.
 class NativeChannels {
+  // We need this "global" `session` variable to be able to close the session
+  // from inside the java/kotlin code when the plugin is detached from the
+  // engine. This is because when the app is set up to ignore battery
+  // optimizations, Android may let the native (c/c++/rust) code running even
+  // after the plugin was detached.
+  static Session? session;
+
   static final MethodChannel _channel = const MethodChannel('ouisync_plugin');
 
   static Repository? _repository;
@@ -91,6 +99,11 @@ class NativeChannels {
         final dstFd = args["dstFd"] as int;
 
         return await _copyFileToRawFd(srcPath, dstFd);
+
+      case 'stopSession':
+        session?.close();
+        session = null;
+        return;
 
       default:
         throw Exception('No method called ${call.method} was found');
@@ -206,7 +219,9 @@ class Session {
         pool.toNativeUtf8(configsDirPath),
         port)));
 
-    return Session._(bindings);
+    final session = Session._(bindings);
+    NativeChannels.session = session;
+    return session;
   }
 
   /// Subscribe to network event notifications.
@@ -284,6 +299,7 @@ class Session {
     }
 
     bindings.session_close();
+    NativeChannels.session = null;
   }
 }
 
