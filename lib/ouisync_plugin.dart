@@ -992,6 +992,10 @@ DynamicLibrary _defaultLib() {
     return DynamicLibrary.open('$name.dll');
   }
 
+  if (Platform.isLinux) {
+    return DynamicLibrary.open('lib$name.so');
+  }
+
   throw Exception('unsupported platform ${Platform.operatingSystem}');
 }
 

@@ -37,6 +37,8 @@ flutter:
         pluginClass: OuisyncPlugin
       windows:
         pluginClass: OuisyncPlugin
+      linux:
+        pluginClass: OuisyncPlugin
 
 ffigen:
   name: 'Bindings'
