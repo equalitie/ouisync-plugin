@@ -514,10 +514,10 @@ class Repository {
   }
 
   StateMonitor? stateMonitor() {
-    return StateMonitor.getRoot(bindings)?.child("Repositories")?.child(low_hex_id());
+    return StateMonitor.getRoot(bindings)?.child("Repositories")?.child(lowHexId());
   }
 
-  String low_hex_id() {
+  String lowHexId() {
     return bindings.repository_low_hex_id(handle).cast<Utf8>().intoDartString();
   }
 }
