@@ -959,7 +959,7 @@ DynamicLibrary _defaultLib() {
   final name = 'ouisync_ffi';
 
   if (env.containsKey('FLUTTER_TEST')) {
-    late final path;
+    late final String path;
 
     if (kReleaseMode) {
         path = 'ouisync/target/release';

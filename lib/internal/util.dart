@@ -1,7 +1,6 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
-import 'package:messagepack/messagepack.dart';
 import '../bindings.dart';
 
 // Convenience function to convert a dart string to a C-style nul-terminated utf-8 encoded

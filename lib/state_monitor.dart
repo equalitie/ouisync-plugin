@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:collection';
-import 'package:ffi/ffi.dart';
 import 'package:messagepack/messagepack.dart';
 import 'internal/util.dart';
 import 'bindings.dart';
@@ -88,12 +87,12 @@ class StateMonitor {
     return bytesIntoUint8List(bindings.session_get_state_monitor(stringToNativeUtf8(path)));
   }
 
-  static StateMonitor? _parse(List<String> path, Bindings bindings, Uint8List messagepack_data) {
-    if (messagepack_data.length == 0) {
+  static StateMonitor? _parse(List<String> path, Bindings bindings, Uint8List messagepackData) {
+    if (messagepackData.isEmpty) {
       return null;
     }
 
-    var unpacker = Unpacker(messagepack_data);
+    var unpacker = Unpacker(messagepackData);
 
     //// Struct is encoded as a list.  Use this for debugging. Note that
     //// unpackList returns a list of `Object?`s so we would need to do a lot
@@ -121,10 +120,10 @@ class StateMonitor {
   }
 
   static Map<String, String> _unpackValues(Unpacker u) {
-    final values_len = u.unpackMapLength();
+    final valuesLen = u.unpackMapLength();
     var values = SplayTreeMap<String, String>();
 
-    for (var i = 0; i < values_len; i++) {
+    for (var i = 0; i < valuesLen; i++) {
       final key = u.unpackString()!;
       values[key] = u.unpackString()!;
     }
@@ -133,12 +132,12 @@ class StateMonitor {
   }
 
   static Map<String, int> _unpackChildren(Unpacker u) {
-    final children_len = u.unpackMapLength();
+    final childrenLen = u.unpackMapLength();
     var children = SplayTreeMap<String, int>();
 
-    for (var i = 0; i < children_len; i++) {
-      final child_name = u.unpackString()!;
-      children[child_name] = u.unpackInt()!;
+    for (var i = 0; i < childrenLen; i++) {
+      final childName = u.unpackString()!;
+      children[childName] = u.unpackInt()!;
     }
 
     return children;
@@ -153,10 +152,10 @@ class Subscription {
   // Broadcast Streams don't buffer, which is what we want given that the
   // stream doesn't carry any meaningful value except for the information that
   // a change happened.
-  late final Stream<Null> broadcastStream;
+  late final Stream<void> broadcastStream;
 
   Subscription._(this._bindings, this._handle, this._port)
-    : broadcastStream = _port.asBroadcastStream().cast<Null>();
+    : broadcastStream = _port.asBroadcastStream().cast<void>();
 
   void close() {
     _bindings.session_state_monitor_unsubscribe(_handle);
