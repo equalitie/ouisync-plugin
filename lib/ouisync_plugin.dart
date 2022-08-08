@@ -562,6 +562,12 @@ class ShareToken {
     return name;
   }
 
+  String repositoryId() {
+    final idPtr = _withPoolSync((pool) =>
+        bindings.share_token_repository_low_hex_id(pool.toNativeUtf8(token)));
+    return idPtr.cast<Utf8>().intoNullableDartString()!;
+  }
+
   /// Get the access mode the share token provides.
   AccessMode get mode => _decodeAccessMode(_withPoolSync(
       (pool) => bindings.share_token_mode(pool.toNativeUtf8(token))))!;

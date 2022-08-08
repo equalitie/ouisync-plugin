@@ -778,6 +778,24 @@ class Bindings {
   late final _share_token_mode =
       _share_token_modePtr.asFunction<int Function(ffi.Pointer<ffi.Int8>)>();
 
+  /// Return the RepositoryId of the repository corresponding to the share token in the low hex format.
+  /// User is responsible for deallocating the returned string.
+  ffi.Pointer<ffi.Int8> share_token_repository_low_hex_id(
+    ffi.Pointer<ffi.Int8> token,
+  ) {
+    return _share_token_repository_low_hex_id(
+      token,
+    );
+  }
+
+  late final _share_token_repository_low_hex_idPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              ffi.Pointer<ffi.Int8>)>>('share_token_repository_low_hex_id');
+  late final _share_token_repository_low_hex_id =
+      _share_token_repository_low_hex_idPtr
+          .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
+
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
   ffi.Pointer<ffi.Int8> share_token_suggested_name(
     ffi.Pointer<ffi.Int8> token,
