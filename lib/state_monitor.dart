@@ -26,6 +26,12 @@ class StateMonitor {
     return _getMonitor(bindings, [...path, name]);
   }
 
+  int? parseIntValue(String name) {
+    final str = values[name];
+    if (str == null) return null;
+    return int.tryParse(str);
+  }
+
   Subscription? subscribe() {
     final recvPort = ReceivePort();
 
