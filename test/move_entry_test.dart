@@ -19,7 +19,7 @@ void main() {
     temp = await io.Directory.systemTemp.createTemp();
     session = await Session.open('${temp.path}/device_id.conf');
     repository = await Repository.create(session,
-        store: ':memory:', password: 'test123');
+        store: '${temp.path}/repo.db', password: 'test123');
   });
 
   tearDown(() async {
