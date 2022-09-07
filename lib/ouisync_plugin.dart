@@ -247,6 +247,16 @@ class Session {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
+  bool addUserProvidedQuicPeer(String addr) {
+    return _withPoolSync((pool) =>
+      bindings.network_add_user_provided_quic_peer(pool.toNativeUtf8(addr)));
+  }
+
+  bool removeUserProvidedQuicPeer(String addr) {
+    return _withPoolSync((pool) =>
+      bindings.network_remove_user_provided_quic_peer(pool.toNativeUtf8(addr)));
+  }
+
   String? get tcpListenerLocalAddressV4 => bindings
       .network_tcp_listener_local_addr_v4()
       .cast<Utf8>()

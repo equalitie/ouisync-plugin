@@ -456,6 +456,59 @@ class Bindings {
       _network_quic_listener_local_addr_v6Ptr
           .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
+  /// Add a QUIC endpoint to which which OuiSync shall attempt to connect. Upon failure or success
+  /// but then disconnection, the endpoint be retried until the below
+  /// `network_remove_user_provided_quic_peer` function with the same endpoint is called.
+  ///
+  /// The endpoint provided to this function may be an IPv4 endpoint in the format
+  /// "192.168.0.1:1234", or an IPv6 address in the format "[2001:db8:1]:1234".
+  ///
+  /// If the format is not parsed correctly, this function returns `false`, in all other cases it
+  /// returns `true`. The latter includes the case when the peer has already been added.
+  bool network_add_user_provided_quic_peer(
+    ffi.Pointer<ffi.Int8> addr,
+  ) {
+    return _network_add_user_provided_quic_peer(
+          addr,
+        ) !=
+        0;
+  }
+
+  late final _network_add_user_provided_quic_peerPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function(ffi.Pointer<ffi.Int8>)>>(
+          'network_add_user_provided_quic_peer');
+  late final _network_add_user_provided_quic_peer =
+      _network_add_user_provided_quic_peerPtr
+          .asFunction<int Function(ffi.Pointer<ffi.Int8>)>();
+
+  /// Remove a QUIC endpoint from the list of user provided QUIC peers (added by the above
+  /// `network_add_user_provided_quic_peer` function). Note that users added by other discovery
+  /// mechanisms are not affected by this function. Also, removing a peer will not cause
+  /// disconnection if the connection has already been established. But if the peers disconnected due
+  /// to other reasons, the connection to this `addr` shall not be reattempted after the call to this
+  /// function.
+  ///
+  /// The endpoint provided to this function may be an IPv4 endpoint in the format
+  /// "192.168.0.1:1234", or an IPv6 address in the format "[2001:db8:1]:1234".
+  ///
+  /// If the format is not parsed correctly, this function returns `false`, in all other cases it
+  /// returns `true`. The latter includes the case when the peer has not been previously added.
+  bool network_remove_user_provided_quic_peer(
+    ffi.Pointer<ffi.Int8> addr,
+  ) {
+    return _network_remove_user_provided_quic_peer(
+          addr,
+        ) !=
+        0;
+  }
+
+  late final _network_remove_user_provided_quic_peerPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function(ffi.Pointer<ffi.Int8>)>>(
+          'network_remove_user_provided_quic_peer');
+  late final _network_remove_user_provided_quic_peer =
+      _network_remove_user_provided_quic_peerPtr
+          .asFunction<int Function(ffi.Pointer<ffi.Int8>)>();
+
   /// Return the list of peers with which we're connected, serialized with msgpack.
   Bytes network_connected_peers() {
     return _network_connected_peers();
