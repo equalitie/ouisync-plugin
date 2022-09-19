@@ -14,7 +14,7 @@ const password = "correct horse battery staple";
 
 class MyApp extends StatefulWidget {
   @override
-  _MyAppState createState() => _MyAppState();
+  State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
@@ -42,7 +42,7 @@ class _MyAppState extends State<MyApp> {
         ? await Repository.open(session, store: store, password: password)
         : await Repository.create(session, store: store, password: password);
 
-    bittorrentDhtEnabled = repo.isDhtEnabled();
+    bittorrentDhtEnabled = repo.isDhtEnabled;
 
     NativeChannels.init(repository: repo);
 
@@ -117,7 +117,7 @@ class _MyAppState extends State<MyApp> {
       repo.disableDht();
     }
 
-    final isEnabled = repo.isDhtEnabled();
+    final isEnabled = repo.isDhtEnabled;
 
     setState(() {
       bittorrentDhtEnabled = isEnabled;
