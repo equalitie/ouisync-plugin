@@ -506,7 +506,7 @@ class Repository {
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
-  bool isDhtEnabled() {
+  bool get isDhtEnabled {
     if (debugTrace) {
       print("Repository.isDhtEnabled");
     }
@@ -530,7 +530,7 @@ class Repository {
     bindings.repository_disable_dht(handle);
   }
 
-  bool isPexEnabled() {
+  bool get isPexEnabled {
     return bindings.repository_is_pex_enabled(handle);
   }
 
