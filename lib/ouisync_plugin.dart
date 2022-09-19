@@ -17,7 +17,6 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 
 const bool DEBUG_TRACE = false;
 
-
 /// MethodChannel handler for calling functions
 /// implemented natively, and viceversa.
 class NativeChannels {
@@ -249,12 +248,12 @@ class Session {
 
   bool addUserProvidedQuicPeer(String addr) {
     return _withPoolSync((pool) =>
-      bindings.network_add_user_provided_quic_peer(pool.toNativeUtf8(addr)));
+        bindings.network_add_user_provided_quic_peer(pool.toNativeUtf8(addr)));
   }
 
   bool removeUserProvidedQuicPeer(String addr) {
-    return _withPoolSync((pool) =>
-      bindings.network_remove_user_provided_quic_peer(pool.toNativeUtf8(addr)));
+    return _withPoolSync((pool) => bindings
+        .network_remove_user_provided_quic_peer(pool.toNativeUtf8(addr)));
   }
 
   String? get tcpListenerLocalAddressV4 => bindings
@@ -301,6 +300,46 @@ class Session {
       bindings.network_current_protocol_version();
   int get highest_seen_protocol_version =>
       bindings.network_highest_seen_protocol_version();
+
+  /// Is network enabled?
+  bool get isNetworkEnabled => bindings.network_is_enabled();
+
+  /// Enable netowork
+  Future<void> enableNetwork() =>
+      _invoke<void>((port) => bindings.network_enable(port));
+
+  /// Disable netowork
+  void disableNetwork() {
+    bindings.network_disable();
+  }
+
+  /// Is port forwarding (UPnP) enabled?
+  bool get isPortForwardingEnabled =>
+      bindings.network_is_port_forwarding_enabled();
+
+  /// Enable port forwarding (UPnP)
+  void enablePortForwarding() {
+    bindings.network_enable_port_forwarding();
+  }
+
+  /// Disable port forwarding (UPnP)
+  void disablePortForwarding() {
+    bindings.network_disable_port_forwarding();
+  }
+
+  /// Is local discovery enabled?
+  bool get isLocalDiscoveryEnabled =>
+      bindings.network_is_local_discovery_enabled();
+
+  /// Enable local discovery
+  void enableLocalDiscovery() {
+    bindings.network_enable_local_discovery();
+  }
+
+  /// Disable local discovery
+  void disableLocalDiscovery() {
+    bindings.network_disable_local_discovery();
+  }
 
   /// Closes the session.
   void close() {
@@ -490,6 +529,18 @@ class Repository {
     bindings.repository_disable_dht(handle);
   }
 
+  bool isPexEnabled() {
+    return bindings.repository_is_pex_enabled(handle);
+  }
+
+  void enablePex() {
+    bindings.repository_enable_pex(handle);
+  }
+
+  void disablePex() {
+    bindings.repository_disable_pex(handle);
+  }
+
   AccessMode get accessMode {
     if (DEBUG_TRACE) {
       print("Repository.get accessMode");
@@ -524,7 +575,9 @@ class Repository {
   }
 
   StateMonitor? stateMonitor() {
-    return StateMonitor.getRoot(bindings)?.child("Repositories")?.child(lowHexId());
+    return StateMonitor.getRoot(bindings)
+        ?.child("Repositories")
+        ?.child(lowHexId());
   }
 
   String lowHexId() {
@@ -969,7 +1022,7 @@ DynamicLibrary _defaultLib() {
   final env = Platform.environment;
 
   if (env.containsKey('OUISYNC_LIB')) {
-      return DynamicLibrary.open(env['OUISYNC_LIB']!);
+    return DynamicLibrary.open(env['OUISYNC_LIB']!);
   }
 
   final name = 'ouisync_ffi';
@@ -978,9 +1031,9 @@ DynamicLibrary _defaultLib() {
     late final String path;
 
     if (kReleaseMode) {
-        path = 'ouisync/target/release';
+      path = 'ouisync/target/release';
     } else {
-        path = 'ouisync/target/debug';
+      path = 'ouisync/target/debug';
     }
 
     if (Platform.isLinux) {

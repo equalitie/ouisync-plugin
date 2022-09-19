@@ -570,6 +570,106 @@ class Bindings {
   late final _network_dht_local_addr_v6 = _network_dht_local_addr_v6Ptr
       .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
+  /// Enables the entire network
+  void network_enable(
+    int port,
+  ) {
+    return _network_enable(
+      port,
+    );
+  }
+
+  late final _network_enablePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(Port)>>('network_enable');
+  late final _network_enable =
+      _network_enablePtr.asFunction<void Function(int)>();
+
+  /// Disables the entire network
+  void network_disable() {
+    return _network_disable();
+  }
+
+  late final _network_disablePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('network_disable');
+  late final _network_disable =
+      _network_disablePtr.asFunction<void Function()>();
+
+  /// Checks whether network is enabled
+  bool network_is_enabled() {
+    return _network_is_enabled() != 0;
+  }
+
+  late final _network_is_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function()>>('network_is_enabled');
+  late final _network_is_enabled =
+      _network_is_enabledPtr.asFunction<int Function()>();
+
+  /// Enables port forwarding (UPnP)
+  void network_enable_port_forwarding() {
+    return _network_enable_port_forwarding();
+  }
+
+  late final _network_enable_port_forwardingPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          'network_enable_port_forwarding');
+  late final _network_enable_port_forwarding =
+      _network_enable_port_forwardingPtr.asFunction<void Function()>();
+
+  /// Disables port forwarding (UPnP)
+  void network_disable_port_forwarding() {
+    return _network_disable_port_forwarding();
+  }
+
+  late final _network_disable_port_forwardingPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          'network_disable_port_forwarding');
+  late final _network_disable_port_forwarding =
+      _network_disable_port_forwardingPtr.asFunction<void Function()>();
+
+  /// Checks whether port forwarding (UPnP) is enabled
+  bool network_is_port_forwarding_enabled() {
+    return _network_is_port_forwarding_enabled() != 0;
+  }
+
+  late final _network_is_port_forwarding_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function()>>(
+          'network_is_port_forwarding_enabled');
+  late final _network_is_port_forwarding_enabled =
+      _network_is_port_forwarding_enabledPtr.asFunction<int Function()>();
+
+  /// Enables local discovery
+  void network_enable_local_discovery() {
+    return _network_enable_local_discovery();
+  }
+
+  late final _network_enable_local_discoveryPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          'network_enable_local_discovery');
+  late final _network_enable_local_discovery =
+      _network_enable_local_discoveryPtr.asFunction<void Function()>();
+
+  /// Disables local discovery
+  void network_disable_local_discovery() {
+    return _network_disable_local_discovery();
+  }
+
+  late final _network_disable_local_discoveryPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          'network_disable_local_discovery');
+  late final _network_disable_local_discovery =
+      _network_disable_local_discoveryPtr.asFunction<void Function()>();
+
+  /// Checks whether local discovery is enabled
+  bool network_is_local_discovery_enabled() {
+    return _network_is_local_discovery_enabled() != 0;
+  }
+
+  late final _network_is_local_discovery_enabledPtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function()>>(
+          'network_is_local_discovery_enabled');
+  late final _network_is_local_discovery_enabled =
+      _network_is_local_discovery_enabledPtr.asFunction<int Function()>();
+
   /// Creates a new repository.
   void repository_create(
     ffi.Pointer<ffi.Int8> store,
@@ -758,6 +858,50 @@ class Bindings {
       'repository_disable_dht');
   late final _repository_disable_dht =
       _repository_disable_dhtPtr.asFunction<void Function(int)>();
+
+  bool repository_is_pex_enabled(
+    int handle,
+  ) {
+    return _repository_is_pex_enabled(
+          handle,
+        ) !=
+        0;
+  }
+
+  late final _repository_is_pex_enabledPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Uint8 Function(
+              SharedHandle_RepositoryHolder)>>('repository_is_pex_enabled');
+  late final _repository_is_pex_enabled =
+      _repository_is_pex_enabledPtr.asFunction<int Function(int)>();
+
+  void repository_enable_pex(
+    int handle,
+  ) {
+    return _repository_enable_pex(
+      handle,
+    );
+  }
+
+  late final _repository_enable_pexPtr = _lookup<
+          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
+      'repository_enable_pex');
+  late final _repository_enable_pex =
+      _repository_enable_pexPtr.asFunction<void Function(int)>();
+
+  void repository_disable_pex(
+    int handle,
+  ) {
+    return _repository_disable_pex(
+      handle,
+    );
+  }
+
+  late final _repository_disable_pexPtr = _lookup<
+          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
+      'repository_disable_pex');
+  late final _repository_disable_pex =
+      _repository_disable_pexPtr.asFunction<void Function(int)>();
 
   void repository_create_share_token(
     int handle,
