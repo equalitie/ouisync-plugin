@@ -14,7 +14,7 @@ import 'state_monitor.dart';
 import 'internal/util.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 
-const bool DEBUG_TRACE = false;
+const bool debugTrace = false;
 
 /// MethodChannel handler for calling functions
 /// implemented natively, and viceversa.
@@ -206,7 +206,7 @@ class Session {
   /// configuration files shall be stored. If it doesn't exists, it will be
   /// created.
   static Future<Session> open(String configsDirPath) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Session.open $configsDirPath");
     }
 
@@ -224,7 +224,7 @@ class Session {
 
   /// Subscribe to network event notifications.
   Subscription subscribeToNetworkEvents(void Function(NetworkEvent) callback) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Session.subscribeToNetworkEvents");
     }
 
@@ -302,14 +302,6 @@ class Session {
   int get highestSeenProtocolVersion =>
       bindings.network_highest_seen_protocol_version();
 
-  @Deprecated('Use currentProtocolVersion')
-  int get current_protocol_version =>
-      bindings.network_current_protocol_version();
-
-  @Deprecated('Use highestSeenProtocolVersion')
-  int get highest_seen_protocol_version =>
-      bindings.network_highest_seen_protocol_version();
-
   /// Is network enabled?
   bool get isNetworkEnabled => bindings.network_is_enabled();
 
@@ -352,7 +344,7 @@ class Session {
 
   /// Closes the session.
   void close() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Session.close");
     }
 
@@ -419,7 +411,7 @@ class Repository {
       {required String store,
       required String password,
       ShareToken? shareToken}) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.create $store");
     }
 
@@ -437,7 +429,7 @@ class Repository {
   /// Opens an existing repository.
   static Future<Repository> open(Session session,
       {required String store, String? password}) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.open $store");
     }
 
@@ -452,7 +444,7 @@ class Repository {
   /// Close the repository. Accessing the repository after it's been closed is undefined behaviour
   /// (likely crash).
   Future<void> close() async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.close");
     }
 
@@ -469,7 +461,7 @@ class Repository {
   /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
   /// doesn't exists.
   Future<EntryType?> type(String path) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.type $path");
     }
 
@@ -480,7 +472,7 @@ class Repository {
 
   /// Returns whether the entry (file or directory) at [path] exists.
   Future<bool> exists(String path) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.exists $path");
     }
 
@@ -489,7 +481,7 @@ class Repository {
 
   /// Move/rename the file/directory from [src] to [dst].
   Future<void> move(String src, String dst) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.move $src -> $dst");
     }
 
@@ -501,7 +493,7 @@ class Repository {
   /// Subscribe to change notifications from this repository. The returned handle can be used to
   /// cancel the subscription.
   Subscription subscribe(void Function() callback) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.subscribe");
     }
 
@@ -515,7 +507,7 @@ class Repository {
   }
 
   bool isDhtEnabled() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.isDhtEnabled");
     }
 
@@ -523,7 +515,7 @@ class Repository {
   }
 
   void enableDht() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.enableDht");
     }
 
@@ -531,7 +523,7 @@ class Repository {
   }
 
   void disableDht() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.disableDht");
     }
 
@@ -551,7 +543,7 @@ class Repository {
   }
 
   AccessMode get accessMode {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.get accessMode");
     }
 
@@ -562,7 +554,7 @@ class Repository {
   /// specify repository name which will be included in the token and suggested to the recipient.
   Future<ShareToken> createShareToken(
       {required AccessMode accessMode, String? name}) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Repository.createShareToken");
     }
 
@@ -785,7 +777,7 @@ class Directory with IterableMixin<DirEntry> {
   ///
   /// Note: don't forget to [close] it when no longer needed.
   static Future<Directory> open(Repository repo, String path) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Directory.open $path");
     }
 
@@ -799,7 +791,7 @@ class Directory with IterableMixin<DirEntry> {
   ///
   /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<void> create(Repository repo, String path) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Directory.create $path");
     }
 
@@ -812,7 +804,7 @@ class Directory with IterableMixin<DirEntry> {
   /// content of the directory is removed as well.
   static Future<void> remove(Repository repo, String path,
       {bool recursive = false}) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Directory.remove $path");
     }
 
@@ -826,7 +818,7 @@ class Directory with IterableMixin<DirEntry> {
 
   /// Closes this directory.
   void close() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("Directory.close");
     }
 
@@ -874,7 +866,7 @@ class File {
   ///
   /// Throws if [path] doesn't exists or is a directory.
   static Future<File> open(Repository repo, String path) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.open");
     }
 
@@ -888,7 +880,7 @@ class File {
   ///
   /// Throws if [path] already exists of if the parent of [path] doesn't exists.
   static Future<File> create(Repository repo, String path) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.create $path");
     }
 
@@ -900,7 +892,7 @@ class File {
 
   /// Removes (deletes) a file at [path] from [repo].
   static Future<void> remove(Repository repo, String path) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.remove $path");
     }
 
@@ -910,7 +902,7 @@ class File {
 
   /// Flushed and closes this file.
   Future<void> close() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.close");
     }
 
@@ -919,7 +911,7 @@ class File {
 
   /// Flushes any pending writes to this file.
   Future<void> flush() {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.flush");
     }
 
@@ -953,7 +945,7 @@ class File {
   /// }
   /// ```
   Future<List<int>> read(int offset, int size) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.read");
     }
 
@@ -970,7 +962,7 @@ class File {
 
   /// Write [data] to this file starting at [offset].
   Future<void> write(int offset, List<int> data) async {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.write");
     }
 
@@ -987,7 +979,7 @@ class File {
 
   /// Truncate the file to [size] bytes.
   Future<void> truncate(int size) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.truncate");
     }
 
@@ -996,7 +988,7 @@ class File {
 
   /// Returns the length of this file in bytes.
   Future<int> get length {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.length");
     }
 
@@ -1005,7 +997,7 @@ class File {
 
   /// Copy the contents of the file into the provided raw file descriptor.
   Future<void> copyToRawFd(int fd) {
-    if (DEBUG_TRACE) {
+    if (debugTrace) {
       print("File.copyToRawFd");
     }
 

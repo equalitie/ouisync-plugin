@@ -1,5 +1,5 @@
 import 'dart:io' as io;
-import 'package:chunked_stream/chunked_stream.dart';
+import 'package:async/async.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:ouisync_plugin/ouisync_plugin.dart';
@@ -42,7 +42,7 @@ class _MyAppState extends State<MyApp> {
         ? await Repository.open(session, store: store, password: password)
         : await Repository.create(session, store: store, password: password);
 
-    bittorrentDhtEnabled = await repo.isDhtEnabled();
+    bittorrentDhtEnabled = repo.isDhtEnabled();
 
     NativeChannels.init(repository: repo);
 
@@ -169,9 +169,9 @@ class _MyAppState extends State<MyApp> {
     int offset = 0;
 
     try {
-      final streamReader = ChunkedStreamIterator(stream);
+      final streamReader = ChunkedStreamReader(stream);
       while (true) {
-        final buffer = await streamReader.read(64000);
+        final buffer = await streamReader.readChunk(64000);
         print('Buffer size: ${buffer.length} - offset: $offset');
 
         if (buffer.isEmpty) {
