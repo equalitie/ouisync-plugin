@@ -4,7 +4,6 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
@@ -276,11 +275,13 @@ class Session {
       .cast<Utf8>()
       .intoNullableDartString();
 
+  @Deprecated('Use quicListenerLocalAddressV4')
   String? get dhtLocalAddressV4 => bindings
       .network_dht_local_addr_v4()
       .cast<Utf8>()
       .intoNullableDartString();
 
+  @Deprecated('Use quicListenerLocalAddressV6')
   String? get dhtLocalAddressV6 => bindings
       .network_dht_local_addr_v6()
       .cast<Utf8>()
@@ -296,8 +297,16 @@ class Session {
     return StateMonitor.getRoot(bindings);
   }
 
+  int get currentProtocolVersion => bindings.network_current_protocol_version();
+
+  int get highestSeenProtocolVersion =>
+      bindings.network_highest_seen_protocol_version();
+
+  @Deprecated('Use currentProtocolVersion')
   int get current_protocol_version =>
       bindings.network_current_protocol_version();
+
+  @Deprecated('Use highestSeenProtocolVersion')
   int get highest_seen_protocol_version =>
       bindings.network_highest_seen_protocol_version();
 
