@@ -55,6 +55,9 @@ jobs:
     - name: Generate ./lib/bindings.dart based on ./ouisync/target/bindings.h
       run: flutter pub run ffigen
 
+    - name: Analyze
+      run: flutter analyze
+
     - name: Run tests
       run: flutter test
 
