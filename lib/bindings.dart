@@ -571,18 +571,13 @@ class Bindings {
       .asFunction<ffi.Pointer<ffi.Int8> Function()>();
 
   /// Enables the entire network
-  void network_enable(
-    int port,
-  ) {
-    return _network_enable(
-      port,
-    );
+  void network_enable() {
+    return _network_enable();
   }
 
   late final _network_enablePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(Port)>>('network_enable');
-  late final _network_enable =
-      _network_enablePtr.asFunction<void Function(int)>();
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>('network_enable');
+  late final _network_enable = _network_enablePtr.asFunction<void Function()>();
 
   /// Disables the entire network
   void network_disable() {

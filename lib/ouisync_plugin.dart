@@ -306,8 +306,9 @@ class Session {
   bool get isNetworkEnabled => bindings.network_is_enabled();
 
   /// Enable netowork
-  Future<void> enableNetwork() =>
-      _invoke<void>((port) => bindings.network_enable(port));
+  void enableNetwork() {
+    bindings.network_enable();
+  }
 
   /// Disable netowork
   void disableNetwork() {
