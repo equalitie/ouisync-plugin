@@ -35,20 +35,14 @@ class StateMonitor {
   Subscription? subscribe() {
     final recvPort = ReceivePort();
 
-    final subscriptionHandle =
-        bindings.session_state_monitor_subscribe(
-            stringToNativeUtf8(_pathStr(path)),
-            recvPort.sendPort.nativePort);
+    final subscriptionHandle = bindings.session_state_monitor_subscribe(
+        stringToNativeUtf8(_pathStr(path)), recvPort.sendPort.nativePort);
 
     if (subscriptionHandle == 0) {
       return null;
     }
 
-    return Subscription._(
-        bindings,
-        subscriptionHandle,
-        recvPort
-    );
+    return Subscription._(bindings, subscriptionHandle, recvPort);
   }
 
   bool refresh() {
@@ -73,11 +67,11 @@ class StateMonitor {
   }
 
   StateMonitor._(
-      this.path,
-      this.bindings,
-      this.version,
-      this.values,
-      this.children,
+    this.path,
+    this.bindings,
+    this.version,
+    this.values,
+    this.children,
   );
 
   static String _pathStr(List<String> path) {
@@ -90,10 +84,12 @@ class StateMonitor {
   }
 
   static Uint8List _getMonitorBytes(Bindings bindings, String path) {
-    return bytesIntoUint8List(bindings.session_get_state_monitor(stringToNativeUtf8(path)));
+    return bytesIntoUint8List(
+        bindings.session_get_state_monitor(stringToNativeUtf8(path)));
   }
 
-  static StateMonitor? _parse(List<String> path, Bindings bindings, Uint8List messagepackData) {
+  static StateMonitor? _parse(
+      List<String> path, Bindings bindings, Uint8List messagepackData) {
     if (messagepackData.isEmpty) {
       return null;
     }
@@ -161,7 +157,7 @@ class Subscription {
   late final Stream<void> broadcastStream;
 
   Subscription._(this._bindings, this._handle, this._port)
-    : broadcastStream = _port.asBroadcastStream().cast<void>();
+      : broadcastStream = _port.asBroadcastStream().cast<void>();
 
   void close() {
     _bindings.session_state_monitor_unsubscribe(_handle);
