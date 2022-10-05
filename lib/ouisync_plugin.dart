@@ -275,18 +275,6 @@ class Session {
       .cast<Utf8>()
       .intoNullableDartString();
 
-  @Deprecated('Use quicListenerLocalAddressV4')
-  String? get dhtLocalAddressV4 => bindings
-      .network_dht_local_addr_v4()
-      .cast<Utf8>()
-      .intoNullableDartString();
-
-  @Deprecated('Use quicListenerLocalAddressV6')
-  String? get dhtLocalAddressV6 => bindings
-      .network_dht_local_addr_v6()
-      .cast<Utf8>()
-      .intoNullableDartString();
-
   List<ConnectedPeer> get connectedPeers {
     final bytes = bindings.network_connected_peers().intoUint8List();
     final unpacker = Unpacker(bytes);
@@ -301,9 +289,6 @@ class Session {
 
   int get highestSeenProtocolVersion =>
       bindings.network_highest_seen_protocol_version();
-
-  /// Is network enabled?
-  bool get isNetworkEnabled => bindings.network_is_enabled();
 
   /// Enable netowork
   void enableNetwork() {

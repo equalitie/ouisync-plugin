@@ -542,34 +542,6 @@ class Bindings {
   late final _network_highest_seen_protocol_version =
       _network_highest_seen_protocol_versionPtr.asFunction<int Function()>();
 
-  /// Returns the local dht address for ipv4, if available.
-  /// See [`network_local_addr`] for the format details.
-  ///
-  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
-  ffi.Pointer<ffi.Int8> network_dht_local_addr_v4() {
-    return _network_dht_local_addr_v4();
-  }
-
-  late final _network_dht_local_addr_v4Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
-          'network_dht_local_addr_v4');
-  late final _network_dht_local_addr_v4 = _network_dht_local_addr_v4Ptr
-      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
-
-  /// Returns the local dht address for ipv6, if available.
-  /// See [`network_local_addr`] for the format details.
-  ///
-  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
-  ffi.Pointer<ffi.Int8> network_dht_local_addr_v6() {
-    return _network_dht_local_addr_v6();
-  }
-
-  late final _network_dht_local_addr_v6Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
-          'network_dht_local_addr_v6');
-  late final _network_dht_local_addr_v6 = _network_dht_local_addr_v6Ptr
-      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
-
   /// Enables the entire network
   void network_enable() {
     return _network_enable();
@@ -588,16 +560,6 @@ class Bindings {
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('network_disable');
   late final _network_disable =
       _network_disablePtr.asFunction<void Function()>();
-
-  /// Checks whether network is enabled
-  bool network_is_enabled() {
-    return _network_is_enabled() != 0;
-  }
-
-  late final _network_is_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Uint8 Function()>>('network_is_enabled');
-  late final _network_is_enabled =
-      _network_is_enabledPtr.asFunction<int Function()>();
 
   /// Enables port forwarding (UPnP)
   void network_enable_port_forwarding() {
@@ -1163,9 +1125,6 @@ abstract class ErrorCode {
 
   /// The indended operation is not supported
   static const int operationNotSupported = 8;
-
-  /// Network error
-  static const int network = 9;
 
   /// Failed to read from or write into the device ID config file
   static const int deviceIdConfig = 10;
