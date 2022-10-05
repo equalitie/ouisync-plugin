@@ -222,6 +222,21 @@ class Session {
     return session;
   }
 
+  /// Binds network to the specified addresses.
+  Future<void> bindNetwork({
+    String? quicV4,
+    String? quicV6,
+    String? tcpV4,
+    String? tcpV6,
+  }) =>
+      _withPool((pool) => _invoke<void>((port) => bindings.network_bind(
+            quicV4 != null ? pool.toNativeUtf8(quicV4) : nullptr,
+            quicV6 != null ? pool.toNativeUtf8(quicV6) : nullptr,
+            tcpV4 != null ? pool.toNativeUtf8(tcpV4) : nullptr,
+            tcpV6 != null ? pool.toNativeUtf8(tcpV6) : nullptr,
+            port,
+          )));
+
   /// Subscribe to network event notifications.
   Subscription subscribeToNetworkEvents(void Function(NetworkEvent) callback) {
     if (debugTrace) {
@@ -289,16 +304,6 @@ class Session {
 
   int get highestSeenProtocolVersion =>
       bindings.network_highest_seen_protocol_version();
-
-  /// Enable netowork
-  void enableNetwork() {
-    bindings.network_enable();
-  }
-
-  /// Disable netowork
-  void disableNetwork() {
-    bindings.network_disable();
-  }
 
   /// Is port forwarding (UPnP) enabled?
   bool get isPortForwardingEnabled =>

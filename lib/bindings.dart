@@ -373,6 +373,39 @@ class Bindings {
   late final _file_copy_to_raw_fd =
       _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int)>();
 
+  /// Binds the network to the specified addresses.
+  /// Rebinds if already bound. If any of the addresses is null, that particular protocol/family
+  /// combination is not bound. If all are null the network is disabled.
+  /// Yields `Ok` if the binding was successful, `Err` if any of the given addresses failed to
+  /// parse or are were of incorrect type (e.g. IPv4 instead of IpV6).
+  void network_bind(
+    ffi.Pointer<ffi.Int8> quic_v4,
+    ffi.Pointer<ffi.Int8> quic_v6,
+    ffi.Pointer<ffi.Int8> tcp_v4,
+    ffi.Pointer<ffi.Int8> tcp_v6,
+    int port,
+  ) {
+    return _network_bind(
+      quic_v4,
+      quic_v6,
+      tcp_v4,
+      tcp_v6,
+      port,
+    );
+  }
+
+  late final _network_bindPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Int8>,
+              Port_Result)>>('network_bind');
+  late final _network_bind = _network_bindPtr.asFunction<
+      void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>,
+          ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
+
   /// Subscribe to network event notifications.
   int network_subscribe(
     int port,
@@ -541,25 +574,6 @@ class Bindings {
           'network_highest_seen_protocol_version');
   late final _network_highest_seen_protocol_version =
       _network_highest_seen_protocol_versionPtr.asFunction<int Function()>();
-
-  /// Enables the entire network
-  void network_enable() {
-    return _network_enable();
-  }
-
-  late final _network_enablePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('network_enable');
-  late final _network_enable = _network_enablePtr.asFunction<void Function()>();
-
-  /// Disables the entire network
-  void network_disable() {
-    return _network_disable();
-  }
-
-  late final _network_disablePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('network_disable');
-  late final _network_disable =
-      _network_disablePtr.asFunction<void Function()>();
 
   /// Enables port forwarding (UPnP)
   void network_enable_port_forwarding() {
