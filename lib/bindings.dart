@@ -982,6 +982,24 @@ class Bindings {
       _share_token_repository_low_hex_idPtr
           .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
 
+  /// Returns the info-hash of the repository corresponding to the share token formatted as hex
+  /// string.
+  /// User is responsible for deallocating the returned string.
+  ffi.Pointer<ffi.Int8> share_token_info_hash(
+    ffi.Pointer<ffi.Int8> token,
+  ) {
+    return _share_token_info_hash(
+      token,
+    );
+  }
+
+  late final _share_token_info_hashPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              ffi.Pointer<ffi.Int8>)>>('share_token_info_hash');
+  late final _share_token_info_hash = _share_token_info_hashPtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
+
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
   ffi.Pointer<ffi.Int8> share_token_suggested_name(
     ffi.Pointer<ffi.Int8> token,

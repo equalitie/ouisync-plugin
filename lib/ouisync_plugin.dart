@@ -621,11 +621,16 @@ class ShareToken {
     return name;
   }
 
+  @Deprecated("use infoHash instead")
   String repositoryId() {
     final idPtr = _withPoolSync((pool) =>
         bindings.share_token_repository_low_hex_id(pool.toNativeUtf8(token)));
     return idPtr.cast<Utf8>().intoNullableDartString()!;
   }
+
+  String get infoHash => _withPoolSync(
+        (pool) => bindings.share_token_info_hash(pool.toNativeUtf8(token)),
+      ).cast<Utf8>().intoNullableDartString()!;
 
   /// Get the access mode the share token provides.
   AccessMode get mode => _decodeAccessMode(_withPoolSync(
