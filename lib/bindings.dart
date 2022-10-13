@@ -722,6 +722,24 @@ class Bindings {
   late final _repository_low_hex_id = _repository_low_hex_idPtr
       .asFunction<ffi.Pointer<ffi.Int8> Function(int)>();
 
+  /// Return the info-hash of the repository formatted as hex string. This can be used as a globally
+  /// unique, non-secret identifier of the repository.
+  /// User is responsible for deallocating the returned string.
+  ffi.Pointer<ffi.Int8> repository_info_hash(
+    int handle,
+  ) {
+    return _repository_info_hash(
+      handle,
+    );
+  }
+
+  late final _repository_info_hashPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              SharedHandle_RepositoryHolder)>>('repository_info_hash');
+  late final _repository_info_hash = _repository_info_hashPtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function(int)>();
+
   /// Returns the type of repository entry (file, directory, ...).
   /// If the entry doesn't exists, returns `ENTRY_TYPE_INVALID`, not an error.
   void repository_entry_type(

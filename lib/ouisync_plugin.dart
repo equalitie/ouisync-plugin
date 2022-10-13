@@ -569,12 +569,16 @@ class Repository {
   StateMonitor? stateMonitor() {
     return StateMonitor.getRoot(bindings)
         ?.child("Repositories")
-        ?.child(lowHexId());
+        ?.child(infoHash);
   }
 
+  @Deprecated('use infoHash instead')
   String lowHexId() {
     return bindings.repository_low_hex_id(handle).cast<Utf8>().intoDartString();
   }
+
+  String get infoHash =>
+      bindings.repository_info_hash(handle).cast<Utf8>().intoDartString();
 }
 
 class ShareToken {
