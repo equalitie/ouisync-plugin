@@ -1071,10 +1071,9 @@ class Bindings {
   late final _session_open = _session_openPtr.asFunction<
       void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Int8>, int)>();
 
-  /// Retrieve a serialized state monitor corresponding to the `path`.  The path is in the form
-  /// "a:b:c". An empty string returns the "root" state monitor.
+  /// Retrieve a serialized state monitor corresponding to the `path`.
   Bytes session_get_state_monitor(
-    ffi.Pointer<ffi.Int8> path,
+    ffi.Pointer<ffi.Uint8> path,
     int path_len,
   ) {
     return _session_get_state_monitor(
@@ -1085,15 +1084,14 @@ class Bindings {
 
   late final _session_get_state_monitorPtr = _lookup<
       ffi.NativeFunction<
-          Bytes Function(
-              ffi.Pointer<ffi.Int8>, ffi.Uint64)>>('session_get_state_monitor');
+          Bytes Function(ffi.Pointer<ffi.Uint8>,
+              ffi.Uint64)>>('session_get_state_monitor');
   late final _session_get_state_monitor = _session_get_state_monitorPtr
-      .asFunction<Bytes Function(ffi.Pointer<ffi.Int8>, int)>();
+      .asFunction<Bytes Function(ffi.Pointer<ffi.Uint8>, int)>();
 
-  /// Subscribe to "on change" events happening inside a monitor corresponding to the `path`.  The
-  /// path is in the form "a:b:c" and an empty string represents the "root" state monitor.
+  /// Subscribe to "on change" events happening inside a monitor corresponding to the `path`.
   int session_state_monitor_subscribe(
-    ffi.Pointer<ffi.Int8> path,
+    ffi.Pointer<ffi.Uint8> path,
     int path_len,
     int port,
   ) {
@@ -1106,11 +1104,11 @@ class Bindings {
 
   late final _session_state_monitor_subscribePtr = _lookup<
       ffi.NativeFunction<
-          UniqueNullableHandle_JoinHandle Function(ffi.Pointer<ffi.Int8>,
+          UniqueNullableHandle_JoinHandle Function(ffi.Pointer<ffi.Uint8>,
               ffi.Uint64, Port)>>('session_state_monitor_subscribe');
   late final _session_state_monitor_subscribe =
       _session_state_monitor_subscribePtr
-          .asFunction<int Function(ffi.Pointer<ffi.Int8>, int, int)>();
+          .asFunction<int Function(ffi.Pointer<ffi.Uint8>, int, int)>();
 
   /// Unsubscribe from the above "on change" StateMonitor events.
   void session_state_monitor_unsubscribe(
