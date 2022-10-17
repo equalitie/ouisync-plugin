@@ -111,7 +111,7 @@ class StateMonitor {
   );
 
   static _withPointer(Uint8List data, fn) {
-    var buffer = ffi.malloc<Int8>(data.length);
+    var buffer = ffi.malloc<Uint8>(data.length);
 
     try {
       buffer.asTypedList(data.length).setAll(0, data);
