@@ -552,6 +552,18 @@ class Bindings {
   late final _network_connected_peers =
       _network_connected_peersPtr.asFunction<Bytes Function()>();
 
+  /// Returns our runtime id formatted as a hex string.
+  /// The caller is responsible for deallocating it.
+  ffi.Pointer<ffi.Int8> network_this_runtime_id() {
+    return _network_this_runtime_id();
+  }
+
+  late final _network_this_runtime_idPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Int8> Function()>>(
+          'network_this_runtime_id');
+  late final _network_this_runtime_id = _network_this_runtime_idPtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function()>();
+
   /// Return our currently used protocol version number.
   int network_current_protocol_version() {
     return _network_current_protocol_version();

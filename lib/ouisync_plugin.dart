@@ -199,8 +199,15 @@ class FileCache {
 /// and closed at the end. There can be only one session at the time.
 class Session {
   final Bindings bindings;
+  final EventStreamController<NetworkEvent> _networkEventsController;
 
-  Session._(this.bindings);
+  Session._(this.bindings)
+      : _networkEventsController = EventStreamController(
+          bindings: bindings,
+          subscribe: (sendPort) =>
+              bindings.network_subscribe(sendPort.nativePort),
+          decode: _decodeNetworkEvent,
+        );
 
   /// Opens a new session. [configsDirPath] is a path to a directory where
   /// configuration files shall be stored. If it doesn't exists, it will be
@@ -219,6 +226,7 @@ class Session {
 
     final session = Session._(bindings);
     NativeChannels.session = session;
+
     return session;
   }
 
@@ -238,6 +246,7 @@ class Session {
           )));
 
   /// Subscribe to network event notifications.
+  @Deprecated('use networkEvents instead')
   Subscription subscribeToNetworkEvents(void Function(NetworkEvent) callback) {
     if (debugTrace) {
       print("Session.subscribeToNetworkEvents");
@@ -259,6 +268,8 @@ class Session {
 
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
+
+  Stream<NetworkEvent> get networkEvents => _networkEventsController.stream;
 
   bool addUserProvidedQuicPeer(String addr) {
     return _withPoolSync((pool) =>
@@ -339,29 +350,87 @@ class Session {
       print("Session.close");
     }
 
+    _networkEventsController.close();
+
     bindings.session_close();
     NativeChannels.session = null;
+  }
+}
+
+class EventStreamController<E> {
+  final Bindings _bindings;
+  final ReceivePort _recvPort;
+  int? _handle;
+
+  late final Stream<E> stream;
+
+  EventStreamController({
+    required Bindings bindings,
+    required int Function(SendPort) subscribe,
+    required E? Function(dynamic) decode,
+  })  : _bindings = bindings,
+        _recvPort = ReceivePort() {
+    stream = _recvPort.asBroadcastStream(
+      onListen: (_) {
+        _handle ??= subscribe(_recvPort.sendPort);
+      },
+      onCancel: (_) {
+        final handle = _handle;
+        if (handle != null) {
+          bindings.subscription_cancel(handle);
+        }
+      },
+    ).transform(StreamTransformer<dynamic, E>.fromHandlers(
+      handleData: (raw, sink) {
+        final event = decode(raw);
+        if (event != null) {
+          sink.add(event);
+        }
+      },
+    ));
+  }
+
+  void close() {
+    if (_handle != null) {
+      _bindings.subscription_cancel(_handle!);
+    }
+
+    _recvPort.close();
   }
 }
 
 class ConnectedPeer {
   final String ip;
   final int port;
-  final String direction;
+  final String source;
   final String state;
+  final String? runtimeId;
 
-  ConnectedPeer(this.ip, this.port, this.direction, this.state);
+  ConnectedPeer({
+    required this.ip,
+    required this.port,
+    required this.source,
+    required this.state,
+    this.runtimeId,
+  });
 
   static ConnectedPeer decode(Unpacker unpacker) {
     final count = unpacker.unpackListLength();
-    assert(count == 4);
+    assert(count == 4 || count == 5);
 
     final ip = unpacker.unpackString()!;
     final port = unpacker.unpackInt()!;
-    final direction = unpacker.unpackString()!;
+    final source = unpacker.unpackString()!;
     final state = unpacker.unpackString()!;
+    final runtimeId = count > 4 ? unpacker.unpackString()! : null;
 
-    return ConnectedPeer(ip, port, direction, state);
+    return ConnectedPeer(
+      ip: ip,
+      port: port,
+      source: source,
+      state: state,
+      runtimeId: runtimeId,
+    );
   }
 
   static List<ConnectedPeer> decodeAll(Unpacker unpacker) {
@@ -371,7 +440,8 @@ class ConnectedPeer {
   }
 
   @override
-  String toString() => '$ip:$port, $direction, $state';
+  String toString() =>
+      '$runtimeType(ip: $ip, port: $port, source: $source, state: $state, runtimeId: $runtimeId)';
 }
 
 enum NetworkEvent {
@@ -379,8 +449,8 @@ enum NetworkEvent {
   peerSetChange,
 }
 
-NetworkEvent? _decodeNetworkEvent(int n) {
-  switch (n) {
+NetworkEvent? _decodeNetworkEvent(dynamic raw) {
+  switch (raw as int) {
     case NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
       return NetworkEvent.protocolVersionMismatch;
     case NETWORK_EVENT_PEER_SET_CHANGE:
