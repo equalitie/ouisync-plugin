@@ -568,8 +568,8 @@ class Repository {
 
   StateMonitor? stateMonitor() {
     return StateMonitor.getRoot(bindings)
-        ?.child("Repositories")
-        ?.child(infoHash);
+        ?.child(MonitorId.expect_unique("Repositories"))
+        ?.child(MonitorId.expect_unique(infoHash));
   }
 
   @Deprecated('use infoHash instead')

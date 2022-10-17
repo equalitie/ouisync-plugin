@@ -1075,37 +1075,42 @@ class Bindings {
   /// "a:b:c". An empty string returns the "root" state monitor.
   Bytes session_get_state_monitor(
     ffi.Pointer<ffi.Int8> path,
+    int path_len,
   ) {
     return _session_get_state_monitor(
       path,
+      path_len,
     );
   }
 
-  late final _session_get_state_monitorPtr =
-      _lookup<ffi.NativeFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>>(
-          'session_get_state_monitor');
+  late final _session_get_state_monitorPtr = _lookup<
+      ffi.NativeFunction<
+          Bytes Function(
+              ffi.Pointer<ffi.Int8>, ffi.Uint64)>>('session_get_state_monitor');
   late final _session_get_state_monitor = _session_get_state_monitorPtr
-      .asFunction<Bytes Function(ffi.Pointer<ffi.Int8>)>();
+      .asFunction<Bytes Function(ffi.Pointer<ffi.Int8>, int)>();
 
   /// Subscribe to "on change" events happening inside a monitor corresponding to the `path`.  The
   /// path is in the form "a:b:c" and an empty string represents the "root" state monitor.
   int session_state_monitor_subscribe(
     ffi.Pointer<ffi.Int8> path,
+    int path_len,
     int port,
   ) {
     return _session_state_monitor_subscribe(
       path,
+      path_len,
       port,
     );
   }
 
   late final _session_state_monitor_subscribePtr = _lookup<
       ffi.NativeFunction<
-          UniqueNullableHandle_JoinHandle Function(
-              ffi.Pointer<ffi.Int8>, Port)>>('session_state_monitor_subscribe');
+          UniqueNullableHandle_JoinHandle Function(ffi.Pointer<ffi.Int8>,
+              ffi.Uint64, Port)>>('session_state_monitor_subscribe');
   late final _session_state_monitor_subscribe =
       _session_state_monitor_subscribePtr
-          .asFunction<int Function(ffi.Pointer<ffi.Int8>, int)>();
+          .asFunction<int Function(ffi.Pointer<ffi.Int8>, int, int)>();
 
   /// Unsubscribe from the above "on change" StateMonitor events.
   void session_state_monitor_unsubscribe(

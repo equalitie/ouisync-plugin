@@ -1,29 +1,60 @@
 import 'dart:ffi';
+import 'package:ffi/ffi.dart' as ffi;
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:collection';
-import 'package:messagepack/messagepack.dart';
 import 'internal/util.dart';
 import 'bindings.dart';
+
+import 'package:messagepack/messagepack.dart';
 
 // Version is incremented every time the monitor or any of it's values or
 // children changes.
 typedef Version = int;
 
+// Used to identify child state monitors.
+class MonitorId implements Comparable<MonitorId> {
+  String _name;
+  // This one is now shown to the user, it allows us to have multiple monitors of the same name.
+  int _disambiguator;
+
+  String get name => _name;
+
+  MonitorId(this._name, this._disambiguator);
+
+  // For when we expect the name to uniquely identify the child.
+  static MonitorId expect_unique(String name) => MonitorId(name, 0);
+
+  @override
+  String toString() {
+    return "MonitorId($_name, $_disambiguator)";
+  }
+
+  @override
+  int compareTo(MonitorId other) {
+    // Negative return value means `this` will be appear first.
+    final cmp = _name.compareTo(other._name);
+    if (cmp == 0) {
+      return _disambiguator - other._disambiguator;
+    }
+    return cmp;
+  }
+}
+
 class StateMonitor {
-  List<String> path;
+  List<MonitorId> path;
   Bindings bindings;
   Version version;
   Map<String, String> values;
-  Map<String, Version> children;
+  Map<MonitorId, Version> children;
 
   static StateMonitor? getRoot(Bindings bindings) {
-    return _getMonitor(bindings, <String>[]);
+    return _getMonitor(bindings, <MonitorId>[]);
   }
 
-  StateMonitor? child(String name) {
-    return _getMonitor(bindings, [...path, name]);
+  StateMonitor? child(MonitorId childId) {
+    return _getMonitor(bindings, [...path, childId]);
   }
 
   int? parseIntValue(String name) {
@@ -35,8 +66,13 @@ class StateMonitor {
   Subscription? subscribe() {
     final recvPort = ReceivePort();
 
-    final subscriptionHandle = bindings.session_state_monitor_subscribe(
-        stringToNativeUtf8(_pathStr(path)), recvPort.sendPort.nativePort);
+    var subscriptionHandle = 0;
+
+    final pathBytes = _pathBytes(path);
+    _withPointer(pathBytes, (pathPtr) {
+      subscriptionHandle = bindings.session_state_monitor_subscribe(
+          pathPtr, pathBytes.length, recvPort.sendPort.nativePort);
+    });
 
     if (subscriptionHandle == 0) {
       return null;
@@ -63,7 +99,7 @@ class StateMonitor {
 
   @override
   String toString() {
-    return "StateMonitor{ path:${_pathStr(path)}, version:$version, values:$values, children:$children }";
+    return "StateMonitor{ path:$path, version:$version, values:$values, children:$children }";
   }
 
   StateMonitor._(
@@ -74,22 +110,46 @@ class StateMonitor {
     this.children,
   );
 
-  static String _pathStr(List<String> path) {
-    return path.join(':');
+  static _withPointer(Uint8List data, fn) {
+    var buffer = ffi.malloc<Int8>(data.length);
+
+    try {
+      buffer.asTypedList(data.length).setAll(0, data);
+      fn(buffer);
+    } finally {
+      ffi.malloc.free(buffer);
+    }
   }
 
-  static StateMonitor? _getMonitor(Bindings bindings, List<String> path) {
-    final bytes = _getMonitorBytes(bindings, _pathStr(path));
-    return StateMonitor._parse(path, bindings, bytes);
+  static Uint8List _pathBytes(List<MonitorId> path) {
+    final p = Packer();
+    p.packListLength(path.length);
+
+    for (final item in path) {
+      p.packListLength(2);
+      p.packString(item._name);
+      p.packInt(item._disambiguator);
+    }
+
+    return p.takeBytes();
   }
 
-  static Uint8List _getMonitorBytes(Bindings bindings, String path) {
-    return bytesIntoUint8List(
-        bindings.session_get_state_monitor(stringToNativeUtf8(path)));
+  static StateMonitor? _getMonitor(Bindings bindings, List<MonitorId> path) {
+    StateMonitor? monitor;
+    final pathBytes = _pathBytes(path);
+    _withPointer(pathBytes, (pathPtr) {
+      final bytes =
+          bindings.session_get_state_monitor(pathPtr, pathBytes.length);
+      if (bytes != null) {
+        monitor =
+            StateMonitor._parse(path, bindings, bytesIntoUint8List(bytes));
+      }
+    });
+    return monitor;
   }
 
   static StateMonitor? _parse(
-      List<String> path, Bindings bindings, Uint8List messagepackData) {
+      List<MonitorId> path, Bindings bindings, Uint8List messagepackData) {
     if (messagepackData.isEmpty) {
       return null;
     }
@@ -133,13 +193,17 @@ class StateMonitor {
     return values;
   }
 
-  static Map<String, int> _unpackChildren(Unpacker u) {
+  static Map<MonitorId, int> _unpackChildren(Unpacker u) {
     final childrenLen = u.unpackMapLength();
-    var children = SplayTreeMap<String, int>();
+    var children = SplayTreeMap<MonitorId, int>();
 
     for (var i = 0; i < childrenLen; i++) {
-      final childName = u.unpackString()!;
-      children[childName] = u.unpackInt()!;
+      // A string in the format "disambiguator:name".
+      final idStr = u.unpackString()!;
+      final colon = idStr.indexOf(':');
+      final disambiguator = int.parse(idStr.substring(0, colon));
+      final name = idStr.substring(colon + 1);
+      children[MonitorId(name, disambiguator)] = u.unpackInt()!;
     }
 
     return children;
