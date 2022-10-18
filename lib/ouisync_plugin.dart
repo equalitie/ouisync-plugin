@@ -321,6 +321,9 @@ class Session {
     bindings.network_disable_local_discovery();
   }
 
+  String get thisRuntimeId =>
+      bindings.network_this_runtime_id().cast<Utf8>().intoDartString();
+
   /// Closes the session.
   void close() {
     if (debugTrace) {
