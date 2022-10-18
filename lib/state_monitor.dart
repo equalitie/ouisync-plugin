@@ -24,7 +24,7 @@ class MonitorId implements Comparable<MonitorId> {
   MonitorId(this._name, this._disambiguator);
 
   // For when we expect the name to uniquely identify the child.
-  static MonitorId expect_unique(String name) => MonitorId(name, 0);
+  static MonitorId expectUnique(String name) => MonitorId(name, 0);
 
   @override
   String toString() {
