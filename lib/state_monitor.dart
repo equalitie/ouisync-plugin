@@ -69,7 +69,7 @@ class StateMonitor {
     var subscriptionHandle = 0;
 
     final pathBytes = _pathBytes(path);
-    _withPointer(pathBytes, (pathPtr) {
+    _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
       subscriptionHandle = bindings.session_state_monitor_subscribe(
           pathPtr, pathBytes.length, recvPort.sendPort.nativePort);
     });
@@ -137,7 +137,7 @@ class StateMonitor {
   static StateMonitor? _getMonitor(Bindings bindings, List<MonitorId> path) {
     StateMonitor? monitor;
     final pathBytes = _pathBytes(path);
-    _withPointer(pathBytes, (pathPtr) {
+    _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
       final bytes =
           bindings.session_get_state_monitor(pathPtr, pathBytes.length);
       if (bytes != null) {
