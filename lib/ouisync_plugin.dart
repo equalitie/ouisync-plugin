@@ -719,6 +719,7 @@ class EventStreamController<E> {
         final handle = _handle;
         if (handle != null) {
           bindings.subscription_cancel(handle);
+          _handle = null;
         }
       },
     ).transform(StreamTransformer<dynamic, E>.fromHandlers(
