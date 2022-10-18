@@ -337,48 +337,6 @@ class Session {
   }
 }
 
-class EventStreamController<E> {
-  final Bindings _bindings;
-  final ReceivePort _recvPort;
-  int? _handle;
-
-  late final Stream<E> stream;
-
-  EventStreamController({
-    required Bindings bindings,
-    required int Function(SendPort) subscribe,
-    required E? Function(dynamic) decode,
-  })  : _bindings = bindings,
-        _recvPort = ReceivePort() {
-    stream = _recvPort.asBroadcastStream(
-      onListen: (_) {
-        _handle ??= subscribe(_recvPort.sendPort);
-      },
-      onCancel: (_) {
-        final handle = _handle;
-        if (handle != null) {
-          bindings.subscription_cancel(handle);
-        }
-      },
-    ).transform(StreamTransformer<dynamic, E>.fromHandlers(
-      handleData: (raw, sink) {
-        final event = decode(raw);
-        if (event != null) {
-          sink.add(event);
-        }
-      },
-    ));
-  }
-
-  void close() {
-    if (_handle != null) {
-      _bindings.subscription_cancel(_handle!);
-    }
-
-    _recvPort.close();
-  }
-}
-
 class PeerInfo {
   final String ip;
   final int port;
@@ -443,8 +401,15 @@ NetworkEvent? _decodeNetworkEvent(dynamic raw) {
 class Repository {
   final Bindings bindings;
   final int handle;
+  final EventStreamController<RepositoryEvent> _eventsController;
 
-  Repository._(this.bindings, this.handle);
+  Repository._(this.bindings, this.handle)
+      : _eventsController = EventStreamController(
+          bindings: bindings,
+          subscribe: (sendPort) =>
+              bindings.repository_subscribe(handle, sendPort.nativePort),
+          decode: (_) => RepositoryEvent(),
+        );
 
   /// Creates a new repository.
   static Future<Repository> create(Session session,
@@ -487,6 +452,8 @@ class Repository {
     if (debugTrace) {
       print("Repository.close");
     }
+
+    _eventsController.close();
 
     final recvPort = ReceivePort();
 
@@ -532,6 +499,7 @@ class Repository {
 
   /// Subscribe to change notifications from this repository. The returned handle can be used to
   /// cancel the subscription.
+  @Deprecated('use events')
   Subscription subscribe(void Function() callback) {
     if (debugTrace) {
       print("Repository.subscribe");
@@ -545,6 +513,8 @@ class Repository {
 
     return Subscription._(bindings, subscriptionHandle, recvPort);
   }
+
+  Stream<RepositoryEvent> get events => _eventsController.stream;
 
   bool get isDhtEnabled {
     if (debugTrace) {
@@ -683,6 +653,10 @@ class ShareToken {
   int get hashCode => token.hashCode;
 }
 
+class RepositoryEvent {
+  RepositoryEvent();
+}
+
 enum AccessMode {
   blind,
   read,
@@ -740,7 +714,51 @@ class Progress {
   int get hashCode => Object.hash(value, total);
 }
 
+/// Helper that provides a Stream of events emitted on the native side.
+class EventStreamController<E> {
+  final Bindings _bindings;
+  final ReceivePort _recvPort;
+  int? _handle;
+
+  late final Stream<E> stream;
+
+  EventStreamController({
+    required Bindings bindings,
+    required int Function(SendPort) subscribe,
+    required E? Function(dynamic) decode,
+  })  : _bindings = bindings,
+        _recvPort = ReceivePort() {
+    stream = _recvPort.asBroadcastStream(
+      onListen: (_) {
+        _handle ??= subscribe(_recvPort.sendPort);
+      },
+      onCancel: (_) {
+        final handle = _handle;
+        if (handle != null) {
+          bindings.subscription_cancel(handle);
+        }
+      },
+    ).transform(StreamTransformer<dynamic, E>.fromHandlers(
+      handleData: (raw, sink) {
+        final event = decode(raw);
+        if (event != null) {
+          sink.add(event);
+        }
+      },
+    ));
+  }
+
+  void close() {
+    if (_handle != null) {
+      _bindings.subscription_cancel(_handle!);
+    }
+
+    _recvPort.close();
+  }
+}
+
 /// A handle to a subscription.
+@Deprecated('use EventStreamController')
 class Subscription {
   final Bindings bindings;
   final int handle;

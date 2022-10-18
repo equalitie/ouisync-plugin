@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -9,7 +10,7 @@ void main() {
   late Session session;
 
   late Repository repository;
-  late Subscription subscription;
+  late StreamSubscription<RepositoryEvent> subscription;
 
   late String currentPath;
 
@@ -31,14 +32,14 @@ void main() {
 
     currentPath = '/';
 
-    subscription = repository.subscribe(() async {
+    subscription = repository.events.listen((_) async {
       print('Syncing $currentPath');
       await getDirectoryContents(repository, currentPath);
     });
   });
 
   tearDown(() async {
-    subscription.cancel();
+    await subscription.cancel();
     await repository.close();
 
     session.close();
