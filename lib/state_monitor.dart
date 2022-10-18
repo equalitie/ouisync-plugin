@@ -140,10 +140,7 @@ class StateMonitor {
     _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
       final bytes =
           bindings.session_get_state_monitor(pathPtr, pathBytes.length);
-      if (bytes != null) {
-        monitor =
-            StateMonitor._parse(path, bindings, bytesIntoUint8List(bytes));
-      }
+      monitor = StateMonitor._parse(path, bindings, bytesIntoUint8List(bytes));
     });
     return monitor;
   }
