@@ -497,23 +497,6 @@ class Repository {
             handle, pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
   }
 
-  /// Subscribe to change notifications from this repository. The returned handle can be used to
-  /// cancel the subscription.
-  @Deprecated('use events')
-  Subscription subscribe(void Function() callback) {
-    if (debugTrace) {
-      print("Repository.subscribe");
-    }
-
-    final recvPort = ReceivePort();
-    recvPort.listen((_) => callback());
-
-    final subscriptionHandle =
-        bindings.repository_subscribe(handle, recvPort.sendPort.nativePort);
-
-    return Subscription._(bindings, subscriptionHandle, recvPort);
-  }
-
   Stream<RepositoryEvent> get events => _eventsController.stream;
 
   bool get isDhtEnabled {
@@ -714,7 +697,7 @@ class Progress {
   int get hashCode => Object.hash(value, total);
 }
 
-/// Helper that provides a Stream of events emitted on the native side.
+/// Helper translates native event subscription into a Stream of events
 class EventStreamController<E> {
   final Bindings _bindings;
   final ReceivePort _recvPort;
@@ -754,22 +737,6 @@ class EventStreamController<E> {
     }
 
     _recvPort.close();
-  }
-}
-
-/// A handle to a subscription.
-@Deprecated('use EventStreamController')
-class Subscription {
-  final Bindings bindings;
-  final int handle;
-  final ReceivePort port;
-
-  Subscription._(this.bindings, this.handle, this.port);
-
-  /// Cancel the subscription. No more notification events are received after this.
-  void cancel() {
-    bindings.subscription_cancel(handle);
-    port.close();
   }
 }
 
