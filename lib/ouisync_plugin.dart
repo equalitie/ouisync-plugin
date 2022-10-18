@@ -245,30 +245,6 @@ class Session {
             port,
           )));
 
-  /// Subscribe to network event notifications.
-  @Deprecated('use networkEvents instead')
-  Subscription subscribeToNetworkEvents(void Function(NetworkEvent) callback) {
-    if (debugTrace) {
-      print("Session.subscribeToNetworkEvents");
-    }
-
-    final recvPort = ReceivePort();
-
-    recvPort.listen((encoded) {
-      final event = _decodeNetworkEvent(encoded as int);
-      if (event != null) {
-        callback(event);
-      } else {
-        print('invalid network event: $encoded');
-      }
-    });
-
-    final subscriptionHandle =
-        bindings.network_subscribe(recvPort.sendPort.nativePort);
-
-    return Subscription._(bindings, subscriptionHandle, recvPort);
-  }
-
   Stream<NetworkEvent> get networkEvents => _networkEventsController.stream;
 
   bool addUserProvidedQuicPeer(String addr) {
@@ -644,11 +620,6 @@ class Repository {
         ?.child(MonitorId.expectUnique(infoHash));
   }
 
-  @Deprecated('use infoHash instead')
-  String lowHexId() {
-    return bindings.repository_low_hex_id(handle).cast<Utf8>().intoDartString();
-  }
-
   String get infoHash =>
       bindings.repository_info_hash(handle).cast<Utf8>().intoDartString();
 }
@@ -691,13 +662,6 @@ class ShareToken {
     freeNative(namePtr);
 
     return name;
-  }
-
-  @Deprecated("use infoHash instead")
-  String repositoryId() {
-    final idPtr = _withPoolSync((pool) =>
-        bindings.share_token_repository_low_hex_id(pool.toNativeUtf8(token)));
-    return idPtr.cast<Utf8>().intoNullableDartString()!;
   }
 
   String get infoHash => _withPoolSync(
