@@ -278,11 +278,10 @@ class Session {
       .intoNullableDartString();
 
   /// Gets a stream that yields lists of known peers.
-  Stream<List<ConnectedPeer>> get connectedPeers =>
-      networkEvents.asyncMap((_) async {
+  Stream<List<PeerInfo>> get peers => networkEvents.asyncMap((_) async {
         final bytes = bindings.network_connected_peers().intoUint8List();
         final unpacker = Unpacker(bytes);
-        return ConnectedPeer.decodeAll(unpacker);
+        return PeerInfo.decodeAll(unpacker);
       });
 
   StateMonitor? getRootStateMonitor() {
@@ -377,14 +376,14 @@ class EventStreamController<E> {
   }
 }
 
-class ConnectedPeer {
+class PeerInfo {
   final String ip;
   final int port;
   final String source;
   final String state;
   final String? runtimeId;
 
-  ConnectedPeer({
+  PeerInfo({
     required this.ip,
     required this.port,
     required this.source,
@@ -392,7 +391,7 @@ class ConnectedPeer {
     this.runtimeId,
   });
 
-  static ConnectedPeer decode(Unpacker unpacker) {
+  static PeerInfo decode(Unpacker unpacker) {
     final count = unpacker.unpackListLength();
     assert(count == 4 || count == 5);
 
@@ -402,7 +401,7 @@ class ConnectedPeer {
     final state = unpacker.unpackString()!;
     final runtimeId = count > 4 ? unpacker.unpackString()! : null;
 
-    return ConnectedPeer(
+    return PeerInfo(
       ip: ip,
       port: port,
       source: source,
@@ -411,10 +410,9 @@ class ConnectedPeer {
     );
   }
 
-  static List<ConnectedPeer> decodeAll(Unpacker unpacker) {
+  static List<PeerInfo> decodeAll(Unpacker unpacker) {
     final count = unpacker.unpackListLength();
-    return Iterable.generate(count, (_) => ConnectedPeer.decode(unpacker))
-        .toList();
+    return Iterable.generate(count, (_) => PeerInfo.decode(unpacker)).toList();
   }
 
   @override
