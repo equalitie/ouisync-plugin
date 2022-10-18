@@ -301,11 +301,13 @@ class Session {
       .cast<Utf8>()
       .intoNullableDartString();
 
-  List<ConnectedPeer> get connectedPeers {
-    final bytes = bindings.network_connected_peers().intoUint8List();
-    final unpacker = Unpacker(bytes);
-    return ConnectedPeer.decodeAll(unpacker);
-  }
+  /// Gets a stream that yields lists of known peers.
+  Stream<List<ConnectedPeer>> get connectedPeers =>
+      networkEvents.asyncMap((_) async {
+        final bytes = bindings.network_connected_peers().intoUint8List();
+        final unpacker = Unpacker(bytes);
+        return ConnectedPeer.decodeAll(unpacker);
+      });
 
   StateMonitor? getRootStateMonitor() {
     return StateMonitor.getRoot(bindings);
