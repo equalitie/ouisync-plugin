@@ -15,9 +15,9 @@ typedef Version = int;
 
 // Used to identify child state monitors.
 class MonitorId implements Comparable<MonitorId> {
-  String _name;
+  final String _name;
   // This one is now shown to the user, it allows us to have multiple monitors of the same name.
-  int _disambiguator;
+  final int _disambiguator;
 
   String get name => _name;
 
