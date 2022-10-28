@@ -74,11 +74,12 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   private fun startFilePreviewAction(arguments: HashMap<String, Any>) {
+    val authority = arguments["authority"]
     val path = arguments["path"]
     val size = arguments["size"]
     val useDefaultApp = arguments["useDefaultApp"]
 
-    val uri = Uri.parse("${PipeProvider.CONTENT_URI}$size$path")
+    val uri = Uri.parse("content://$authority.pipe/$size$path")
 
     Log.d(javaClass.simpleName, "Uri: ${uri.toString()}")
 
@@ -96,11 +97,12 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
   private fun startFileShareAction(arguments: HashMap<String, Any>) {
+    val authority = arguments["authority"]
     val path = arguments["path"]
     val size = arguments["size"]
     val title = "Share file from OuiSync"
 
-    val uri = Uri.parse("${PipeProvider.CONTENT_URI}$size$path")
+    val uri = Uri.parse("content://$authority.pipe/$size$path")
 
     Log.d(javaClass.simpleName, "Uri: ${uri.toString()}")
 

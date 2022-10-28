@@ -21,7 +21,6 @@ import java.util.concurrent.Semaphore
 
 class PipeProvider: AbstractFileProvider() {
     companion object {
-        val CONTENT_URI: Uri = Uri.parse("content://ie.equalit.ouisync_plugin.pipe/")
         private const val CHUNK_SIZE = 64000
         private val TAG = PipeProvider::class.java.simpleName
 
@@ -54,7 +53,7 @@ class PipeProvider: AbstractFileProvider() {
         Log.d(TAG, "Opening file '$uri' in mode '$mode'")
 
         val path = getPathFromUri(uri);
-
+        Log.d(TAG, "Pipe path=" + path);
         if (supportsProxyFileDescriptor) {
             var size = super.getDataLength(uri);
 
