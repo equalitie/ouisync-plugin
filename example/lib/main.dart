@@ -212,14 +212,16 @@ void showAlertDialog(BuildContext context, String path, int size) {
     child: Text("Preview"),
     onPressed: () async {
       Navigator.of(context).pop();
-      await NativeChannels.previewOuiSyncFile(path, size);
+      await NativeChannels.previewOuiSyncFile(
+          "ie.equalit.ouisync_plugin_example", path, size);
     },
   );
   Widget shareFileButton = TextButton(
       child: Text("Share"),
       onPressed: () async {
         Navigator.of(context).pop();
-        await NativeChannels.shareOuiSyncFile(path, size);
+        await NativeChannels.shareOuiSyncFile(
+            "ie.equalit.ouisync_plugin_example", path, size);
       });
   Widget cancelButton = TextButton(
     child: Text("Cancel"),
