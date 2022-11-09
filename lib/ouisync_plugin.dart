@@ -951,12 +951,9 @@ extension BytesExtension on Bytes {
 
 // Free a pointer that was allocated by the native side.
 void freeString(Pointer<Utf8> ptr) {
-  // This *should* be fine as long as both sides are using the same allocator which *should* be the
-  // case (malloc). If this assumption turns out to be wrong, we should expose a native function to
-  // deallocate the pointer and call it here instead.
-  malloc.free(ptr);
+  bindings.free_string(ptr.cast<Int8>());
 }
 
 void freeBytes(Bytes bytes) {
-  malloc.free(bytes.ptr);
+  bindings.free_bytes(bytes);
 }

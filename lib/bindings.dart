@@ -1161,6 +1161,34 @@ class Bindings {
           'subscription_cancel');
   late final _subscription_cancel =
       _subscription_cancelPtr.asFunction<void Function(int)>();
+
+  /// Deallocate string that has been allocated on the rust side
+  void free_string(
+    ffi.Pointer<ffi.Int8> ptr,
+  ) {
+    return _free_string(
+      ptr,
+    );
+  }
+
+  late final _free_stringPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Int8>)>>(
+          'free_string');
+  late final _free_string =
+      _free_stringPtr.asFunction<void Function(ffi.Pointer<ffi.Int8>)>();
+
+  /// Deallocate Bytes that has been allocated on the rust side
+  void free_bytes(
+    Bytes bytes,
+  ) {
+    return _free_bytes(
+      bytes,
+    );
+  }
+
+  late final _free_bytesPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(Bytes)>>('free_bytes');
+  late final _free_bytes = _free_bytesPtr.asFunction<void Function(Bytes)>();
 }
 
 abstract class ErrorCode {
