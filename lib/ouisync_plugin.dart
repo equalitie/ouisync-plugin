@@ -6,13 +6,12 @@ import 'dart:isolate';
 import 'dart:math';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/services.dart';
 import 'package:messagepack/messagepack.dart';
 
 import 'bindings.dart';
 import 'state_monitor.dart';
-import 'internal/util.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode;
 
 const bool debugTrace = false;
 
@@ -611,14 +610,10 @@ class ShareToken {
       bindings.share_token_encode(pool.toNativeUtf8(token)).intoUint8List());
 
   /// Get the suggested repository name from the share token.
-  String get suggestedName {
-    final namePtr = _withPoolSync((pool) =>
-        bindings.share_token_suggested_name(pool.toNativeUtf8(token)));
-    final name = namePtr.cast<Utf8>().toDartString();
-    freeNative(namePtr);
-
-    return name;
-  }
+  String get suggestedName => _withPoolSync((pool) =>
+          bindings.share_token_suggested_name(pool.toNativeUtf8(token)))
+      .cast<Utf8>()
+      .intoDartString();
 
   String get infoHash => _withPoolSync(
         (pool) => bindings.share_token_info_hash(pool.toNativeUtf8(token)),
@@ -1170,19 +1165,11 @@ class _Pool implements Allocator {
       str.toNativeUtf8(allocator: this).cast<Int8>();
 }
 
-// Free a pointer that was allocated by the native side.
-void freeNative(Pointer<NativeType> ptr) {
-  // This *should* be fine as long as both sides are using the same allocator which *should* be the
-  // case (malloc). If this assumption turns out to be wrong, we should expose a native function to
-  // deallocate the pointer and call it here instead.
-  malloc.free(ptr);
-}
-
 extension Utf8Pointer on Pointer<Utf8> {
   // Similar to [toDartString] but also deallocates the original pointer.
   String intoDartString() {
     final string = toDartString();
-    freeNative(this);
+    freeString(this);
     return string;
   }
 
@@ -1191,12 +1178,36 @@ extension Utf8Pointer on Pointer<Utf8> {
       return null;
     }
     final string = toDartString();
-    freeNative(this);
+    freeString(this);
     return string;
   }
 }
 
 extension BytesExtension on Bytes {
   // Converts this `Bytes` into `Uint8List` and deallocates the original pointer.
-  Uint8List intoUint8List() => bytesIntoUint8List(this);
+  Uint8List intoUint8List() {
+    if (ptr != nullptr) {
+      try {
+        // Creating a copy so we can deallocate the pointer.
+        // TODO: is this the right way to do this?
+        return Uint8List.fromList(ptr.asTypedList(len));
+      } finally {
+        freeBytes(this);
+      }
+    } else {
+      return Uint8List(0);
+    }
+  }
+}
+
+// Free a pointer that was allocated by the native side.
+void freeString(Pointer<Utf8> ptr) {
+  // This *should* be fine as long as both sides are using the same allocator which *should* be the
+  // case (malloc). If this assumption turns out to be wrong, we should expose a native function to
+  // deallocate the pointer and call it here instead.
+  malloc.free(ptr);
+}
+
+void freeBytes(Bytes bytes) {
+  malloc.free(bytes.ptr);
 }

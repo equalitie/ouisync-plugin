@@ -1,13 +1,14 @@
 import 'dart:ffi';
-import 'package:ffi/ffi.dart' as ffi;
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:collection';
-import 'internal/util.dart';
-import 'bindings.dart';
 
+import 'package:ffi/ffi.dart' as ffi;
 import 'package:messagepack/messagepack.dart';
+
+import 'bindings.dart';
+import 'ouisync_plugin.dart' show BytesExtension;
 
 // Version is incremented every time the monitor or any of it's values or
 // children changes.
@@ -140,7 +141,7 @@ class StateMonitor {
     _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
       final bytes =
           bindings.session_get_state_monitor(pathPtr, pathBytes.length);
-      monitor = StateMonitor._parse(path, bindings, bytesIntoUint8List(bytes));
+      monitor = StateMonitor._parse(path, bindings, bytes.intoUint8List());
     });
     return monitor;
   }
