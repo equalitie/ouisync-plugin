@@ -7,7 +7,7 @@ import 'dart:collection';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:messagepack/messagepack.dart';
 
-import 'bindings.dart';
+import 'bindings_global.dart';
 import 'ouisync_plugin.dart' show BytesExtension;
 
 // Version is incremented every time the monitor or any of it's values or
@@ -45,17 +45,16 @@ class MonitorId implements Comparable<MonitorId> {
 
 class StateMonitor {
   List<MonitorId> path;
-  Bindings bindings;
   Version version;
   Map<String, String> values;
   Map<MonitorId, Version> children;
 
-  static StateMonitor? getRoot(Bindings bindings) {
-    return _getMonitor(bindings, <MonitorId>[]);
+  static StateMonitor? getRoot() {
+    return _getMonitor(<MonitorId>[]);
   }
 
   StateMonitor? child(MonitorId childId) {
-    return _getMonitor(bindings, [...path, childId]);
+    return _getMonitor([...path, childId]);
   }
 
   int? parseIntValue(String name) {
@@ -83,7 +82,7 @@ class StateMonitor {
   }
 
   bool refresh() {
-    final m = _getMonitor(bindings, path);
+    final m = _getMonitor(path);
 
     if (m == null) {
       values.clear();
@@ -105,7 +104,6 @@ class StateMonitor {
 
   StateMonitor._(
     this.path,
-    this.bindings,
     this.version,
     this.values,
     this.children,
@@ -135,19 +133,18 @@ class StateMonitor {
     return p.takeBytes();
   }
 
-  static StateMonitor? _getMonitor(Bindings bindings, List<MonitorId> path) {
+  static StateMonitor? _getMonitor(List<MonitorId> path) {
     StateMonitor? monitor;
     final pathBytes = _pathBytes(path);
     _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
       final bytes =
           bindings.session_get_state_monitor(pathPtr, pathBytes.length);
-      monitor = StateMonitor._parse(path, bindings, bytes.intoUint8List());
+      monitor = StateMonitor._parse(path, bytes.intoUint8List());
     });
     return monitor;
   }
 
-  static StateMonitor? _parse(
-      List<MonitorId> path, Bindings bindings, Uint8List messagepackData) {
+  static StateMonitor? _parse(List<MonitorId> path, Uint8List messagepackData) {
     if (messagepackData.isEmpty) {
       return null;
     }
@@ -172,7 +169,6 @@ class StateMonitor {
 
     return StateMonitor._(
       path,
-      bindings,
       version,
       values,
       children,

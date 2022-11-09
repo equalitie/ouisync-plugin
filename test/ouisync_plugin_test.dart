@@ -66,7 +66,7 @@ void main() {
     final token =
         await repo.createShareToken(accessMode: AccessMode.read, name: 'test');
     final encoded = token.encode();
-    final decoded = ShareToken.decode(session, encoded);
+    final decoded = ShareToken.decode(encoded);
 
     expect(token, equals(decoded));
   });
