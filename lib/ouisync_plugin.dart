@@ -539,8 +539,11 @@ class EventStreamController<E> {
   }
 
   void close() {
-    if (_handle != null) {
-      bindings.subscription_cancel(_handle!);
+    final handle = _handle;
+    _handle = null;
+
+    if (handle != null) {
+      bindings.subscription_cancel(handle);
     }
 
     _recvPort.close();
