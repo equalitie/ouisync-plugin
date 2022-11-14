@@ -95,11 +95,13 @@ class Session {
       .intoNullableDartString();
 
   /// Gets a stream that yields lists of known peers.
-  Stream<List<PeerInfo>> get peers => networkEvents.asyncMap((_) async {
-        final bytes = bindings.network_connected_peers().intoUint8List();
-        final unpacker = Unpacker(bytes);
-        return PeerInfo.decodeAll(unpacker);
-      });
+  Stream<List<PeerInfo>> get onPeersChange => networkEvents.map((_) => peers);
+
+  List<PeerInfo> get peers {
+    final bytes = bindings.network_connected_peers().intoUint8List();
+    final unpacker = Unpacker(bytes);
+    return PeerInfo.decodeAll(unpacker);
+  }
 
   StateMonitor? getRootStateMonitor() {
     return StateMonitor.getRoot();
