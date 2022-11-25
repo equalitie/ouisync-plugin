@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
 import 'package:messagepack/messagepack.dart';
@@ -219,9 +220,10 @@ NetworkEvent? _decodeNetworkEvent(dynamic raw) {
 /// A reference to a ouisync repository.
 class Repository {
   final int handle;
+  final String _store;
   final EventStreamController<RepositoryEvent> _eventsController;
 
-  Repository._(this.handle)
+  Repository._(this.handle, this._store)
       : _eventsController = EventStreamController(
           subscribe: (sendPort) =>
               bindings.repository_subscribe(handle, sendPort.nativePort),
@@ -246,7 +248,7 @@ class Repository {
             shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
             port)));
 
-    return Repository._(handle);
+    return Repository._(handle, store);
   }
 
   /// Opens an existing repository.
@@ -263,7 +265,7 @@ class Repository {
         bindings.repository_open(pool.toNativeUtf8(store),
             password != null ? pool.toNativeUtf8(password) : nullptr, port)));
 
-    return Repository._(handle);
+    return Repository._(handle, store);
   }
 
   /// Close the repository. Accessing the repository after it's been closed is undefined behaviour
@@ -390,8 +392,10 @@ class Repository {
 
   StateMonitor? stateMonitor() {
     return StateMonitor.getRoot()
-        ?.child(MonitorId.expectUnique("Repositories"))
-        ?.child(MonitorId.expectUnique(infoHash));
+        ?.childrenWithName("Repositories")
+        .firstOrNull
+        ?.childrenWithName("repository(db=$_store)")
+        .firstOrNull;
   }
 
   String get infoHash =>

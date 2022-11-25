@@ -57,6 +57,14 @@ class StateMonitor {
     return _getMonitor([...path, childId]);
   }
 
+  Iterable<StateMonitor> childrenWithName(String name) {
+    return children.entries
+        .where((e) => e.key.name == name)
+        .map((e) => child(e.key))
+        // Filter out nulls.
+        .whereType<StateMonitor>();
+  }
+
   int? parseIntValue(String name) {
     final str = values[name];
     if (str == null) return null;
