@@ -25,8 +25,11 @@ to list all available triples):
 
 ## Before using/building this plugin
 
-Before this plugin can be used, one has to first generate the `ouisync/target/bindings.h`
-header file and then the `lib/bindings.dart` file.
+This repository contains the `ouisync` library as a submodule, which must be pulled as follows:
+
+```git submodule update --init --recursive```
+
+In order to use this plugin, one must generate the `ouisync/target/bindings.h` header file and then the `lib/bindings.dart` file.
 
 The former is done with the command:
 
@@ -38,7 +41,7 @@ The latter is then done from the root folder of this repository:
     $ flutter pub run ffigen
 
 Note that the above needs to be done every time the public interface of the
-`ouisync` module changes.
+`ouisync` submodule changes.
 
 ## Building the AAR
 
