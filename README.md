@@ -6,6 +6,14 @@ A flutter plugin providing high-level dart API for the ouisync native library.
 
 ## Building the native library
 
+You will need the following installed:
+- rustup
+- cargo (which gets installed with rustup)
+- llvm
+- flutter
+
+On macos, we recommend installing Apple's Xcode command line tools, which include a working llvm installation.
+
 The native library is built automatically as part of this plugins build
 process, but it needs the following prerequisities to be satisfied first:
 
