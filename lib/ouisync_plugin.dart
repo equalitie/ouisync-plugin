@@ -230,11 +230,22 @@ class Repository {
           decode: (_) => RepositoryEvent(),
         );
 
-  /// Creates a new repository.
+  /// Creates a new repository and set access to it based on the following table:
+  ///
+  /// local_read_password  |  local_write_password  |  token access  |  result
+  /// ---------------------+------------------------+----------------+------------------------------
+  /// null or any          |  null or any           |  blind         |  blind replica
+  /// null                 |  null or any           |  read          |  read without password
+  /// read_pwd             |  null or any           |  read          |  read with read_pwd as password
+  /// null                 |  null                  |  write         |  read and write without password
+  /// any                  |  null                  |  write         |  read (only!) with password
+  /// null                 |  any                   |  write         |  read without password, require password for writing
+  /// any                  |  any                   |  write         |  read with one password, write with (possibly same) one
   static Future<Repository> create(
     Session session, {
     required String store,
-    required String password,
+    required String? readPassword,
+    required String? writePassword,
     ShareToken? shareToken,
   }) async {
     if (debugTrace) {
@@ -244,7 +255,8 @@ class Repository {
     final handle = await _withPool((pool) => _invoke<int>((port) =>
         bindings.repository_create(
             pool.toNativeUtf8(store),
-            pool.toNativeUtf8(password),
+            readPassword != null ? pool.toNativeUtf8(readPassword) : nullptr,
+            writePassword != null ? pool.toNativeUtf8(writePassword) : nullptr,
             shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
             port)));
 

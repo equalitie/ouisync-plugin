@@ -184,8 +184,10 @@ class Bindings {
 
   late final _file_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
-              Port_Result_SharedHandle_Mutex_FfiFile)>>('file_open');
+          ffi.Void Function(
+              SharedHandle_RepositoryHolder,
+              ffi.Pointer<ffi.Int8>,
+              Port_Result_SharedHandle_FileHolder)>>('file_open');
   late final _file_open = _file_openPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
@@ -203,8 +205,10 @@ class Bindings {
 
   late final _file_createPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Int8>,
-              Port_Result_SharedHandle_Mutex_FfiFile)>>('file_create');
+          ffi.Void Function(
+              SharedHandle_RepositoryHolder,
+              ffi.Pointer<ffi.Int8>,
+              Port_Result_SharedHandle_FileHolder)>>('file_create');
   late final _file_create = _file_createPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Int8>, int)>();
 
@@ -241,7 +245,7 @@ class Bindings {
   late final _file_closePtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_Mutex_FfiFile, Port_Result)>>('file_close');
+              SharedHandle_FileHolder, Port_Result)>>('file_close');
   late final _file_close = _file_closePtr.asFunction<void Function(int, int)>();
 
   void file_flush(
@@ -257,7 +261,7 @@ class Bindings {
   late final _file_flushPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_Mutex_FfiFile, Port_Result)>>('file_flush');
+              SharedHandle_FileHolder, Port_Result)>>('file_flush');
   late final _file_flush = _file_flushPtr.asFunction<void Function(int, int)>();
 
   /// Read at most `len` bytes from the file into `buffer`. Yields the number of bytes actually read
@@ -281,7 +285,7 @@ class Bindings {
   late final _file_readPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_Mutex_FfiFile,
+              SharedHandle_FileHolder,
               ffi.Uint64,
               ffi.Pointer<ffi.Uint8>,
               ffi.Uint64,
@@ -308,7 +312,7 @@ class Bindings {
 
   late final _file_writePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Uint64,
+          ffi.Void Function(SharedHandle_FileHolder, ffi.Uint64,
               ffi.Pointer<ffi.Uint8>, ffi.Uint64, Port_Result)>>('file_write');
   late final _file_write = _file_writePtr
       .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
@@ -328,7 +332,7 @@ class Bindings {
 
   late final _file_truncatePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Uint64,
+          ffi.Void Function(SharedHandle_FileHolder, ffi.Uint64,
               Port_Result)>>('file_truncate');
   late final _file_truncate =
       _file_truncatePtr.asFunction<void Function(int, int, int)>();
@@ -347,7 +351,7 @@ class Bindings {
   late final _file_lenPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_Mutex_FfiFile, Port_Result_u64)>>('file_len');
+              SharedHandle_FileHolder, Port_Result_u64)>>('file_len');
   late final _file_len = _file_lenPtr.asFunction<void Function(int, int)>();
 
   /// Copy the file contents into the provided raw file descriptor.
@@ -368,7 +372,7 @@ class Bindings {
 
   late final _file_copy_to_raw_fdPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Mutex_FfiFile, ffi.Int32,
+          ffi.Void Function(SharedHandle_FileHolder, ffi.Int32,
               Port_Result)>>('file_copy_to_raw_fd');
   late final _file_copy_to_raw_fd =
       _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int)>();
@@ -653,16 +657,28 @@ class Bindings {
   late final _network_is_local_discovery_enabled =
       _network_is_local_discovery_enabledPtr.asFunction<int Function()>();
 
-  /// Creates a new repository.
+  /// Creates a new repository and set access to it based on the following table:
+  ///
+  /// local_read_password  |  local_write_password  |  token access  |  result
+  /// ---------------------+------------------------+----------------+------------------------------
+  /// null or any          |  null or any           |  blind         |  blind replica
+  /// null                 |  null or any           |  read          |  read without password
+  /// read_pwd             |  null or any           |  read          |  read with read_pwd as password
+  /// null                 |  null                  |  write         |  read and write without password
+  /// any                  |  null                  |  write         |  read (only!) with password
+  /// null                 |  any                   |  write         |  read without password, require password for writing
+  /// any                  |  any                   |  write         |  read with one password, write with (possibly same) one
   void repository_create(
     ffi.Pointer<ffi.Int8> store,
-    ffi.Pointer<ffi.Int8> master_password,
+    ffi.Pointer<ffi.Int8> local_read_password,
+    ffi.Pointer<ffi.Int8> local_write_password,
     ffi.Pointer<ffi.Int8> share_token,
     int port,
   ) {
     return _repository_create(
       store,
-      master_password,
+      local_read_password,
+      local_write_password,
       share_token,
       port,
     );
@@ -674,20 +690,21 @@ class Bindings {
               ffi.Pointer<ffi.Int8>,
               ffi.Pointer<ffi.Int8>,
               ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Int8>,
               Port_Result_SharedHandle_RepositoryHolder)>>('repository_create');
   late final _repository_create = _repository_createPtr.asFunction<
       void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>,
-          ffi.Pointer<ffi.Int8>, int)>();
+          ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
 
   /// Opens an existing repository.
   void repository_open(
     ffi.Pointer<ffi.Int8> store,
-    ffi.Pointer<ffi.Int8> master_password,
+    ffi.Pointer<ffi.Int8> local_password,
     int port,
   ) {
     return _repository_open(
       store,
-      master_password,
+      local_password,
       port,
     );
   }
@@ -713,9 +730,49 @@ class Bindings {
   late final _repository_closePtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder, Port)>>('repository_close');
+              SharedHandle_RepositoryHolder, Port_Result)>>('repository_close');
   late final _repository_close =
       _repository_closePtr.asFunction<void Function(int, int)>();
+
+  /// Returns true if the repository requires a local password to be opened for reading.
+  void repository_requires_local_password_for_reading(
+    int handle,
+    int port,
+  ) {
+    return _repository_requires_local_password_for_reading(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_requires_local_password_for_readingPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  SharedHandle_RepositoryHolder, Port_Result_bool)>>(
+      'repository_requires_local_password_for_reading');
+  late final _repository_requires_local_password_for_reading =
+      _repository_requires_local_password_for_readingPtr
+          .asFunction<void Function(int, int)>();
+
+  /// Returns true if the repository requires a local password to be opened for writing.
+  void repository_requires_local_password_for_writing(
+    int handle,
+    int port,
+  ) {
+    return _repository_requires_local_password_for_writing(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_requires_local_password_for_writingPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  SharedHandle_RepositoryHolder, Port_Result_bool)>>(
+      'repository_requires_local_password_for_writing');
+  late final _repository_requires_local_password_for_writing =
+      _repository_requires_local_password_for_writingPtr
+          .asFunction<void Function(int, int)>();
 
   /// Return the RepositoryId of the repository in the low hex format.
   /// User is responsible for deallocating the returned string.
@@ -1249,11 +1306,14 @@ typedef UniqueHandle_Directory = ffi.Uint64;
 /// FFI handle to a borrowed resource.
 typedef RefHandle_DirEntry = ffi.Uint64;
 
+/// FFI handle to a resource with shared ownership.
+typedef SharedHandle_RepositoryHolder = ffi.Uint64;
+
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_SharedHandle_Mutex_FfiFile = Port;
+typedef Port_Result_SharedHandle_FileHolder = Port;
 
 /// FFI handle to a resource with shared ownership.
-typedef SharedHandle_Mutex_FfiFile = ffi.Uint64;
+typedef SharedHandle_FileHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u64 = Port;
@@ -1267,8 +1327,8 @@ typedef Port_u8 = Port;
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_SharedHandle_RepositoryHolder = Port;
 
-/// FFI handle to a resource with shared ownership.
-typedef SharedHandle_RepositoryHolder = ffi.Uint64;
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u8 = Port;
