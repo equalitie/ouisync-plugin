@@ -35,6 +35,7 @@ The former is done with the command:
 
 The latter is then done from the root folder of this repository:
 
+    $ flutter pub get
     $ flutter pub run ffigen
 
 Note that the above needs to be done every time the public interface of the
