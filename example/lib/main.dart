@@ -10,8 +10,6 @@ void main() async {
   runApp(MaterialApp(home: MyApp()));
 }
 
-const password = "correct horse battery staple";
-
 class MyApp extends StatefulWidget {
   @override
   State<MyApp> createState() => _MyAppState();
@@ -39,8 +37,9 @@ class _MyAppState extends State<MyApp> {
     final storeExists = await io.File(store).exists();
 
     final repo = storeExists
-        ? await Repository.open(session, store: store, password: password)
-        : await Repository.create(session, store: store, password: password);
+        ? await Repository.open(session, store: store, password: null)
+        : await Repository.create(session,
+            store: store, readPassword: null, writePassword: null);
 
     bittorrentDhtEnabled = repo.isDhtEnabled;
 

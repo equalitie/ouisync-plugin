@@ -11,7 +11,6 @@ void main() {
   final sessionStore = '$appDirectory/config.db';
   final repositoryStore = '$appDirectory/repo.db';
 
-  final password = '1a2b3c';
   final path = '/';
 
   setUp(() async {
@@ -32,7 +31,7 @@ void main() {
       () async {
     {
       repository = await Repository.create(session,
-          store: repositoryStore, password: password);
+          store: repositoryStore, readPassword: null, writePassword: null);
 
       await getDirectoryContents(repository!, path);
 
@@ -41,7 +40,7 @@ void main() {
     }
     {
       repository = await Repository.open(session,
-          store: repositoryStore, password: password);
+          store: repositoryStore, password: null);
 
       await getDirectoryContents(repository!, path);
     }
