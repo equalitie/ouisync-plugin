@@ -425,6 +425,20 @@ class Bindings {
   late final _network_subscribe =
       _network_subscribePtr.asFunction<int Function(int)>();
 
+  /// Gracefully disconnect from peers.
+  void network_shutdown(
+    int port,
+  ) {
+    return _network_shutdown(
+      port,
+    );
+  }
+
+  late final _network_shutdownPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(Port)>>('network_shutdown');
+  late final _network_shutdown =
+      _network_shutdownPtr.asFunction<void Function(int)>();
+
   /// Return the local TCP network endpoint as a string. The format is "<IPv4>:<PORT>". The
   /// returned pointer may be null if we did not bind to a TCP IPv4 address.
   ///
@@ -667,7 +681,7 @@ class Bindings {
   /// null                 |  null                  |  write         |  read and write without password
   /// any                  |  null                  |  write         |  read (only!) with password
   /// null                 |  any                   |  write         |  read without password, require password for writing
-  /// any                  |  any                   |  write         |  read with one password, write with (possibly same) one
+  /// any                  |  any                   |  write         |  read with password, write with (same or different) password
   void repository_create(
     ffi.Pointer<ffi.Int8> store,
     ffi.Pointer<ffi.Int8> local_read_password,
@@ -715,6 +729,115 @@ class Bindings {
               Port_Result_SharedHandle_RepositoryHolder)>>('repository_open');
   late final _repository_open = _repository_openPtr.asFunction<
       void Function(ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
+
+  /// If `share_token` is null, the function will try with the currently active access secrets in the
+  /// repository. Note that passing `share_token` explicitly (as opposed to implicitly using the
+  /// currently active secrets) may be used to increase access permissions.
+  ///
+  /// Attempting to change the secret without enough permissions will fail with PermissionDenied
+  /// error.
+  ///
+  /// If `local_read_password` is null, the repository will become readable without a password.
+  /// To remove the read (and write) permission use the `repository_remove_read_access`
+  /// function.
+  void repository_set_read_access(
+    int handle,
+    ffi.Pointer<ffi.Int8> local_read_password,
+    ffi.Pointer<ffi.Int8> share_token,
+    int port,
+  ) {
+    return _repository_set_read_access(
+      handle,
+      local_read_password,
+      share_token,
+      port,
+    );
+  }
+
+  late final _repository_set_read_accessPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SharedHandle_RepositoryHolder,
+              ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Int8>,
+              Port_Result)>>('repository_set_read_access');
+  late final _repository_set_read_access =
+      _repository_set_read_accessPtr.asFunction<
+          void Function(
+              int, ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
+
+  /// If `share_token` is null, the function will try with the currently active access secrets in the
+  /// repository. Note that passing `share_token` explicitly (as opposed to implicitly using the
+  /// currently active secrets) may be used to increase access permissions.
+  ///
+  /// Attempting to change the secret without enough permissions will fail with PermissionDenied
+  /// error.
+  ///
+  /// If `local_write_password` is null, the repository will become read and writable without a
+  /// password.  To remove the read and write access use the
+  /// `repository_remove_read_and_write_access` function.
+  void repository_set_read_and_write_access(
+    int handle,
+    ffi.Pointer<ffi.Int8> local_write_password,
+    ffi.Pointer<ffi.Int8> share_token,
+    int port,
+  ) {
+    return _repository_set_read_and_write_access(
+      handle,
+      local_write_password,
+      share_token,
+      port,
+    );
+  }
+
+  late final _repository_set_read_and_write_accessPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SharedHandle_RepositoryHolder,
+              ffi.Pointer<ffi.Int8>,
+              ffi.Pointer<ffi.Int8>,
+              Port_Result)>>('repository_set_read_and_write_access');
+  late final _repository_set_read_and_write_access =
+      _repository_set_read_and_write_accessPtr.asFunction<
+          void Function(
+              int, ffi.Pointer<ffi.Int8>, ffi.Pointer<ffi.Int8>, int)>();
+
+  /// Note that after removing read key the user may still read the repository if they previously had
+  /// write key set up.
+  void repository_remove_read_key(
+    int handle,
+    int port,
+  ) {
+    return _repository_remove_read_key(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_remove_read_keyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_RepositoryHolder,
+              Port_Result)>>('repository_remove_read_key');
+  late final _repository_remove_read_key =
+      _repository_remove_read_keyPtr.asFunction<void Function(int, int)>();
+
+  /// Note that removing the write key will leave read key intact.
+  void repository_remove_write_key(
+    int handle,
+    int port,
+  ) {
+    return _repository_remove_write_key(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_remove_write_keyPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_RepositoryHolder,
+              Port_Result)>>('repository_remove_write_key');
+  late final _repository_remove_write_key =
+      _repository_remove_write_keyPtr.asFunction<void Function(int, int)>();
 
   /// Closes a repository.
   void repository_close(
@@ -1203,6 +1326,21 @@ class Bindings {
   late final _session_closePtr =
       _lookup<ffi.NativeFunction<ffi.Void Function()>>('session_close');
   late final _session_close = _session_closePtr.asFunction<void Function()>();
+
+  /// Shutdowns the network and closes the session. This is equivalent to doing it in two steps
+  /// (`network_shutdown` then `session_close`, but in flutter when the engine is being detached from
+  /// Android runtime then async wait for `network_shutdown` never completes (or does so randomly),
+  /// and thus `session_close` is never invoked. My guess is that because the dart engine is being
+  /// detached we can't do any async await on the dart side anymore, and thus need to do it here.
+  void session_shutdown_network_and_close() {
+    return _session_shutdown_network_and_close();
+  }
+
+  late final _session_shutdown_network_and_closePtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+          'session_shutdown_network_and_close');
+  late final _session_shutdown_network_and_close =
+      _session_shutdown_network_and_closePtr.asFunction<void Function()>();
 
   /// Cancel a notification subscription.
   void subscription_cancel(

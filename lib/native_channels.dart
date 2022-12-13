@@ -88,8 +88,13 @@ class NativeChannels {
         return await _copyFileToRawFd(srcPath, dstFd);
 
       case 'stopSession':
-        session?.close();
+        final s = session;
         session = null;
+
+        if (s != null) {
+          s.shutdownNetworkAndClose();
+        }
+
         return;
 
       default:

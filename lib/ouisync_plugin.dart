@@ -155,6 +155,23 @@ class Session {
     bindings.session_close();
     NativeChannels.session = null;
   }
+
+  /// Try to gracefully close connections to peers.
+  Future<void> shutdownNetwork() async {
+    final recvPort = ReceivePort();
+
+    try {
+      bindings.network_shutdown(recvPort.sendPort.nativePort);
+      await recvPort.first;
+    } finally {
+      recvPort.close();
+    }
+  }
+
+  /// Try to gracefully close connections to peers.
+  Future<void> shutdownNetworkAndClose() async {
+    bindings.session_shutdown_network_and_close();
+  }
 }
 
 class PeerInfo {
