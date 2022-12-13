@@ -168,8 +168,8 @@ class Session {
     }
   }
 
-  /// Try to gracefully close connections to peers.
-  Future<void> shutdownNetworkAndClose() async {
+  /// Try to gracefully close connections to peers then close the session.
+  void shutdownNetworkAndClose() {
     bindings.session_shutdown_network_and_close();
   }
 }
