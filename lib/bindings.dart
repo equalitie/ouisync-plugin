@@ -1328,10 +1328,11 @@ class Bindings {
   late final _session_close = _session_closePtr.asFunction<void Function()>();
 
   /// Shutdowns the network and closes the session. This is equivalent to doing it in two steps
-  /// (`network_shutdown` then `session_close`, but in flutter when the engine is being detached from
-  /// Android runtime then async wait for `network_shutdown` never completes (or does so randomly),
-  /// and thus `session_close` is never invoked. My guess is that because the dart engine is being
-  /// detached we can't do any async await on the dart side anymore, and thus need to do it here.
+  /// (`network_shutdown` then `session_close`), but in flutter when the engine is being detached
+  /// from Android runtime then async wait for `network_shutdown` never completes (or does so
+  /// randomly), and thus `session_close` is never invoked. My guess is that because the dart engine
+  /// is being detached we can't do any async await on the dart side anymore, and thus need to do it
+  /// here.
   void session_shutdown_network_and_close() {
     return _session_shutdown_network_and_close();
   }
