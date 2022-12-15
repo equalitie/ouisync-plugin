@@ -15,6 +15,11 @@ jobs:
       with:
         toolchain: stable
 
+      # Not an ideal solution, but seems tha't the currently accepted workaround:
+      # https://github.com/dart-lang/ffigen/issues/222
+    - name: Create a link to libclang.so where flutter looks for it.
+      run: sudo ln -s /usr/local/lib/android/sdk/ndk/23.2.8568313/toolchains/renderscript/prebuilt/linux-x86_64/lib64/libclang.so /usr/lib/
+
     - name: Building ouisync library for the test
       # Building without `--release` because debug is required for `flutter test`
       run: cd ouisync && cargo build -p ouisync-ffi # --verbose

@@ -46,9 +46,12 @@ ffigen:
   description: 'Bindings to the ouisync library'
   output: 'lib/bindings.dart'
   # Generation of bindings may fail if the libclang.so library is not found in
-  # default locations. In such case uncomment the below line and set it to the
-  # correct path. For a bit more info: https://pub.dev/packages/ffigen
-  #llvm-path: ['/usr/lib/llvm-14/lib/libclang.so']
+  # default locations. Here we can list few more locations to search in. Note
+  # that the `lib/` directory is added, so e.g. if the lib is in
+  # `/usr/lib/libclang.so` one needs to add `/usr` here as the path to search
+  # in.
+  llvm-path:
+    - '/usr/lib/llvm-14' # Ubuntu 22.04.1 LTS
   headers:
     entry-points:
       - './ouisync/target/bindings.h'
