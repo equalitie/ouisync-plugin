@@ -773,18 +773,18 @@ class Bindings {
   /// Attempting to change the secret without enough permissions will fail with PermissionDenied
   /// error.
   ///
-  /// If `local_write_password` is null, the repository will become read and writable without a
+  /// If `local_rw_password` is null, the repository will become read and writable without a
   /// password.  To remove the read and write access use the
   /// `repository_remove_read_and_write_access` function.
   void repository_set_read_and_write_access(
     int handle,
-    ffi.Pointer<ffi.Int8> local_write_password,
+    ffi.Pointer<ffi.Int8> local_rw_password,
     ffi.Pointer<ffi.Int8> share_token,
     int port,
   ) {
     return _repository_set_read_and_write_access(
       handle,
-      local_write_password,
+      local_rw_password,
       share_token,
       port,
     );
@@ -931,6 +931,25 @@ class Bindings {
               SharedHandle_RepositoryHolder)>>('repository_info_hash');
   late final _repository_info_hash = _repository_info_hashPtr
       .asFunction<ffi.Pointer<ffi.Int8> Function(int)>();
+
+  /// Returns an ID that is randomly generated once per repository. Can be used to store local user
+  /// data per repository (e.g. passwords behind biometric storage).
+  void repository_database_id(
+    int handle,
+    int port,
+  ) {
+    return _repository_database_id(
+      handle,
+      port,
+    );
+  }
+
+  late final _repository_database_idPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SharedHandle_RepositoryHolder,
+              Port_Result_Vec_u8)>>('repository_database_id');
+  late final _repository_database_id =
+      _repository_database_idPtr.asFunction<void Function(int, int)>();
 
   /// Returns the type of repository entry (file, directory, ...).
   /// If the entry doesn't exists, returns `ENTRY_TYPE_INVALID`, not an error.
@@ -1470,13 +1489,13 @@ typedef Port_Result_SharedHandle_RepositoryHolder = Port;
 typedef Port_Result_bool = Port;
 
 /// Type-safe wrapper over native dart SendPort.
+typedef Port_Result_Vec_u8 = Port;
+
+/// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u8 = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_Vec_u8 = Port;
 
 /// FFI handle to a resource with unique ownership that can also be null.
 typedef UniqueNullableHandle_JoinHandle = ffi.Uint64;

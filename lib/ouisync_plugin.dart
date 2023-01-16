@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
+import 'package:hex/hex.dart';
 import 'package:messagepack/messagepack.dart';
 
 import 'bindings_global.dart';
@@ -429,6 +430,13 @@ class Repository {
 
   String get infoHash =>
       bindings.repository_info_hash(handle).cast<Utf8>().intoDartString();
+
+  Future<String> hexDatabaseId() async {
+    final bytes = await _withPool((pool) => _invoke<Uint8List>((port) {
+          bindings.repository_database_id(handle, port);
+        }));
+    return HEX.encode(bytes);
+  }
 }
 
 class ShareToken {
