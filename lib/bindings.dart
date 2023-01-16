@@ -1227,6 +1227,24 @@ class Bindings {
   late final _share_token_suggested_name = _share_token_suggested_namePtr
       .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
 
+  /// Take the input string, decide whether it's a valid OuiSync token and normalize it (remove white
+  /// space, unnecessary slashes,...).
+  /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
+  ffi.Pointer<ffi.Int8> share_token_normalize(
+    ffi.Pointer<ffi.Int8> token,
+  ) {
+    return _share_token_normalize(
+      token,
+    );
+  }
+
+  late final _share_token_normalizePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int8> Function(
+              ffi.Pointer<ffi.Int8>)>>('share_token_normalize');
+  late final _share_token_normalize = _share_token_normalizePtr
+      .asFunction<ffi.Pointer<ffi.Int8> Function(ffi.Pointer<ffi.Int8>)>();
+
   /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
   Bytes share_token_encode(
     ffi.Pointer<ffi.Int8> token,

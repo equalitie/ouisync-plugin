@@ -405,7 +405,7 @@ class Repository {
       print("Repository.createShareToken");
     }
 
-    return ShareToken(await _withPool((pool) => _invoke<String>((port) =>
+    return ShareToken._(await _withPool((pool) => _invoke<String>((port) =>
         bindings.repository_create_share_token(
             handle,
             _encodeAccessMode(accessMode),
@@ -442,7 +442,17 @@ class Repository {
 class ShareToken {
   final String token;
 
-  ShareToken(this.token);
+  ShareToken._(this.token);
+
+  static ShareToken? fromString(String s) => _withPoolSync((pool) {
+        final normalized = bindings.share_token_normalize(pool.toNativeUtf8(s));
+
+        if (normalized == nullptr) {
+          return null;
+        }
+
+        return ShareToken._(normalized.cast<Utf8>().intoDartString());
+      });
 
   /// Decode share token from raw bytes (obtained for example from a QR code).
   /// Returns null if the decoding failed.
@@ -454,7 +464,7 @@ class ShareToken {
 
         if (tokenPtr != nullptr) {
           final token = tokenPtr.cast<Utf8>().intoDartString();
-          return ShareToken(token);
+          return ShareToken._(token);
         } else {
           return null;
         }
