@@ -429,6 +429,18 @@ class Repository {
 
   String get infoHash =>
       bindings.repository_info_hash(handle).cast<Utf8>().intoDartString();
+
+  Future<void> setReadWriteAccess(
+          {required String newPassword,
+          required ShareToken? shareToken}) async =>
+      await _withPool((pool) => _invoke((port) =>
+          bindings.repository_set_read_and_write_access(
+              handle,
+              pool.toNativeUtf8(newPassword),
+              shareToken != null
+                  ? pool.toNativeUtf8(shareToken.token)
+                  : nullptr,
+              port)));
 }
 
 class ShareToken {
