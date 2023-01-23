@@ -978,8 +978,8 @@ class _Pool implements Allocator {
 
   // Convenience function to convert a dart string to a C-style nul-terminated utf-8 encoded
   // string pointer. The pointer is allocated using this pool.
-  Pointer<Int8> toNativeUtf8(String str) =>
-      str.toNativeUtf8(allocator: this).cast<Int8>();
+  Pointer<Char> toNativeUtf8(String str) =>
+      str.toNativeUtf8(allocator: this).cast<Char>();
 }
 
 extension Utf8Pointer on Pointer<Utf8> {
@@ -1019,7 +1019,7 @@ extension BytesExtension on Bytes {
 
 // Free a pointer that was allocated by the native side.
 void freeString(Pointer<Utf8> ptr) {
-  bindings.free_string(ptr.cast<Int8>());
+  bindings.free_string(ptr.cast<Char>());
 }
 
 void freeBytes(Bytes bytes) {
