@@ -11,14 +11,14 @@ dependencies:
   collection: ^1.16.0
   flutter:
     sdk: flutter
-  ffi: ^1.0.0
+  ffi: ^2.0.1
   hex: ^0.2.0
   path: ^1.8.0
   messagepack: ^0.2.1
   platform: ^3.1.0
 
 dev_dependencies:
-  ffigen: ^4.1.2
+  ffigen: ^7.2.4
   lints: ^2.0.0
   test: ^1.17.4
 
