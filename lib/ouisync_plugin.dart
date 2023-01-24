@@ -21,14 +21,17 @@ const bool debugTrace = false;
 /// Entry point to the ouisync bindings. A session should be opened at the start of the application
 /// and closed at the end. There can be only one session at the time.
 class Session {
-  final EventStreamController<NetworkEvent> _networkEventsController;
+  final int handle;
+  late final EventStreamController<NetworkEvent> _networkEventsController;
 
-  Session._()
-      : _networkEventsController = EventStreamController(
-          subscribe: (sendPort) =>
-              bindings.network_subscribe(sendPort.nativePort),
-          decode: _decodeNetworkEvent,
-        );
+  Session._(this.handle) {
+    _networkEventsController = EventStreamController(
+      session: this,
+      subscribe: (sendPort) =>
+          bindings.network_subscribe(handle, sendPort.nativePort),
+      decode: _decodeNetworkEvent,
+    );
+  }
 
   /// Opens a new session. [configsDirPath] is a path to a directory where
   /// configuration files shall be stored. If it doesn't exists, it will be
@@ -38,12 +41,11 @@ class Session {
       print("Session.open $configsDirPath");
     }
 
-    await _withPool((pool) => _invoke<void>((port) => bindings.session_open(
-        NativeApi.postCObject.cast<Void>(),
-        pool.toNativeUtf8(configsDirPath),
-        port)));
+    final handle = await _withPool((pool) => _invoke<int>((port) =>
+        bindings.session_open(NativeApi.postCObject.cast<Void>(),
+            pool.toNativeUtf8(configsDirPath), port)));
 
-    final session = Session._();
+    final session = Session._(handle);
     NativeChannels.session = session;
 
     return session;
@@ -57,6 +59,7 @@ class Session {
     String? tcpV6,
   }) =>
       _withPool((pool) => _invoke<void>((port) => bindings.network_bind(
+            handle,
             quicV4 != null ? pool.toNativeUtf8(quicV4) : nullptr,
             quicV6 != null ? pool.toNativeUtf8(quicV6) : nullptr,
             tcpV4 != null ? pool.toNativeUtf8(tcpV4) : nullptr,
@@ -67,32 +70,33 @@ class Session {
   Stream<NetworkEvent> get networkEvents => _networkEventsController.stream;
 
   bool addUserProvidedQuicPeer(String addr) {
-    return _withPoolSync((pool) =>
-        bindings.network_add_user_provided_quic_peer(pool.toNativeUtf8(addr)));
+    return _withPoolSync((pool) => bindings.network_add_user_provided_quic_peer(
+        handle, pool.toNativeUtf8(addr)));
   }
 
   bool removeUserProvidedQuicPeer(String addr) {
-    return _withPoolSync((pool) => bindings
-        .network_remove_user_provided_quic_peer(pool.toNativeUtf8(addr)));
+    return _withPoolSync((pool) =>
+        bindings.network_remove_user_provided_quic_peer(
+            handle, pool.toNativeUtf8(addr)));
   }
 
   String? get tcpListenerLocalAddressV4 => bindings
-      .network_tcp_listener_local_addr_v4()
+      .network_tcp_listener_local_addr_v4(handle)
       .cast<Utf8>()
       .intoNullableDartString();
 
   String? get tcpListenerLocalAddressV6 => bindings
-      .network_tcp_listener_local_addr_v6()
+      .network_tcp_listener_local_addr_v6(handle)
       .cast<Utf8>()
       .intoNullableDartString();
 
   String? get quicListenerLocalAddressV4 => bindings
-      .network_quic_listener_local_addr_v4()
+      .network_quic_listener_local_addr_v4(handle)
       .cast<Utf8>()
       .intoNullableDartString();
 
   String? get quicListenerLocalAddressV6 => bindings
-      .network_quic_listener_local_addr_v6()
+      .network_quic_listener_local_addr_v6(handle)
       .cast<Utf8>()
       .intoNullableDartString();
 
@@ -100,50 +104,51 @@ class Session {
   Stream<List<PeerInfo>> get onPeersChange => networkEvents.map((_) => peers);
 
   List<PeerInfo> get peers {
-    final bytes = bindings.network_connected_peers().intoUint8List();
+    final bytes = bindings.network_connected_peers(handle).intoUint8List();
     final unpacker = Unpacker(bytes);
     return PeerInfo.decodeAll(unpacker);
   }
 
   StateMonitor? getRootStateMonitor() {
-    return StateMonitor.getRoot();
+    return StateMonitor.getRoot(this);
   }
 
-  int get currentProtocolVersion => bindings.network_current_protocol_version();
+  int get currentProtocolVersion =>
+      bindings.network_current_protocol_version(handle);
 
   int get highestSeenProtocolVersion =>
-      bindings.network_highest_seen_protocol_version();
+      bindings.network_highest_seen_protocol_version(handle);
 
   /// Is port forwarding (UPnP) enabled?
   bool get isPortForwardingEnabled =>
-      bindings.network_is_port_forwarding_enabled();
+      bindings.network_is_port_forwarding_enabled(handle);
 
   /// Enable port forwarding (UPnP)
   void enablePortForwarding() {
-    bindings.network_enable_port_forwarding();
+    bindings.network_enable_port_forwarding(handle);
   }
 
   /// Disable port forwarding (UPnP)
   void disablePortForwarding() {
-    bindings.network_disable_port_forwarding();
+    bindings.network_disable_port_forwarding(handle);
   }
 
   /// Is local discovery enabled?
   bool get isLocalDiscoveryEnabled =>
-      bindings.network_is_local_discovery_enabled();
+      bindings.network_is_local_discovery_enabled(handle);
 
   /// Enable local discovery
   void enableLocalDiscovery() {
-    bindings.network_enable_local_discovery();
+    bindings.network_enable_local_discovery(handle);
   }
 
   /// Disable local discovery
   void disableLocalDiscovery() {
-    bindings.network_disable_local_discovery();
+    bindings.network_disable_local_discovery(handle);
   }
 
   String get thisRuntimeId =>
-      bindings.network_this_runtime_id().cast<Utf8>().intoDartString();
+      bindings.network_this_runtime_id(handle).cast<Utf8>().intoDartString();
 
   /// Closes the session.
   void close() {
@@ -153,7 +158,7 @@ class Session {
 
     _networkEventsController.close();
 
-    bindings.session_close();
+    bindings.session_close(handle);
     NativeChannels.session = null;
   }
 
@@ -162,7 +167,7 @@ class Session {
     final recvPort = ReceivePort();
 
     try {
-      bindings.network_shutdown(recvPort.sendPort.nativePort);
+      bindings.network_shutdown(handle, recvPort.sendPort.nativePort);
       await recvPort.first;
     } finally {
       recvPort.close();
@@ -171,7 +176,7 @@ class Session {
 
   /// Try to gracefully close connections to peers then close the session.
   void shutdownNetworkAndClose() {
-    bindings.session_shutdown_network_and_close();
+    bindings.session_shutdown_network_and_close(handle);
   }
 }
 
@@ -237,14 +242,16 @@ NetworkEvent? _decodeNetworkEvent(dynamic raw) {
 
 /// A reference to a ouisync repository.
 class Repository {
+  final Session session;
   final int handle;
   final String _store;
   final EventStreamController<RepositoryEvent> _eventsController;
 
-  Repository._(this.handle, this._store)
+  Repository._(this.session, this.handle, this._store)
       : _eventsController = EventStreamController(
-          subscribe: (sendPort) =>
-              bindings.repository_subscribe(handle, sendPort.nativePort),
+          session: session,
+          subscribe: (sendPort) => bindings.repository_subscribe(
+              session.handle, handle, sendPort.nativePort),
           decode: (_) => RepositoryEvent(),
         );
 
@@ -272,13 +279,14 @@ class Repository {
 
     final handle = await _withPool((pool) => _invoke<int>((port) =>
         bindings.repository_create(
+            session.handle,
             pool.toNativeUtf8(store),
             readPassword != null ? pool.toNativeUtf8(readPassword) : nullptr,
             writePassword != null ? pool.toNativeUtf8(writePassword) : nullptr,
             shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
             port)));
 
-    return Repository._(handle, store);
+    return Repository._(session, handle, store);
   }
 
   /// Opens an existing repository.
@@ -292,10 +300,10 @@ class Repository {
     }
 
     final handle = await _withPool((pool) => _invoke<int>((port) =>
-        bindings.repository_open(pool.toNativeUtf8(store),
+        bindings.repository_open(session.handle, pool.toNativeUtf8(store),
             password != null ? pool.toNativeUtf8(password) : nullptr, port)));
 
-    return Repository._(handle, store);
+    return Repository._(session, handle, store);
   }
 
   /// Close the repository. Accessing the repository after it's been closed is undefined behaviour
@@ -310,7 +318,8 @@ class Repository {
     final recvPort = ReceivePort();
 
     try {
-      bindings.repository_close(handle, recvPort.sendPort.nativePort);
+      bindings.repository_close(
+          session.handle, handle, recvPort.sendPort.nativePort);
       await recvPort.first;
     } finally {
       recvPort.close();
@@ -326,7 +335,7 @@ class Repository {
 
     return _decodeEntryType(await _withPool((pool) => _invoke<int>((port) =>
         bindings.repository_entry_type(
-            handle, pool.toNativeUtf8(path), port))));
+            session.handle, handle, pool.toNativeUtf8(path), port))));
   }
 
   /// Returns whether the entry (file or directory) at [path] exists.
@@ -345,8 +354,8 @@ class Repository {
     }
 
     return _withPool((pool) => _invoke<void>((port) =>
-        bindings.repository_move_entry(
-            handle, pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
+        bindings.repository_move_entry(session.handle, handle,
+            pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
   }
 
   Stream<RepositoryEvent> get events => _eventsController.stream;
@@ -356,7 +365,7 @@ class Repository {
       print("Repository.isDhtEnabled");
     }
 
-    return bindings.repository_is_dht_enabled(handle);
+    return bindings.repository_is_dht_enabled(session.handle, handle);
   }
 
   void enableDht() {
@@ -364,7 +373,7 @@ class Repository {
       print("Repository.enableDht");
     }
 
-    bindings.repository_enable_dht(handle);
+    bindings.repository_enable_dht(session.handle, handle);
   }
 
   void disableDht() {
@@ -372,19 +381,19 @@ class Repository {
       print("Repository.disableDht");
     }
 
-    bindings.repository_disable_dht(handle);
+    bindings.repository_disable_dht(session.handle, handle);
   }
 
   bool get isPexEnabled {
-    return bindings.repository_is_pex_enabled(handle);
+    return bindings.repository_is_pex_enabled(session.handle, handle);
   }
 
   void enablePex() {
-    bindings.repository_enable_pex(handle);
+    bindings.repository_enable_pex(session.handle, handle);
   }
 
   void disablePex() {
-    bindings.repository_disable_pex(handle);
+    bindings.repository_disable_pex(session.handle, handle);
   }
 
   AccessMode get accessMode {
@@ -392,7 +401,8 @@ class Repository {
       print("Repository.get accessMode");
     }
 
-    return _decodeAccessMode(bindings.repository_access_mode(handle))!;
+    return _decodeAccessMode(
+        bindings.repository_access_mode(session.handle, handle))!;
   }
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
@@ -407,6 +417,7 @@ class Repository {
 
     return ShareToken._(await _withPool((pool) => _invoke<String>((port) =>
         bindings.repository_create_share_token(
+            session.handle,
             handle,
             _encodeAccessMode(accessMode),
             name != null ? pool.toNativeUtf8(name) : nullptr,
@@ -414,28 +425,31 @@ class Repository {
   }
 
   Future<Progress> syncProgress() async {
-    final bytes = await _invoke<Uint8List>(
-        (port) => bindings.repository_sync_progress(handle, port));
+    final bytes = await _invoke<Uint8List>((port) =>
+        bindings.repository_sync_progress(session.handle, handle, port));
     final unpacker = Unpacker(bytes);
     return Progress.decode(unpacker);
   }
 
   StateMonitor? stateMonitor() {
-    return StateMonitor.getRoot()
+    return StateMonitor.getRoot(session)
         ?.childrenWithName("Repositories")
         .firstOrNull
         ?.childrenWithName("repository(db=$_store)")
         .firstOrNull;
   }
 
-  String get infoHash =>
-      bindings.repository_info_hash(handle).cast<Utf8>().intoDartString();
+  String get infoHash => bindings
+      .repository_info_hash(session.handle, handle)
+      .cast<Utf8>()
+      .intoDartString();
 
   Future<void> setReadWriteAccess(
           {required String newPassword,
           required ShareToken? shareToken}) async =>
       await _withPool((pool) => _invoke((port) =>
           bindings.repository_set_read_and_write_access(
+              session.handle,
               handle,
               pool.toNativeUtf8(newPassword),
               shareToken != null
@@ -445,7 +459,7 @@ class Repository {
 
   Future<String> hexDatabaseId() async {
     final bytes = await _withPool((pool) => _invoke<Uint8List>((port) {
-          bindings.repository_database_id(handle, port);
+          bindings.repository_database_id(session.handle, handle, port);
         }));
     return HEX.encode(bytes);
   }
@@ -573,12 +587,14 @@ class Progress {
 
 /// Helper translates native event subscription into a Stream of events
 class EventStreamController<E> {
+  final Session session;
   final ReceivePort _recvPort;
   int? _handle;
 
   late final Stream<E> stream;
 
   EventStreamController({
+    required this.session,
     required int Function(SendPort) subscribe,
     required E? Function(dynamic) decode,
   }) : _recvPort = ReceivePort() {
@@ -589,7 +605,7 @@ class EventStreamController<E> {
       onCancel: (_) {
         final handle = _handle;
         if (handle != null) {
-          bindings.subscription_cancel(handle);
+          bindings.subscription_cancel(session.handle, handle);
           _handle = null;
         }
       },
@@ -608,7 +624,7 @@ class EventStreamController<E> {
     _handle = null;
 
     if (handle != null) {
-      bindings.subscription_cancel(handle);
+      bindings.subscription_cancel(session.handle, handle);
     }
 
     _recvPort.close();
@@ -637,19 +653,23 @@ EntryType? _decodeEntryType(int n) {
 
 /// Single entry of a directory.
 class DirEntry {
-  final int handle;
+  final Directory directory;
+  final int index;
 
-  DirEntry._(this.handle);
+  DirEntry._(this.directory, this.index);
 
   /// Name of this entry.
   ///
   /// Note: this is just the name, not the full path.
-  String get name =>
-      bindings.dir_entry_name(handle).cast<Utf8>().toDartString();
+  String get name => bindings
+      .directory_entry_name(directory.session.handle, directory.handle, index)
+      .cast<Utf8>()
+      .toDartString();
 
   /// Type of this entry (file/directory).
   EntryType get type {
-    return _decodeEntryType(bindings.dir_entry_type(handle)) ??
+    return _decodeEntryType(bindings.directory_entry_type(
+            directory.session.handle, directory.handle, index)) ??
         (throw Error(ErrorCode.other, 'invalid dir entry type'));
   }
 }
@@ -662,9 +682,10 @@ class DirEntry {
 /// Subsequent external changes to the directory (e.g. added files) are not recognized and the
 /// directory needs to be manually reopened to do so.
 class Directory with IterableMixin<DirEntry> {
+  final Session session;
   final int handle;
 
-  Directory._(this.handle);
+  Directory._(this.session, this.handle);
 
   /// Opens a directory of [repo] at [path].
   ///
@@ -676,8 +697,15 @@ class Directory with IterableMixin<DirEntry> {
       print("Directory.open $path");
     }
 
-    return Directory._(await _withPool((pool) => _invoke<int>((port) =>
-        bindings.directory_open(repo.handle, pool.toNativeUtf8(path), port))));
+    return Directory._(
+        repo.session,
+        await _withPool(
+            (pool) => _invoke<int>((port) => bindings.directory_open(
+                  repo.session.handle,
+                  repo.handle,
+                  pool.toNativeUtf8(path),
+                  port,
+                ))));
   }
 
   /// Creates a new directory in [repo] at [path].
@@ -688,15 +716,23 @@ class Directory with IterableMixin<DirEntry> {
       print("Directory.create $path");
     }
 
-    return _withPool((pool) => _invoke<void>((port) =>
-        bindings.directory_create(repo.handle, pool.toNativeUtf8(path), port)));
+    return _withPool(
+        (pool) => _invoke<void>((port) => bindings.directory_create(
+              repo.session.handle,
+              repo.handle,
+              pool.toNativeUtf8(path),
+              port,
+            )));
   }
 
   /// Remove a directory from [repo] at [path]. If [recursive] is false (which is the default),
   /// the directory must be empty otherwise an exception is thrown. If [recursive] it is true, the
   /// content of the directory is removed as well.
-  static Future<void> remove(Repository repo, String path,
-      {bool recursive = false}) {
+  static Future<void> remove(
+    Repository repo,
+    String path, {
+    bool recursive = false,
+  }) {
     if (debugTrace) {
       print("Directory.remove $path");
     }
@@ -705,8 +741,8 @@ class Directory with IterableMixin<DirEntry> {
         ? bindings.directory_remove_recursively
         : bindings.directory_remove;
 
-    return _withPool((pool) => _invoke<void>(
-        (port) => fun(repo.handle, pool.toNativeUtf8(path), port)));
+    return _withPool((pool) => _invoke<void>((port) =>
+        fun(repo.session.handle, repo.handle, pool.toNativeUtf8(path), port)));
   }
 
   /// Closes this directory.
@@ -715,27 +751,28 @@ class Directory with IterableMixin<DirEntry> {
       print("Directory.close");
     }
 
-    bindings.directory_close(handle);
+    bindings.directory_close(session.handle, handle);
   }
 
   /// Returns an [Iterator] to iterate over entries of this directory.
   @override
-  Iterator<DirEntry> get iterator => DirEntriesIterator._(handle);
+  Iterator<DirEntry> get iterator => DirEntriesIterator._(this);
 }
 
 /// Iterator for a [Directory]
 class DirEntriesIterator extends Iterator<DirEntry> {
-  final int handle;
+  final Directory directory;
   final int count;
   int index = -1;
 
-  DirEntriesIterator._(this.handle)
-      : count = bindings.directory_num_entries(handle);
+  DirEntriesIterator._(this.directory)
+      : count = bindings.directory_num_entries(
+            directory.session.handle, directory.handle);
 
   @override
   DirEntry get current {
     assert(index >= 0 && index < count);
-    return DirEntry._(bindings.directory_get_entry(handle, index));
+    return DirEntry._(directory, index);
   }
 
   @override
@@ -747,9 +784,10 @@ class DirEntriesIterator extends Iterator<DirEntry> {
 
 /// Reference to a file in a [Repository].
 class File {
+  Session session;
   final int handle;
 
-  File._(this.handle);
+  File._(this.session, this.handle);
 
   static const defaultChunkSize = 1024;
 
@@ -761,8 +799,14 @@ class File {
       print("File.open");
     }
 
-    return File._(await _withPool((pool) => _invoke<int>((port) =>
-        bindings.file_open(repo.handle, pool.toNativeUtf8(path), port))));
+    return File._(
+        repo.session,
+        await _withPool((pool) => _invoke<int>((port) => bindings.file_open(
+              repo.session.handle,
+              repo.handle,
+              pool.toNativeUtf8(path),
+              port,
+            ))));
   }
 
   /// Creates a new file in [repo] at [path].
@@ -773,8 +817,15 @@ class File {
       print("File.create $path");
     }
 
-    return File._(await _withPool((pool) => _invoke<int>((port) =>
-        bindings.file_create(repo.handle, pool.toNativeUtf8(path), port))));
+    return File._(
+      repo.session,
+      await _withPool((pool) => _invoke<int>((port) => bindings.file_create(
+            repo.session.handle,
+            repo.handle,
+            pool.toNativeUtf8(path),
+            port,
+          ))),
+    );
   }
 
   /// Removes (deletes) a file at [path] from [repo].
@@ -783,8 +834,12 @@ class File {
       print("File.remove $path");
     }
 
-    return _withPool((pool) => _invoke<void>((port) =>
-        bindings.file_remove(repo.handle, pool.toNativeUtf8(path), port)));
+    return _withPool((pool) => _invoke<void>((port) => bindings.file_remove(
+          repo.session.handle,
+          repo.handle,
+          pool.toNativeUtf8(path),
+          port,
+        )));
   }
 
   /// Flushed and closes this file.
@@ -793,7 +848,8 @@ class File {
       print("File.close");
     }
 
-    return _invoke<void>((port) => bindings.file_close(handle, port));
+    return _invoke<void>(
+        (port) => bindings.file_close(session.handle, handle, port));
   }
 
   /// Flushes any pending writes to this file.
@@ -802,7 +858,8 @@ class File {
       print("File.flush");
     }
 
-    return _invoke<void>((port) => bindings.file_flush(handle, port));
+    return _invoke<void>(
+        (port) => bindings.file_flush(session.handle, handle, port));
   }
 
   /// Read [size] bytes from this file, starting at [offset].
@@ -839,8 +896,14 @@ class File {
     var buffer = malloc<Uint8>(size);
 
     try {
-      final actualSize = await _invoke<int>(
-          (port) => bindings.file_read(handle, offset, buffer, size, port));
+      final actualSize = await _invoke<int>((port) => bindings.file_read(
+            session.handle,
+            handle,
+            offset,
+            buffer,
+            size,
+            port,
+          ));
       return buffer.asTypedList(actualSize).toList();
     } finally {
       malloc.free(buffer);
@@ -857,8 +920,14 @@ class File {
 
     try {
       buffer.asTypedList(data.length).setAll(0, data);
-      await _invoke<void>((port) =>
-          bindings.file_write(handle, offset, buffer, data.length, port));
+      await _invoke<void>((port) => bindings.file_write(
+            session.handle,
+            handle,
+            offset,
+            buffer,
+            data.length,
+            port,
+          ));
     } finally {
       malloc.free(buffer);
     }
@@ -870,7 +939,8 @@ class File {
       print("File.truncate");
     }
 
-    return _invoke<void>((port) => bindings.file_truncate(handle, size, port));
+    return _invoke<void>(
+        (port) => bindings.file_truncate(session.handle, handle, size, port));
   }
 
   /// Returns the length of this file in bytes.
@@ -879,7 +949,8 @@ class File {
       print("File.length");
     }
 
-    return _invoke<int>((port) => bindings.file_len(handle, port));
+    return _invoke<int>(
+        (port) => bindings.file_len(session.handle, handle, port));
   }
 
   /// Copy the contents of the file into the provided raw file descriptor.
@@ -888,8 +959,8 @@ class File {
       print("File.copyToRawFd");
     }
 
-    return _invoke<void>(
-        (port) => bindings.file_copy_to_raw_fd(handle, fd, port));
+    return _invoke<void>((port) =>
+        bindings.file_copy_to_raw_fd(session.handle, handle, fd, port));
   }
 }
 

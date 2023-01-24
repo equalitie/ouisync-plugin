@@ -19,11 +19,13 @@ class Bindings {
       : _lookup = lookup;
 
   void directory_create(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _directory_create(
+      session,
       repo,
       path,
       port,
@@ -32,17 +34,19 @@ class Bindings {
 
   late final _directory_createPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Char>,
-              Port_Result)>>('directory_create');
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
+              ffi.Pointer<ffi.Char>, Port_Result)>>('directory_create');
   late final _directory_create = _directory_createPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   void directory_open(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _directory_open(
+      session,
       repo,
       path,
       port,
@@ -51,18 +55,23 @@ class Bindings {
 
   late final _directory_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Char>,
-              Port_Result_UniqueHandle_Directory)>>('directory_open');
+          ffi.Void Function(
+              SessionHandle,
+              Handle_RepositoryHolder,
+              ffi.Pointer<ffi.Char>,
+              Port_Result_Handle_Directory)>>('directory_open');
   late final _directory_open = _directory_openPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   /// Removes the directory at the given path from the repository. The directory must be empty.
   void directory_remove(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _directory_remove(
+      session,
       repo,
       path,
       port,
@@ -71,18 +80,20 @@ class Bindings {
 
   late final _directory_removePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Char>,
-              Port_Result)>>('directory_remove');
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
+              ffi.Pointer<ffi.Char>, Port_Result)>>('directory_remove');
   late final _directory_remove = _directory_removePtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   /// Removes the directory at the given path including its content from the repository.
   void directory_remove_recursively(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _directory_remove_recursively(
+      session,
       repo,
       path,
       port,
@@ -91,91 +102,94 @@ class Bindings {
 
   late final _directory_remove_recursivelyPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Char>,
+          ffi.Void Function(
+              SessionHandle,
+              Handle_RepositoryHolder,
+              ffi.Pointer<ffi.Char>,
               Port_Result)>>('directory_remove_recursively');
   late final _directory_remove_recursively = _directory_remove_recursivelyPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   void directory_close(
+    int session,
     int handle,
   ) {
     return _directory_close(
+      session,
       handle,
     );
   }
 
-  late final _directory_closePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(UniqueHandle_Directory)>>(
-          'directory_close');
+  late final _directory_closePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SessionHandle, Handle_Directory)>>('directory_close');
   late final _directory_close =
-      _directory_closePtr.asFunction<void Function(int)>();
+      _directory_closePtr.asFunction<void Function(int, int)>();
 
   int directory_num_entries(
+    int session,
     int handle,
   ) {
     return _directory_num_entries(
+      session,
       handle,
     );
   }
 
-  late final _directory_num_entriesPtr =
-      _lookup<ffi.NativeFunction<ffi.Uint64 Function(UniqueHandle_Directory)>>(
-          'directory_num_entries');
+  late final _directory_num_entriesPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Uint64 Function(
+              SessionHandle, Handle_Directory)>>('directory_num_entries');
   late final _directory_num_entries =
-      _directory_num_entriesPtr.asFunction<int Function(int)>();
+      _directory_num_entriesPtr.asFunction<int Function(int, int)>();
 
-  int directory_get_entry(
+  ffi.Pointer<ffi.Char> directory_entry_name(
+    int session,
     int handle,
     int index,
   ) {
-    return _directory_get_entry(
+    return _directory_entry_name(
+      session,
       handle,
       index,
     );
   }
 
-  late final _directory_get_entryPtr = _lookup<
+  late final _directory_entry_namePtr = _lookup<
       ffi.NativeFunction<
-          RefHandle_DirEntry Function(
-              UniqueHandle_Directory, ffi.Uint64)>>('directory_get_entry');
-  late final _directory_get_entry =
-      _directory_get_entryPtr.asFunction<int Function(int, int)>();
+          ffi.Pointer<ffi.Char> Function(SessionHandle, Handle_Directory,
+              ffi.Uint64)>>('directory_entry_name');
+  late final _directory_entry_name = _directory_entry_namePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(int, int, int)>();
 
-  ffi.Pointer<ffi.Char> dir_entry_name(
+  int directory_entry_type(
+    int session,
     int handle,
+    int index,
   ) {
-    return _dir_entry_name(
+    return _directory_entry_type(
+      session,
       handle,
+      index,
     );
   }
 
-  late final _dir_entry_namePtr = _lookup<
+  late final _directory_entry_typePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              RefHandle_DirEntry)>>('dir_entry_name');
-  late final _dir_entry_name =
-      _dir_entry_namePtr.asFunction<ffi.Pointer<ffi.Char> Function(int)>();
-
-  int dir_entry_type(
-    int handle,
-  ) {
-    return _dir_entry_type(
-      handle,
-    );
-  }
-
-  late final _dir_entry_typePtr =
-      _lookup<ffi.NativeFunction<ffi.Uint8 Function(RefHandle_DirEntry)>>(
-          'dir_entry_type');
-  late final _dir_entry_type =
-      _dir_entry_typePtr.asFunction<int Function(int)>();
+          ffi.Uint8 Function(SessionHandle, Handle_Directory,
+              ffi.Uint64)>>('directory_entry_type');
+  late final _directory_entry_type =
+      _directory_entry_typePtr.asFunction<int Function(int, int, int)>();
 
   void file_open(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _file_open(
+      session,
       repo,
       path,
       port,
@@ -185,18 +199,21 @@ class Bindings {
   late final _file_openPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder,
+              SessionHandle,
+              Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>,
-              Port_Result_SharedHandle_FileHolder)>>('file_open');
+              Port_Result_Handle_FileHolder)>>('file_open');
   late final _file_open = _file_openPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   void file_create(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _file_create(
+      session,
       repo,
       path,
       port,
@@ -206,19 +223,22 @@ class Bindings {
   late final _file_createPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder,
+              SessionHandle,
+              Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>,
-              Port_Result_SharedHandle_FileHolder)>>('file_create');
+              Port_Result_Handle_FileHolder)>>('file_create');
   late final _file_create = _file_createPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   /// Remove (delete) the file at the given path from the repository.
   void file_remove(
+    int session,
     int repo,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _file_remove(
+      session,
       repo,
       path,
       port,
@@ -227,16 +247,18 @@ class Bindings {
 
   late final _file_removePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_Repository, ffi.Pointer<ffi.Char>,
-              Port_Result)>>('file_remove');
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
+              ffi.Pointer<ffi.Char>, Port_Result)>>('file_remove');
   late final _file_remove = _file_removePtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   void file_close(
+    int session,
     int handle,
     int port,
   ) {
     return _file_close(
+      session,
       handle,
       port,
     );
@@ -245,14 +267,17 @@ class Bindings {
   late final _file_closePtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_FileHolder, Port_Result)>>('file_close');
-  late final _file_close = _file_closePtr.asFunction<void Function(int, int)>();
+              SessionHandle, Handle_FileHolder, Port_Result)>>('file_close');
+  late final _file_close =
+      _file_closePtr.asFunction<void Function(int, int, int)>();
 
   void file_flush(
+    int session,
     int handle,
     int port,
   ) {
     return _file_flush(
+      session,
       handle,
       port,
     );
@@ -261,12 +286,14 @@ class Bindings {
   late final _file_flushPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_FileHolder, Port_Result)>>('file_flush');
-  late final _file_flush = _file_flushPtr.asFunction<void Function(int, int)>();
+              SessionHandle, Handle_FileHolder, Port_Result)>>('file_flush');
+  late final _file_flush =
+      _file_flushPtr.asFunction<void Function(int, int, int)>();
 
   /// Read at most `len` bytes from the file into `buffer`. Yields the number of bytes actually read
   /// (zero on EOF).
   void file_read(
+    int session,
     int handle,
     int offset,
     ffi.Pointer<ffi.Uint8> buffer,
@@ -274,6 +301,7 @@ class Bindings {
     int port,
   ) {
     return _file_read(
+      session,
       handle,
       offset,
       buffer,
@@ -285,16 +313,18 @@ class Bindings {
   late final _file_readPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_FileHolder,
+              SessionHandle,
+              Handle_FileHolder,
               ffi.Uint64,
               ffi.Pointer<ffi.Uint8>,
               ffi.Uint64,
               Port_Result_u64)>>('file_read');
-  late final _file_read = _file_readPtr
-      .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
+  late final _file_read = _file_readPtr.asFunction<
+      void Function(int, int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
   /// Write `len` bytes from `buffer` into the file.
   void file_write(
+    int session,
     int handle,
     int offset,
     ffi.Pointer<ffi.Uint8> buffer,
@@ -302,6 +332,7 @@ class Bindings {
     int port,
   ) {
     return _file_write(
+      session,
       handle,
       offset,
       buffer,
@@ -312,18 +343,20 @@ class Bindings {
 
   late final _file_writePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_FileHolder, ffi.Uint64,
+          ffi.Void Function(SessionHandle, Handle_FileHolder, ffi.Uint64,
               ffi.Pointer<ffi.Uint8>, ffi.Uint64, Port_Result)>>('file_write');
-  late final _file_write = _file_writePtr
-      .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
+  late final _file_write = _file_writePtr.asFunction<
+      void Function(int, int, int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
   /// Truncate the file to `len` bytes.
   void file_truncate(
+    int session,
     int handle,
     int len,
     int port,
   ) {
     return _file_truncate(
+      session,
       handle,
       len,
       port,
@@ -332,17 +365,19 @@ class Bindings {
 
   late final _file_truncatePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_FileHolder, ffi.Uint64,
+          ffi.Void Function(SessionHandle, Handle_FileHolder, ffi.Uint64,
               Port_Result)>>('file_truncate');
   late final _file_truncate =
-      _file_truncatePtr.asFunction<void Function(int, int, int)>();
+      _file_truncatePtr.asFunction<void Function(int, int, int, int)>();
 
   /// Retrieve the size of the file in bytes.
   void file_len(
+    int session,
     int handle,
     int port,
   ) {
     return _file_len(
+      session,
       handle,
       port,
     );
@@ -351,19 +386,22 @@ class Bindings {
   late final _file_lenPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_FileHolder, Port_Result_u64)>>('file_len');
-  late final _file_len = _file_lenPtr.asFunction<void Function(int, int)>();
+              SessionHandle, Handle_FileHolder, Port_Result_u64)>>('file_len');
+  late final _file_len =
+      _file_lenPtr.asFunction<void Function(int, int, int)>();
 
   /// Copy the file contents into the provided raw file descriptor.
   /// This function takes ownership of the file descriptor and closes it when it finishes. If the
   /// caller needs to access the descriptor afterwards (or while the function is running), he/she
   /// needs to `dup` it before passing it into this function.
   void file_copy_to_raw_fd(
+    int session,
     int handle,
     int fd,
     int port,
   ) {
     return _file_copy_to_raw_fd(
+      session,
       handle,
       fd,
       port,
@@ -372,10 +410,10 @@ class Bindings {
 
   late final _file_copy_to_raw_fdPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_FileHolder, ffi.Int,
+          ffi.Void Function(SessionHandle, Handle_FileHolder, ffi.Int,
               Port_Result)>>('file_copy_to_raw_fd');
   late final _file_copy_to_raw_fd =
-      _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int)>();
+      _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int, int)>();
 
   /// Binds the network to the specified addresses.
   /// Rebinds if already bound. If any of the addresses is null, that particular protocol/family
@@ -383,6 +421,7 @@ class Bindings {
   /// Yields `Ok` if the binding was successful, `Err` if any of the given addresses failed to
   /// parse or are were of incorrect type (e.g. IPv4 instead of IpV6).
   void network_bind(
+    int session,
     ffi.Pointer<ffi.Char> quic_v4,
     ffi.Pointer<ffi.Char> quic_v6,
     ffi.Pointer<ffi.Char> tcp_v4,
@@ -390,6 +429,7 @@ class Bindings {
     int port,
   ) {
     return _network_bind(
+      session,
       quic_v4,
       quic_v6,
       tcp_v4,
@@ -401,43 +441,50 @@ class Bindings {
   late final _network_bindPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
+              SessionHandle,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               Port_Result)>>('network_bind');
   late final _network_bind = _network_bindPtr.asFunction<
-      void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
+      void Function(int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
           ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
 
   /// Subscribe to network event notifications.
   int network_subscribe(
+    int session,
     int port,
   ) {
     return _network_subscribe(
+      session,
       port,
     );
   }
 
-  late final _network_subscribePtr =
-      _lookup<ffi.NativeFunction<UniqueHandle_JoinHandle Function(Port_u8)>>(
-          'network_subscribe');
+  late final _network_subscribePtr = _lookup<
+      ffi.NativeFunction<
+          Handle_JoinHandle Function(
+              SessionHandle, Port_u8)>>('network_subscribe');
   late final _network_subscribe =
-      _network_subscribePtr.asFunction<int Function(int)>();
+      _network_subscribePtr.asFunction<int Function(int, int)>();
 
   /// Gracefully disconnect from peers.
   void network_shutdown(
+    int session,
     int port,
   ) {
     return _network_shutdown(
+      session,
       port,
     );
   }
 
-  late final _network_shutdownPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(Port)>>('network_shutdown');
+  late final _network_shutdownPtr = _lookup<
+          ffi.NativeFunction<ffi.Void Function(SessionHandle, Port_Result)>>(
+      'network_shutdown');
   late final _network_shutdown =
-      _network_shutdownPtr.asFunction<void Function(int)>();
+      _network_shutdownPtr.asFunction<void Function(int, int)>();
 
   /// Return the local TCP network endpoint as a string. The format is "<IPv4>:<PORT>". The
   /// returned pointer may be null if we did not bind to a TCP IPv4 address.
@@ -445,16 +492,20 @@ class Bindings {
   /// Example: "192.168.1.1:65522"
   ///
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
-  ffi.Pointer<ffi.Char> network_tcp_listener_local_addr_v4() {
-    return _network_tcp_listener_local_addr_v4();
+  ffi.Pointer<ffi.Char> network_tcp_listener_local_addr_v4(
+    int session,
+  ) {
+    return _network_tcp_listener_local_addr_v4(
+      session,
+    );
   }
 
-  late final _network_tcp_listener_local_addr_v4Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-          'network_tcp_listener_local_addr_v4');
+  late final _network_tcp_listener_local_addr_v4Ptr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(SessionHandle)>>(
+      'network_tcp_listener_local_addr_v4');
   late final _network_tcp_listener_local_addr_v4 =
       _network_tcp_listener_local_addr_v4Ptr
-          .asFunction<ffi.Pointer<ffi.Char> Function()>();
+          .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   /// Return the local TCP network endpoint as a string. The format is "<[IPv6]>:<PORT>". The
   /// returned pointer pointer may be null if we did bind to a TCP IPv6 address.
@@ -462,16 +513,20 @@ class Bindings {
   /// Example: "[2001:db8::1]:65522"
   ///
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
-  ffi.Pointer<ffi.Char> network_tcp_listener_local_addr_v6() {
-    return _network_tcp_listener_local_addr_v6();
+  ffi.Pointer<ffi.Char> network_tcp_listener_local_addr_v6(
+    int session,
+  ) {
+    return _network_tcp_listener_local_addr_v6(
+      session,
+    );
   }
 
-  late final _network_tcp_listener_local_addr_v6Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-          'network_tcp_listener_local_addr_v6');
+  late final _network_tcp_listener_local_addr_v6Ptr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(SessionHandle)>>(
+      'network_tcp_listener_local_addr_v6');
   late final _network_tcp_listener_local_addr_v6 =
       _network_tcp_listener_local_addr_v6Ptr
-          .asFunction<ffi.Pointer<ffi.Char> Function()>();
+          .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   /// Return the local QUIC/UDP network endpoint as a string. The format is "<IPv4>:<PORT>". The
   /// returned pointer may be null if we did not bind to a QUIC/UDP IPv4 address.
@@ -479,16 +534,20 @@ class Bindings {
   /// Example: "192.168.1.1:65522"
   ///
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
-  ffi.Pointer<ffi.Char> network_quic_listener_local_addr_v4() {
-    return _network_quic_listener_local_addr_v4();
+  ffi.Pointer<ffi.Char> network_quic_listener_local_addr_v4(
+    int session,
+  ) {
+    return _network_quic_listener_local_addr_v4(
+      session,
+    );
   }
 
-  late final _network_quic_listener_local_addr_v4Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-          'network_quic_listener_local_addr_v4');
+  late final _network_quic_listener_local_addr_v4Ptr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(SessionHandle)>>(
+      'network_quic_listener_local_addr_v4');
   late final _network_quic_listener_local_addr_v4 =
       _network_quic_listener_local_addr_v4Ptr
-          .asFunction<ffi.Pointer<ffi.Char> Function()>();
+          .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   /// Return the local QUIC/UDP network endpoint as a string. The format is "<[IPv6]>:<PORT>". The
   /// returned pointer may be null if we did bind to a QUIC/UDP IPv6 address.
@@ -496,16 +555,20 @@ class Bindings {
   /// Example: "[2001:db8::1]:65522"
   ///
   /// IMPORTANT: the caller is responsible for deallocating the returned pointer.
-  ffi.Pointer<ffi.Char> network_quic_listener_local_addr_v6() {
-    return _network_quic_listener_local_addr_v6();
+  ffi.Pointer<ffi.Char> network_quic_listener_local_addr_v6(
+    int session,
+  ) {
+    return _network_quic_listener_local_addr_v6(
+      session,
+    );
   }
 
-  late final _network_quic_listener_local_addr_v6Ptr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-          'network_quic_listener_local_addr_v6');
+  late final _network_quic_listener_local_addr_v6Ptr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(SessionHandle)>>(
+      'network_quic_listener_local_addr_v6');
   late final _network_quic_listener_local_addr_v6 =
       _network_quic_listener_local_addr_v6Ptr
-          .asFunction<ffi.Pointer<ffi.Char> Function()>();
+          .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   /// Add a QUIC endpoint to which which OuiSync shall attempt to connect. Upon failure or success
   /// but then disconnection, the endpoint be retried until the below
@@ -517,19 +580,22 @@ class Bindings {
   /// If the format is not parsed correctly, this function returns `false`, in all other cases it
   /// returns `true`. The latter includes the case when the peer has already been added.
   bool network_add_user_provided_quic_peer(
+    int session,
     ffi.Pointer<ffi.Char> addr,
   ) {
     return _network_add_user_provided_quic_peer(
+      session,
       addr,
     );
   }
 
-  late final _network_add_user_provided_quic_peerPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function(ffi.Pointer<ffi.Char>)>>(
-          'network_add_user_provided_quic_peer');
+  late final _network_add_user_provided_quic_peerPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Bool Function(SessionHandle,
+              ffi.Pointer<ffi.Char>)>>('network_add_user_provided_quic_peer');
   late final _network_add_user_provided_quic_peer =
       _network_add_user_provided_quic_peerPtr
-          .asFunction<bool Function(ffi.Pointer<ffi.Char>)>();
+          .asFunction<bool Function(int, ffi.Pointer<ffi.Char>)>();
 
   /// Remove a QUIC endpoint from the list of user provided QUIC peers (added by the above
   /// `network_add_user_provided_quic_peer` function). Note that users added by other discovery
@@ -544,130 +610,174 @@ class Bindings {
   /// If the format is not parsed correctly, this function returns `false`, in all other cases it
   /// returns `true`. The latter includes the case when the peer has not been previously added.
   bool network_remove_user_provided_quic_peer(
+    int session,
     ffi.Pointer<ffi.Char> addr,
   ) {
     return _network_remove_user_provided_quic_peer(
+      session,
       addr,
     );
   }
 
-  late final _network_remove_user_provided_quic_peerPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function(ffi.Pointer<ffi.Char>)>>(
-          'network_remove_user_provided_quic_peer');
+  late final _network_remove_user_provided_quic_peerPtr = _lookup<
+          ffi.NativeFunction<
+              ffi.Bool Function(SessionHandle, ffi.Pointer<ffi.Char>)>>(
+      'network_remove_user_provided_quic_peer');
   late final _network_remove_user_provided_quic_peer =
       _network_remove_user_provided_quic_peerPtr
-          .asFunction<bool Function(ffi.Pointer<ffi.Char>)>();
+          .asFunction<bool Function(int, ffi.Pointer<ffi.Char>)>();
 
   /// Return the list of peers with which we're connected, serialized with msgpack.
-  Bytes network_connected_peers() {
-    return _network_connected_peers();
+  Bytes network_connected_peers(
+    int session,
+  ) {
+    return _network_connected_peers(
+      session,
+    );
   }
 
   late final _network_connected_peersPtr =
-      _lookup<ffi.NativeFunction<Bytes Function()>>('network_connected_peers');
+      _lookup<ffi.NativeFunction<Bytes Function(SessionHandle)>>(
+          'network_connected_peers');
   late final _network_connected_peers =
-      _network_connected_peersPtr.asFunction<Bytes Function()>();
+      _network_connected_peersPtr.asFunction<Bytes Function(int)>();
 
   /// Returns our runtime id formatted as a hex string.
   /// The caller is responsible for deallocating it.
-  ffi.Pointer<ffi.Char> network_this_runtime_id() {
-    return _network_this_runtime_id();
+  ffi.Pointer<ffi.Char> network_this_runtime_id(
+    int session,
+  ) {
+    return _network_this_runtime_id(
+      session,
+    );
   }
 
-  late final _network_this_runtime_idPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function()>>(
-          'network_this_runtime_id');
+  late final _network_this_runtime_idPtr = _lookup<
+          ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(SessionHandle)>>(
+      'network_this_runtime_id');
   late final _network_this_runtime_id = _network_this_runtime_idPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function()>();
+      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   /// Return our currently used protocol version number.
-  int network_current_protocol_version() {
-    return _network_current_protocol_version();
+  int network_current_protocol_version(
+    int session,
+  ) {
+    return _network_current_protocol_version(
+      session,
+    );
   }
 
   late final _network_current_protocol_versionPtr =
-      _lookup<ffi.NativeFunction<ffi.Uint32 Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Uint32 Function(SessionHandle)>>(
           'network_current_protocol_version');
   late final _network_current_protocol_version =
-      _network_current_protocol_versionPtr.asFunction<int Function()>();
+      _network_current_protocol_versionPtr.asFunction<int Function(int)>();
 
   /// Return the highest seen protocol version number. The value returned is always higher
   /// or equal to the value returned from network_current_protocol_version() fn.
-  int network_highest_seen_protocol_version() {
-    return _network_highest_seen_protocol_version();
+  int network_highest_seen_protocol_version(
+    int session,
+  ) {
+    return _network_highest_seen_protocol_version(
+      session,
+    );
   }
 
   late final _network_highest_seen_protocol_versionPtr =
-      _lookup<ffi.NativeFunction<ffi.Uint32 Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Uint32 Function(SessionHandle)>>(
           'network_highest_seen_protocol_version');
   late final _network_highest_seen_protocol_version =
-      _network_highest_seen_protocol_versionPtr.asFunction<int Function()>();
+      _network_highest_seen_protocol_versionPtr.asFunction<int Function(int)>();
 
   /// Enables port forwarding (UPnP)
-  void network_enable_port_forwarding() {
-    return _network_enable_port_forwarding();
+  void network_enable_port_forwarding(
+    int session,
+  ) {
+    return _network_enable_port_forwarding(
+      session,
+    );
   }
 
   late final _network_enable_port_forwardingPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
           'network_enable_port_forwarding');
   late final _network_enable_port_forwarding =
-      _network_enable_port_forwardingPtr.asFunction<void Function()>();
+      _network_enable_port_forwardingPtr.asFunction<void Function(int)>();
 
   /// Disables port forwarding (UPnP)
-  void network_disable_port_forwarding() {
-    return _network_disable_port_forwarding();
+  void network_disable_port_forwarding(
+    int session,
+  ) {
+    return _network_disable_port_forwarding(
+      session,
+    );
   }
 
   late final _network_disable_port_forwardingPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
           'network_disable_port_forwarding');
   late final _network_disable_port_forwarding =
-      _network_disable_port_forwardingPtr.asFunction<void Function()>();
+      _network_disable_port_forwardingPtr.asFunction<void Function(int)>();
 
   /// Checks whether port forwarding (UPnP) is enabled
-  bool network_is_port_forwarding_enabled() {
-    return _network_is_port_forwarding_enabled();
+  bool network_is_port_forwarding_enabled(
+    int session,
+  ) {
+    return _network_is_port_forwarding_enabled(
+      session,
+    );
   }
 
   late final _network_is_port_forwarding_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Bool Function(SessionHandle)>>(
           'network_is_port_forwarding_enabled');
   late final _network_is_port_forwarding_enabled =
-      _network_is_port_forwarding_enabledPtr.asFunction<bool Function()>();
+      _network_is_port_forwarding_enabledPtr.asFunction<bool Function(int)>();
 
   /// Enables local discovery
-  void network_enable_local_discovery() {
-    return _network_enable_local_discovery();
+  void network_enable_local_discovery(
+    int session,
+  ) {
+    return _network_enable_local_discovery(
+      session,
+    );
   }
 
   late final _network_enable_local_discoveryPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
           'network_enable_local_discovery');
   late final _network_enable_local_discovery =
-      _network_enable_local_discoveryPtr.asFunction<void Function()>();
+      _network_enable_local_discoveryPtr.asFunction<void Function(int)>();
 
   /// Disables local discovery
-  void network_disable_local_discovery() {
-    return _network_disable_local_discovery();
+  void network_disable_local_discovery(
+    int session,
+  ) {
+    return _network_disable_local_discovery(
+      session,
+    );
   }
 
   late final _network_disable_local_discoveryPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
           'network_disable_local_discovery');
   late final _network_disable_local_discovery =
-      _network_disable_local_discoveryPtr.asFunction<void Function()>();
+      _network_disable_local_discoveryPtr.asFunction<void Function(int)>();
 
   /// Checks whether local discovery is enabled
-  bool network_is_local_discovery_enabled() {
-    return _network_is_local_discovery_enabled();
+  bool network_is_local_discovery_enabled(
+    int session,
+  ) {
+    return _network_is_local_discovery_enabled(
+      session,
+    );
   }
 
   late final _network_is_local_discovery_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Bool Function(SessionHandle)>>(
           'network_is_local_discovery_enabled');
   late final _network_is_local_discovery_enabled =
-      _network_is_local_discovery_enabledPtr.asFunction<bool Function()>();
+      _network_is_local_discovery_enabledPtr.asFunction<bool Function(int)>();
 
   /// Creates a new repository and set access to it based on the following table:
   ///
@@ -681,6 +791,7 @@ class Bindings {
   /// null                 |  any                   |  write         |  read without password, require password for writing
   /// any                  |  any                   |  write         |  read with password, write with (same or different) password
   void repository_create(
+    int session,
     ffi.Pointer<ffi.Char> store,
     ffi.Pointer<ffi.Char> local_read_password,
     ffi.Pointer<ffi.Char> local_write_password,
@@ -688,6 +799,7 @@ class Bindings {
     int port,
   ) {
     return _repository_create(
+      session,
       store,
       local_read_password,
       local_write_password,
@@ -699,22 +811,25 @@ class Bindings {
   late final _repository_createPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
+              SessionHandle,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
-              Port_Result_SharedHandle_RepositoryHolder)>>('repository_create');
+              Port_Result_Handle_RepositoryHolder)>>('repository_create');
   late final _repository_create = _repository_createPtr.asFunction<
-      void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
+      void Function(int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
           ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
 
   /// Opens an existing repository.
   void repository_open(
+    int session,
     ffi.Pointer<ffi.Char> store,
     ffi.Pointer<ffi.Char> local_password,
     int port,
   ) {
     return _repository_open(
+      session,
       store,
       local_password,
       port,
@@ -723,10 +838,13 @@ class Bindings {
 
   late final _repository_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
-              Port_Result_SharedHandle_RepositoryHolder)>>('repository_open');
+          ffi.Void Function(
+              SessionHandle,
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
+              Port_Result_Handle_RepositoryHolder)>>('repository_open');
   late final _repository_open = _repository_openPtr.asFunction<
-      void Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
+      void Function(int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
 
   /// If `share_token` is null, the function will try with the currently active access secrets in the
   /// repository. Note that passing `share_token` explicitly (as opposed to implicitly using the
@@ -739,12 +857,14 @@ class Bindings {
   /// To remove the read (and write) permission use the `repository_remove_read_access`
   /// function.
   void repository_set_read_access(
+    int session,
     int handle,
     ffi.Pointer<ffi.Char> local_read_password,
     ffi.Pointer<ffi.Char> share_token,
     int port,
   ) {
     return _repository_set_read_access(
+      session,
       handle,
       local_read_password,
       share_token,
@@ -755,14 +875,15 @@ class Bindings {
   late final _repository_set_read_accessPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder,
+              SessionHandle,
+              Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               Port_Result)>>('repository_set_read_access');
   late final _repository_set_read_access =
       _repository_set_read_accessPtr.asFunction<
           void Function(
-              int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
+              int, int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
 
   /// If `share_token` is null, the function will try with the currently active access secrets in the
   /// repository. Note that passing `share_token` explicitly (as opposed to implicitly using the
@@ -775,12 +896,14 @@ class Bindings {
   /// password.  To remove the read and write access use the
   /// `repository_remove_read_and_write_access` function.
   void repository_set_read_and_write_access(
+    int session,
     int handle,
     ffi.Pointer<ffi.Char> local_rw_password,
     ffi.Pointer<ffi.Char> share_token,
     int port,
   ) {
     return _repository_set_read_and_write_access(
+      session,
       handle,
       local_rw_password,
       share_token,
@@ -791,22 +914,25 @@ class Bindings {
   late final _repository_set_read_and_write_accessPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder,
+              SessionHandle,
+              Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               Port_Result)>>('repository_set_read_and_write_access');
   late final _repository_set_read_and_write_access =
       _repository_set_read_and_write_accessPtr.asFunction<
           void Function(
-              int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
+              int, int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
 
   /// Note that after removing read key the user may still read the repository if they previously had
   /// write key set up.
   void repository_remove_read_key(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_remove_read_key(
+      session,
       handle,
       port,
     );
@@ -814,17 +940,19 @@ class Bindings {
 
   late final _repository_remove_read_keyPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_RepositoryHolder,
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
               Port_Result)>>('repository_remove_read_key');
   late final _repository_remove_read_key =
-      _repository_remove_read_keyPtr.asFunction<void Function(int, int)>();
+      _repository_remove_read_keyPtr.asFunction<void Function(int, int, int)>();
 
   /// Note that removing the write key will leave read key intact.
   void repository_remove_write_key(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_remove_write_key(
+      session,
       handle,
       port,
     );
@@ -832,17 +960,19 @@ class Bindings {
 
   late final _repository_remove_write_keyPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_RepositoryHolder,
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
               Port_Result)>>('repository_remove_write_key');
-  late final _repository_remove_write_key =
-      _repository_remove_write_keyPtr.asFunction<void Function(int, int)>();
+  late final _repository_remove_write_key = _repository_remove_write_keyPtr
+      .asFunction<void Function(int, int, int)>();
 
   /// Closes a repository.
   void repository_close(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_close(
+      session,
       handle,
       port,
     );
@@ -850,17 +980,19 @@ class Bindings {
 
   late final _repository_closePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SharedHandle_RepositoryHolder, Port_Result)>>('repository_close');
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
+              Port_Result)>>('repository_close');
   late final _repository_close =
-      _repository_closePtr.asFunction<void Function(int, int)>();
+      _repository_closePtr.asFunction<void Function(int, int, int)>();
 
   /// Returns true if the repository requires a local password to be opened for reading.
   void repository_requires_local_password_for_reading(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_requires_local_password_for_reading(
+      session,
       handle,
       port,
     );
@@ -869,18 +1001,20 @@ class Bindings {
   late final _repository_requires_local_password_for_readingPtr = _lookup<
           ffi.NativeFunction<
               ffi.Void Function(
-                  SharedHandle_RepositoryHolder, Port_Result_bool)>>(
+                  SessionHandle, Handle_RepositoryHolder, Port_Result_bool)>>(
       'repository_requires_local_password_for_reading');
   late final _repository_requires_local_password_for_reading =
       _repository_requires_local_password_for_readingPtr
-          .asFunction<void Function(int, int)>();
+          .asFunction<void Function(int, int, int)>();
 
   /// Returns true if the repository requires a local password to be opened for writing.
   void repository_requires_local_password_for_writing(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_requires_local_password_for_writing(
+      session,
       handle,
       port,
     );
@@ -889,36 +1023,21 @@ class Bindings {
   late final _repository_requires_local_password_for_writingPtr = _lookup<
           ffi.NativeFunction<
               ffi.Void Function(
-                  SharedHandle_RepositoryHolder, Port_Result_bool)>>(
+                  SessionHandle, Handle_RepositoryHolder, Port_Result_bool)>>(
       'repository_requires_local_password_for_writing');
   late final _repository_requires_local_password_for_writing =
       _repository_requires_local_password_for_writingPtr
-          .asFunction<void Function(int, int)>();
-
-  /// Return the RepositoryId of the repository in the low hex format.
-  /// User is responsible for deallocating the returned string.
-  ffi.Pointer<ffi.Char> repository_low_hex_id(
-    int handle,
-  ) {
-    return _repository_low_hex_id(
-      handle,
-    );
-  }
-
-  late final _repository_low_hex_idPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              SharedHandle_RepositoryHolder)>>('repository_low_hex_id');
-  late final _repository_low_hex_id = _repository_low_hex_idPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+          .asFunction<void Function(int, int, int)>();
 
   /// Return the info-hash of the repository formatted as hex string. This can be used as a globally
   /// unique, non-secret identifier of the repository.
   /// User is responsible for deallocating the returned string.
   ffi.Pointer<ffi.Char> repository_info_hash(
+    int session,
     int handle,
   ) {
     return _repository_info_hash(
+      session,
       handle,
     );
   }
@@ -926,17 +1045,19 @@ class Bindings {
   late final _repository_info_hashPtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Char> Function(
-              SharedHandle_RepositoryHolder)>>('repository_info_hash');
+              SessionHandle, Handle_RepositoryHolder)>>('repository_info_hash');
   late final _repository_info_hash = _repository_info_hashPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+      .asFunction<ffi.Pointer<ffi.Char> Function(int, int)>();
 
   /// Returns an ID that is randomly generated once per repository. Can be used to store local user
   /// data per repository (e.g. passwords behind biometric storage).
   void repository_database_id(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_database_id(
+      session,
       handle,
       port,
     );
@@ -944,19 +1065,21 @@ class Bindings {
 
   late final _repository_database_idPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_RepositoryHolder,
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
               Port_Result_Vec_u8)>>('repository_database_id');
   late final _repository_database_id =
-      _repository_database_idPtr.asFunction<void Function(int, int)>();
+      _repository_database_idPtr.asFunction<void Function(int, int, int)>();
 
   /// Returns the type of repository entry (file, directory, ...).
   /// If the entry doesn't exists, returns `ENTRY_TYPE_INVALID`, not an error.
   void repository_entry_type(
+    int session,
     int handle,
     ffi.Pointer<ffi.Char> path,
     int port,
   ) {
     return _repository_entry_type(
+      session,
       handle,
       path,
       port,
@@ -965,19 +1088,21 @@ class Bindings {
 
   late final _repository_entry_typePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_RepositoryHolder,
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>, Port_Result_u8)>>('repository_entry_type');
   late final _repository_entry_type = _repository_entry_typePtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
 
   /// Move/rename entry from src to dst.
   void repository_move_entry(
+    int session,
     int handle,
     ffi.Pointer<ffi.Char> src,
     ffi.Pointer<ffi.Char> dst,
     int port,
   ) {
     return _repository_move_entry(
+      session,
       handle,
       src,
       dst,
@@ -988,19 +1113,23 @@ class Bindings {
   late final _repository_move_entryPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder,
+              SessionHandle,
+              Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
               Port_Result)>>('repository_move_entry');
   late final _repository_move_entry = _repository_move_entryPtr.asFunction<
-      void Function(int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
+      void Function(
+          int, int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
 
   /// Subscribe to change notifications from the repository.
   int repository_subscribe(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_subscribe(
+      session,
       handle,
       port,
     );
@@ -1008,102 +1137,122 @@ class Bindings {
 
   late final _repository_subscribePtr = _lookup<
       ffi.NativeFunction<
-          UniqueHandle_JoinHandle Function(
-              SharedHandle_RepositoryHolder, Port)>>('repository_subscribe');
+          Handle_JoinHandle Function(SessionHandle, Handle_RepositoryHolder,
+              Port)>>('repository_subscribe');
   late final _repository_subscribe =
-      _repository_subscribePtr.asFunction<int Function(int, int)>();
+      _repository_subscribePtr.asFunction<int Function(int, int, int)>();
 
   bool repository_is_dht_enabled(
+    int session,
     int handle,
   ) {
     return _repository_is_dht_enabled(
+      session,
       handle,
     );
   }
 
   late final _repository_is_dht_enabledPtr = _lookup<
-          ffi.NativeFunction<ffi.Bool Function(SharedHandle_RepositoryHolder)>>(
-      'repository_is_dht_enabled');
+      ffi.NativeFunction<
+          ffi.Bool Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_is_dht_enabled');
   late final _repository_is_dht_enabled =
-      _repository_is_dht_enabledPtr.asFunction<bool Function(int)>();
+      _repository_is_dht_enabledPtr.asFunction<bool Function(int, int)>();
 
   void repository_enable_dht(
+    int session,
     int handle,
   ) {
     return _repository_enable_dht(
+      session,
       handle,
     );
   }
 
   late final _repository_enable_dhtPtr = _lookup<
-          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
-      'repository_enable_dht');
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_enable_dht');
   late final _repository_enable_dht =
-      _repository_enable_dhtPtr.asFunction<void Function(int)>();
+      _repository_enable_dhtPtr.asFunction<void Function(int, int)>();
 
   void repository_disable_dht(
+    int session,
     int handle,
   ) {
     return _repository_disable_dht(
+      session,
       handle,
     );
   }
 
   late final _repository_disable_dhtPtr = _lookup<
-          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
-      'repository_disable_dht');
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_disable_dht');
   late final _repository_disable_dht =
-      _repository_disable_dhtPtr.asFunction<void Function(int)>();
+      _repository_disable_dhtPtr.asFunction<void Function(int, int)>();
 
   bool repository_is_pex_enabled(
+    int session,
     int handle,
   ) {
     return _repository_is_pex_enabled(
+      session,
       handle,
     );
   }
 
   late final _repository_is_pex_enabledPtr = _lookup<
-          ffi.NativeFunction<ffi.Bool Function(SharedHandle_RepositoryHolder)>>(
-      'repository_is_pex_enabled');
+      ffi.NativeFunction<
+          ffi.Bool Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_is_pex_enabled');
   late final _repository_is_pex_enabled =
-      _repository_is_pex_enabledPtr.asFunction<bool Function(int)>();
+      _repository_is_pex_enabledPtr.asFunction<bool Function(int, int)>();
 
   void repository_enable_pex(
+    int session,
     int handle,
   ) {
     return _repository_enable_pex(
+      session,
       handle,
     );
   }
 
   late final _repository_enable_pexPtr = _lookup<
-          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
-      'repository_enable_pex');
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_enable_pex');
   late final _repository_enable_pex =
-      _repository_enable_pexPtr.asFunction<void Function(int)>();
+      _repository_enable_pexPtr.asFunction<void Function(int, int)>();
 
   void repository_disable_pex(
+    int session,
     int handle,
   ) {
     return _repository_disable_pex(
+      session,
       handle,
     );
   }
 
   late final _repository_disable_pexPtr = _lookup<
-          ffi.NativeFunction<ffi.Void Function(SharedHandle_RepositoryHolder)>>(
-      'repository_disable_pex');
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_disable_pex');
   late final _repository_disable_pex =
-      _repository_disable_pexPtr.asFunction<void Function(int)>();
+      _repository_disable_pexPtr.asFunction<void Function(int, int)>();
 
   void repository_create_share_token(
+    int session,
     int handle,
     int access_mode,
     ffi.Pointer<ffi.Char> name,
     int port,
   ) {
     return _repository_create_share_token(
+      session,
       handle,
       access_mode,
       name,
@@ -1114,34 +1263,39 @@ class Bindings {
   late final _repository_create_share_tokenPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SharedHandle_RepositoryHolder,
+              SessionHandle,
+              Handle_RepositoryHolder,
               ffi.Uint8,
               ffi.Pointer<ffi.Char>,
               Port_Result_String)>>('repository_create_share_token');
   late final _repository_create_share_token = _repository_create_share_tokenPtr
-      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
+      .asFunction<void Function(int, int, int, ffi.Pointer<ffi.Char>, int)>();
 
   int repository_access_mode(
+    int session,
     int handle,
   ) {
     return _repository_access_mode(
+      session,
       handle,
     );
   }
 
   late final _repository_access_modePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Uint8 Function(
-              SharedHandle_RepositoryHolder)>>('repository_access_mode');
+          ffi.Uint8 Function(SessionHandle,
+              Handle_RepositoryHolder)>>('repository_access_mode');
   late final _repository_access_mode =
-      _repository_access_modePtr.asFunction<int Function(int)>();
+      _repository_access_modePtr.asFunction<int Function(int, int)>();
 
   /// Returns the syncing progress as a float in the 0.0 - 1.0 range.
   void repository_sync_progress(
+    int session,
     int handle,
     int port,
   ) {
     return _repository_sync_progress(
+      session,
       handle,
       port,
     );
@@ -1149,10 +1303,10 @@ class Bindings {
 
   late final _repository_sync_progressPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SharedHandle_RepositoryHolder,
+          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
               Port_Result_Vec_u8)>>('repository_sync_progress');
   late final _repository_sync_progress =
-      _repository_sync_progressPtr.asFunction<void Function(int, int)>();
+      _repository_sync_progressPtr.asFunction<void Function(int, int, int)>();
 
   /// Returns the access mode of the given share token.
   int share_token_mode(
@@ -1168,24 +1322,6 @@ class Bindings {
           'share_token_mode');
   late final _share_token_mode =
       _share_token_modePtr.asFunction<int Function(ffi.Pointer<ffi.Char>)>();
-
-  /// Return the RepositoryId of the repository corresponding to the share token in the low hex format.
-  /// User is responsible for deallocating the returned string.
-  ffi.Pointer<ffi.Char> share_token_repository_low_hex_id(
-    ffi.Pointer<ffi.Char> token,
-  ) {
-    return _share_token_repository_low_hex_id(
-      token,
-    );
-  }
-
-  late final _share_token_repository_low_hex_idPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              ffi.Pointer<ffi.Char>)>>('share_token_repository_low_hex_id');
-  late final _share_token_repository_low_hex_id =
-      _share_token_repository_low_hex_idPtr
-          .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
 
   /// Returns the info-hash of the repository corresponding to the share token formatted as hex
   /// string.
@@ -1290,16 +1426,18 @@ class Bindings {
   late final _session_openPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>,
-              Port_Result)>>('session_open');
+              Port_Result_SessionHandle)>>('session_open');
   late final _session_open = _session_openPtr.asFunction<
       void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, int)>();
 
   /// Retrieve a serialized state monitor corresponding to the `path`.
   Bytes session_get_state_monitor(
+    int session,
     ffi.Pointer<ffi.Uint8> path,
     int path_len,
   ) {
     return _session_get_state_monitor(
+      session,
       path,
       path_len,
     );
@@ -1307,18 +1445,20 @@ class Bindings {
 
   late final _session_get_state_monitorPtr = _lookup<
       ffi.NativeFunction<
-          Bytes Function(ffi.Pointer<ffi.Uint8>,
+          Bytes Function(SessionHandle, ffi.Pointer<ffi.Uint8>,
               ffi.Uint64)>>('session_get_state_monitor');
   late final _session_get_state_monitor = _session_get_state_monitorPtr
-      .asFunction<Bytes Function(ffi.Pointer<ffi.Uint8>, int)>();
+      .asFunction<Bytes Function(int, ffi.Pointer<ffi.Uint8>, int)>();
 
   /// Subscribe to "on change" events happening inside a monitor corresponding to the `path`.
   int session_state_monitor_subscribe(
+    int session,
     ffi.Pointer<ffi.Uint8> path,
     int path_len,
     int port,
   ) {
     return _session_state_monitor_subscribe(
+      session,
       path,
       path_len,
       port,
@@ -1327,36 +1467,48 @@ class Bindings {
 
   late final _session_state_monitor_subscribePtr = _lookup<
       ffi.NativeFunction<
-          UniqueNullableHandle_JoinHandle Function(ffi.Pointer<ffi.Uint8>,
-              ffi.Uint64, Port)>>('session_state_monitor_subscribe');
+          NullableHandle_JoinHandle Function(
+              SessionHandle,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Uint64,
+              Port)>>('session_state_monitor_subscribe');
   late final _session_state_monitor_subscribe =
       _session_state_monitor_subscribePtr
-          .asFunction<int Function(ffi.Pointer<ffi.Uint8>, int, int)>();
+          .asFunction<int Function(int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
   /// Unsubscribe from the above "on change" StateMonitor events.
   void session_state_monitor_unsubscribe(
+    int session,
     int handle,
   ) {
     return _session_state_monitor_unsubscribe(
+      session,
       handle,
     );
   }
 
   late final _session_state_monitor_unsubscribePtr = _lookup<
-          ffi.NativeFunction<
-              ffi.Void Function(UniqueNullableHandle_JoinHandle)>>(
-      'session_state_monitor_unsubscribe');
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle,
+              NullableHandle_JoinHandle)>>('session_state_monitor_unsubscribe');
   late final _session_state_monitor_unsubscribe =
-      _session_state_monitor_unsubscribePtr.asFunction<void Function(int)>();
+      _session_state_monitor_unsubscribePtr
+          .asFunction<void Function(int, int)>();
 
   /// Closes the ouisync session.
-  void session_close() {
-    return _session_close();
+  void session_close(
+    int session,
+  ) {
+    return _session_close(
+      session,
+    );
   }
 
   late final _session_closePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>('session_close');
-  late final _session_close = _session_closePtr.asFunction<void Function()>();
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
+          'session_close');
+  late final _session_close =
+      _session_closePtr.asFunction<void Function(int)>();
 
   /// Shutdowns the network and closes the session. This is equivalent to doing it in two steps
   /// (`network_shutdown` then `session_close`), but in flutter when the engine is being detached
@@ -1364,30 +1516,37 @@ class Bindings {
   /// randomly), and thus `session_close` is never invoked. My guess is that because the dart engine
   /// is being detached we can't do any async await on the dart side anymore, and thus need to do it
   /// here.
-  void session_shutdown_network_and_close() {
-    return _session_shutdown_network_and_close();
+  void session_shutdown_network_and_close(
+    int session,
+  ) {
+    return _session_shutdown_network_and_close(
+      session,
+    );
   }
 
   late final _session_shutdown_network_and_closePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function()>>(
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
           'session_shutdown_network_and_close');
   late final _session_shutdown_network_and_close =
-      _session_shutdown_network_and_closePtr.asFunction<void Function()>();
+      _session_shutdown_network_and_closePtr.asFunction<void Function(int)>();
 
   /// Cancel a notification subscription.
   void subscription_cancel(
+    int session,
     int handle,
   ) {
     return _subscription_cancel(
+      session,
       handle,
     );
   }
 
-  late final _subscription_cancelPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(UniqueHandle_JoinHandle)>>(
-          'subscription_cancel');
+  late final _subscription_cancelPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SessionHandle, Handle_JoinHandle)>>('subscription_cancel');
   late final _subscription_cancel =
-      _subscription_cancelPtr.asFunction<void Function(int)>();
+      _subscription_cancelPtr.asFunction<void Function(int, int)>();
 
   /// Deallocate string that has been allocated on the rust side
   void free_string(
@@ -1460,42 +1619,33 @@ class Bytes extends ffi.Struct {
   external int len;
 }
 
-/// FFI handle to a resource with shared ownership.
-typedef SharedHandle_Repository = ffi.Uint64;
+typedef SessionHandle = UniqueHandle_Session;
+
+/// FFI handle to a resource with unique ownership.
+typedef UniqueHandle_Session = ffi.Uint64;
+typedef Handle_RepositoryHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result = Port;
 typedef Port = ffi.Int64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_UniqueHandle_Directory = Port;
-
-/// FFI handle to a resource with unique ownership.
-typedef UniqueHandle_Directory = ffi.Uint64;
-
-/// FFI handle to a borrowed resource.
-typedef RefHandle_DirEntry = ffi.Uint64;
-
-/// FFI handle to a resource with shared ownership.
-typedef SharedHandle_RepositoryHolder = ffi.Uint64;
+typedef Port_Result_Handle_Directory = Port;
+typedef Handle_Directory = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_SharedHandle_FileHolder = Port;
-
-/// FFI handle to a resource with shared ownership.
-typedef SharedHandle_FileHolder = ffi.Uint64;
+typedef Port_Result_Handle_FileHolder = Port;
+typedef Handle_FileHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u64 = Port;
-
-/// FFI handle to a resource with unique ownership.
-typedef UniqueHandle_JoinHandle = ffi.Uint64;
+typedef Handle_JoinHandle = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_u8 = Port;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_SharedHandle_RepositoryHolder = Port;
+typedef Port_Result_Handle_RepositoryHolder = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_bool = Port;
@@ -1509,8 +1659,9 @@ typedef Port_Result_u8 = Port;
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
 
-/// FFI handle to a resource with unique ownership that can also be null.
-typedef UniqueNullableHandle_JoinHandle = ffi.Uint64;
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result_SessionHandle = Port;
+typedef NullableHandle_JoinHandle = Handle_JoinHandle;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 

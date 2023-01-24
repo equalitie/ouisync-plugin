@@ -8,7 +8,7 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:messagepack/messagepack.dart';
 
 import 'bindings_global.dart';
-import 'ouisync_plugin.dart' show BytesExtension;
+import 'ouisync_plugin.dart' show BytesExtension, Session;
 
 // Version is incremented every time the monitor or any of it's values or
 // children changes.
@@ -44,17 +44,18 @@ class MonitorId implements Comparable<MonitorId> {
 }
 
 class StateMonitor {
+  final Session session;
   List<MonitorId> path;
   Version version;
   Map<String, String> values;
   Map<MonitorId, Version> children;
 
-  static StateMonitor? getRoot() {
-    return _getMonitor(<MonitorId>[]);
+  static StateMonitor? getRoot(Session session) {
+    return _getMonitor(session, <MonitorId>[]);
   }
 
   StateMonitor? child(MonitorId childId) {
-    return _getMonitor([...path, childId]);
+    return _getMonitor(session, [...path, childId]);
   }
 
   Iterable<StateMonitor> childrenWithName(String name) {
@@ -79,18 +80,22 @@ class StateMonitor {
     final pathBytes = _pathBytes(path);
     _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
       subscriptionHandle = bindings.session_state_monitor_subscribe(
-          pathPtr, pathBytes.length, recvPort.sendPort.nativePort);
+        session.handle,
+        pathPtr,
+        pathBytes.length,
+        recvPort.sendPort.nativePort,
+      );
     });
 
     if (subscriptionHandle == 0) {
       return null;
     }
 
-    return Subscription._(bindings, subscriptionHandle, recvPort);
+    return Subscription._(session, subscriptionHandle, recvPort);
   }
 
   bool refresh() {
-    final m = _getMonitor(path);
+    final m = _getMonitor(session, path);
 
     if (m == null) {
       values.clear();
@@ -111,6 +116,7 @@ class StateMonitor {
   }
 
   StateMonitor._(
+    this.session,
     this.path,
     this.version,
     this.values,
@@ -141,18 +147,25 @@ class StateMonitor {
     return p.takeBytes();
   }
 
-  static StateMonitor? _getMonitor(List<MonitorId> path) {
+  static StateMonitor? _getMonitor(Session session, List<MonitorId> path) {
     StateMonitor? monitor;
     final pathBytes = _pathBytes(path);
     _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
-      final bytes =
-          bindings.session_get_state_monitor(pathPtr, pathBytes.length);
-      monitor = StateMonitor._parse(path, bytes.intoUint8List());
+      final bytes = bindings.session_get_state_monitor(
+        session.handle,
+        pathPtr,
+        pathBytes.length,
+      );
+      monitor = StateMonitor._parse(session, path, bytes.intoUint8List());
     });
     return monitor;
   }
 
-  static StateMonitor? _parse(List<MonitorId> path, Uint8List messagepackData) {
+  static StateMonitor? _parse(
+    Session session,
+    List<MonitorId> path,
+    Uint8List messagepackData,
+  ) {
     if (messagepackData.isEmpty) {
       return null;
     }
@@ -176,6 +189,7 @@ class StateMonitor {
     final children = _unpackChildren(unpacker);
 
     return StateMonitor._(
+      session,
       path,
       version,
       values,
@@ -213,7 +227,7 @@ class StateMonitor {
 }
 
 class Subscription {
-  final Bindings _bindings;
+  final Session _session;
   final int _handle;
   final ReceivePort _port;
 
@@ -222,11 +236,11 @@ class Subscription {
   // a change happened.
   late final Stream<void> broadcastStream;
 
-  Subscription._(this._bindings, this._handle, this._port)
+  Subscription._(this._session, this._handle, this._port)
       : broadcastStream = _port.asBroadcastStream().cast<void>();
 
   void close() {
-    _bindings.session_state_monitor_unsubscribe(_handle);
+    bindings.session_state_monitor_unsubscribe(_session.handle, _handle);
     _port.close();
   }
 }
