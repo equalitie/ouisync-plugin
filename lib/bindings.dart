@@ -1427,24 +1427,23 @@ class Bindings {
   /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
-  void session_open(
+  SessionOpenResult session_open(
     ffi.Pointer<ffi.Void> post_c_object_fn,
     ffi.Pointer<ffi.Char> configs_path,
-    int port,
   ) {
     return _session_open(
       post_c_object_fn,
       configs_path,
-      port,
     );
   }
 
   late final _session_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>,
-              Port_Result_SessionHandle)>>('session_open');
+          SessionOpenResult Function(
+              ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>>('session_open');
   late final _session_open = _session_openPtr.asFunction<
-      void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, int)>();
+      SessionOpenResult Function(
+          ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>();
 
   /// Retrieve a serialized state monitor corresponding to the `path`.
   Bytes session_get_state_monitor(
@@ -1635,6 +1634,16 @@ class Bytes extends ffi.Struct {
   external int len;
 }
 
+class SessionOpenResult extends ffi.Struct {
+  @SessionHandle()
+  external int session;
+
+  @ffi.Int32()
+  external int error_code;
+
+  external ffi.Pointer<ffi.Char> error_message;
+}
+
 typedef SessionHandle = UniqueHandle_Session;
 
 /// FFI handle to a resource with unique ownership.
@@ -1674,9 +1683,6 @@ typedef Port_Result_u8 = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_SessionHandle = Port;
 typedef NullableHandle_JoinHandle = Handle_JoinHandle;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;

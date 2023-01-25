@@ -36,19 +36,24 @@ class Session {
   /// Opens a new session. [configsDirPath] is a path to a directory where
   /// configuration files shall be stored. If it doesn't exists, it will be
   /// created.
-  static Future<Session> open(String configsDirPath) async {
+  static Session open(String configsDirPath) {
     if (debugTrace) {
       print("Session.open $configsDirPath");
     }
 
-    final handle = await _withPool((pool) => _invoke<int>((port) =>
-        bindings.session_open(NativeApi.postCObject.cast<Void>(),
-            pool.toNativeUtf8(configsDirPath), port)));
+    final result = _withPoolSync((pool) => bindings.session_open(
+          NativeApi.postCObject.cast<Void>(),
+          pool.toNativeUtf8(configsDirPath),
+        ));
 
-    final session = Session._(handle);
-    NativeChannels.session = session;
-
-    return session;
+    if (result.error_code == ErrorCode.ok) {
+      final session = Session._(result.session);
+      NativeChannels.session = session;
+      return session;
+    } else {
+      final errorMessage = result.error_message.cast<Utf8>().intoDartString();
+      throw Error(result.error_code, errorMessage);
+    }
   }
 
   /// Binds network to the specified addresses.
