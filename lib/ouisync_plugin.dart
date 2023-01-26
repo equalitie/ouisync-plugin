@@ -296,12 +296,12 @@ class Repository {
     }
 
     final handle = await session.client.invoke(
-      "create_repository",
+      'repository_create',
       {
-        "path": store,
-        "read_password": readPassword,
-        "write_password": writePassword,
-        "share_token": shareToken?.token
+        'path': store,
+        'read_password': readPassword,
+        'write_password': writePassword,
+        'share_token': shareToken?.token
       },
     ) as int;
 
@@ -318,15 +318,15 @@ class Repository {
       print("Repository.open $store");
     }
 
-    final handle = await _withPool((pool) => _invoke<int>((port) =>
-        bindings.repository_open(session.handle, pool.toNativeUtf8(store),
-            password != null ? pool.toNativeUtf8(password) : nullptr, port)));
+    final handle = await session.client.invoke('repository_open', {
+      'path': store,
+      'password': password,
+    }) as int;
 
     return Repository._(session, handle, store);
   }
 
-  /// Close the repository. Accessing the repository after it's been closed is undefined behaviour
-  /// (likely crash).
+  /// Close the repository. Accessing the repository after it's been closed is an error.
   Future<void> close() async {
     if (debugTrace) {
       print("Repository.close");
@@ -334,15 +334,7 @@ class Repository {
 
     _eventsController.close();
 
-    final recvPort = ReceivePort();
-
-    try {
-      bindings.repository_close(
-          session.handle, handle, recvPort.sendPort.nativePort);
-      await recvPort.first;
-    } finally {
-      recvPort.close();
-    }
+    await session.client.invoke('repository_close', handle);
   }
 
   /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
@@ -352,9 +344,12 @@ class Repository {
       print("Repository.type $path");
     }
 
-    return _decodeEntryType(await _withPool((pool) => _invoke<int>((port) =>
-        bindings.repository_entry_type(
-            session.handle, handle, pool.toNativeUtf8(path), port))));
+    return _decodeEntryType(
+      await session.client.invoke('repository_entry_type', {
+        'repository': handle,
+        'path': path,
+      }) as int,
+    );
   }
 
   /// Returns whether the entry (file or directory) at [path] exists.
@@ -367,14 +362,16 @@ class Repository {
   }
 
   /// Move/rename the file/directory from [src] to [dst].
-  Future<void> move(String src, String dst) {
+  Future<void> move(String src, String dst) async {
     if (debugTrace) {
       print("Repository.move $src -> $dst");
     }
 
-    return _withPool((pool) => _invoke<void>((port) =>
-        bindings.repository_move_entry(session.handle, handle,
-            pool.toNativeUtf8(src), pool.toNativeUtf8(dst), port)));
+    await session.client.invoke('repository_move_entry', {
+      'repository': handle,
+      'src': src,
+      'dst': dst,
+    });
   }
 
   Stream<RepositoryEvent> get events => _eventsController.stream;
@@ -460,43 +457,34 @@ class Repository {
         .firstOrNull;
   }
 
-  String get infoHash => bindings
-      .repository_info_hash(session.handle, handle)
-      .cast<Utf8>()
-      .intoDartString();
+  String get infoHash =>
+      session.client.invoke("repository_info_hash", handle) as String;
 
-  Future<void> setReadWriteAccess(
-          {required String? oldPassword,
-          required String newPassword,
-          required ShareToken? shareToken}) async =>
-      await _withPool((pool) => _invoke((port) =>
-          bindings.repository_set_read_and_write_access(
-              session.handle,
-              handle,
-              oldPassword != null ? pool.toNativeUtf8(oldPassword) : nullptr,
-              pool.toNativeUtf8(newPassword),
-              shareToken != null
-                  ? pool.toNativeUtf8(shareToken.token)
-                  : nullptr,
-              port)));
+  Future<void> setReadWriteAccess({
+    required String? oldPassword,
+    required String newPassword,
+    required ShareToken? shareToken,
+  }) =>
+      session.client.invoke('repository_set_read_and_write_access', {
+        'repository': handle,
+        'old_password': oldPassword,
+        'new_password': newPassword,
+        'share_token': shareToken?.toString(),
+      });
 
-  Future<void> setReadAccess(
-          {required String newPassword,
-          required ShareToken? shareToken}) async =>
-      await _withPool((pool) => _invoke((port) =>
-          bindings.repository_set_read_access(
-              session.handle,
-              handle,
-              pool.toNativeUtf8(newPassword),
-              shareToken != null
-                  ? pool.toNativeUtf8(shareToken.token)
-                  : nullptr,
-              port)));
+  Future<void> setReadAccess({
+    required String newPassword,
+    required ShareToken? shareToken,
+  }) =>
+      session.client.invoke('repository_set_read_access', {
+        'repository': handle,
+        'password': newPassword,
+        'share_token': shareToken?.toString(),
+      });
 
   Future<String> hexDatabaseId() async {
-    final bytes = await _withPool((pool) => _invoke<Uint8List>((port) {
-          bindings.repository_database_id(session.handle, handle, port);
-        }));
+    final bytes = await session.client.invoke("repository_database_id", handle)
+        as Uint8List;
     return HEX.encode(bytes);
   }
 }

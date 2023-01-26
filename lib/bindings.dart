@@ -912,8 +912,7 @@ class Bindings {
     return _repository_set_read_and_write_access(
       session,
       handle,
-      local_old_rw_password,
-      local_new_rw_password,
+      local_rw_password,
       share_token,
       port,
     );
@@ -1689,19 +1688,10 @@ typedef Handle_ScopedJoinHandle = ffi.Uint64;
 typedef Port_u8 = Port;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_Handle_RepositoryHolder = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_bool = Port;
+typedef Port_Result_String = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_Vec_u8 = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_u8 = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_String = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u16 = Port;

@@ -24,7 +24,7 @@ class Client {
     return client;
   }
 
-  Future<Object?> invoke(String method, Map<String, Object?> args) async {
+  Future<Object?> invoke(String method, Object? args) async {
     final id = _getMessageId();
     final completer = Completer();
 
@@ -59,6 +59,8 @@ class Client {
       }
 
       final message = deserialize(bytes);
+
+      // TODO: remove this print
       print('received $message');
 
       if (message is! Map) {
