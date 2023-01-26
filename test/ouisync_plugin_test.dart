@@ -10,7 +10,7 @@ void main() {
 
   setUp(() async {
     temp = await io.Directory.systemTemp.createTemp();
-    session = Session.open('${temp.path}/config');
+    session = await Session.open('${temp.path}/config');
     repo = await Repository.create(session,
         store: '${temp.path}/repo.db', readPassword: null, writePassword: null);
   });

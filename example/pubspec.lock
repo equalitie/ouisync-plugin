@@ -160,6 +160,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.0"
+  msgpack_dart:
+    dependency: transitive
+    description:
+      name: msgpack_dart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.1"
   ouisync_plugin:
     dependency: "direct main"
     description:

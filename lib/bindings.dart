@@ -464,7 +464,7 @@ class Bindings {
 
   late final _network_subscribePtr = _lookup<
       ffi.NativeFunction<
-          Handle_JoinHandle Function(
+          Handle_ScopedJoinHandle Function(
               SessionHandle, Port_u8)>>('network_subscribe');
   late final _network_subscribe =
       _network_subscribePtr.asFunction<int Function(int, int)>();
@@ -1146,8 +1146,8 @@ class Bindings {
 
   late final _repository_subscribePtr = _lookup<
       ffi.NativeFunction<
-          Handle_JoinHandle Function(SessionHandle, Handle_RepositoryHolder,
-              Port)>>('repository_subscribe');
+          Handle_ScopedJoinHandle Function(SessionHandle,
+              Handle_RepositoryHolder, Port)>>('repository_subscribe');
   late final _repository_subscribe =
       _repository_subscribePtr.asFunction<int Function(int, int, int)>();
 
@@ -1445,6 +1445,24 @@ class Bindings {
       SessionOpenResult Function(
           ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>();
 
+  /// Get the interface listener port
+  void session_interface_port(
+    int session,
+    int port,
+  ) {
+    return _session_interface_port(
+      session,
+      port,
+    );
+  }
+
+  late final _session_interface_portPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SessionHandle, Port_Result_u16)>>('session_interface_port');
+  late final _session_interface_port =
+      _session_interface_portPtr.asFunction<void Function(int, int)>();
+
   /// Retrieve a serialized state monitor corresponding to the `path`.
   Bytes session_get_state_monitor(
     int session,
@@ -1482,7 +1500,7 @@ class Bindings {
 
   late final _session_state_monitor_subscribePtr = _lookup<
       ffi.NativeFunction<
-          NullableHandle_JoinHandle Function(
+          NullableHandle_ScopedJoinHandle Function(
               SessionHandle,
               ffi.Pointer<ffi.Uint8>,
               ffi.Uint64,
@@ -1503,9 +1521,10 @@ class Bindings {
   }
 
   late final _session_state_monitor_unsubscribePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(SessionHandle,
-              NullableHandle_JoinHandle)>>('session_state_monitor_unsubscribe');
+          ffi.NativeFunction<
+              ffi.Void Function(
+                  SessionHandle, NullableHandle_ScopedJoinHandle)>>(
+      'session_state_monitor_unsubscribe');
   late final _session_state_monitor_unsubscribe =
       _session_state_monitor_unsubscribePtr
           .asFunction<void Function(int, int)>();
@@ -1559,7 +1578,7 @@ class Bindings {
   late final _subscription_cancelPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(
-              SessionHandle, Handle_JoinHandle)>>('subscription_cancel');
+              SessionHandle, Handle_ScopedJoinHandle)>>('subscription_cancel');
   late final _subscription_cancel =
       _subscription_cancelPtr.asFunction<void Function(int, int)>();
 
@@ -1664,7 +1683,7 @@ typedef Handle_FileHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u64 = Port;
-typedef Handle_JoinHandle = ffi.Uint64;
+typedef Handle_ScopedJoinHandle = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_u8 = Port;
@@ -1683,7 +1702,10 @@ typedef Port_Result_u8 = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_String = Port;
-typedef NullableHandle_JoinHandle = Handle_JoinHandle;
+
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result_u16 = Port;
+typedef NullableHandle_ScopedJoinHandle = Handle_ScopedJoinHandle;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 

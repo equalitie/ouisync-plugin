@@ -11,6 +11,7 @@ import 'package:hex/hex.dart';
 import 'package:messagepack/messagepack.dart';
 
 import 'bindings_global.dart';
+import 'client.dart';
 import 'native_channels.dart';
 import 'state_monitor.dart';
 
@@ -22,9 +23,10 @@ const bool debugTrace = false;
 /// and closed at the end. There can be only one session at the time.
 class Session {
   final int handle;
+  final Client client;
   late final EventStreamController<NetworkEvent> _networkEventsController;
 
-  Session._(this.handle) {
+  Session._(this.handle, this.client) {
     _networkEventsController = EventStreamController(
       session: this,
       subscribe: (sendPort) =>
@@ -36,7 +38,7 @@ class Session {
   /// Opens a new session. [configsDirPath] is a path to a directory where
   /// configuration files shall be stored. If it doesn't exists, it will be
   /// created.
-  static Session open(String configsDirPath) {
+  static Future<Session> open(String configsDirPath) async {
     if (debugTrace) {
       print("Session.open $configsDirPath");
     }
@@ -46,14 +48,25 @@ class Session {
           pool.toNativeUtf8(configsDirPath),
         ));
 
+    int handle;
+
     if (result.error_code == ErrorCode.ok) {
-      final session = Session._(result.session);
-      NativeChannels.session = session;
-      return session;
+      handle = result.session;
     } else {
       final errorMessage = result.error_message.cast<Utf8>().intoDartString();
       throw Error(result.error_code, errorMessage);
     }
+
+    final socketPort = await _invoke<int>(
+      (port) => bindings.session_interface_port(handle, port),
+    );
+
+    final client = await Client.connect('127.0.0.1:$socketPort');
+
+    final session = Session._(handle, client);
+    NativeChannels.session = session;
+
+    return session;
   }
 
   /// Binds network to the specified addresses.
@@ -282,14 +295,15 @@ class Repository {
       print("Repository.create $store");
     }
 
-    final handle = await _withPool((pool) => _invoke<int>((port) =>
-        bindings.repository_create(
-            session.handle,
-            pool.toNativeUtf8(store),
-            readPassword != null ? pool.toNativeUtf8(readPassword) : nullptr,
-            writePassword != null ? pool.toNativeUtf8(writePassword) : nullptr,
-            shareToken != null ? pool.toNativeUtf8(shareToken.token) : nullptr,
-            port)));
+    final handle = await session.client.invoke(
+      "create_repository",
+      {
+        "path": store,
+        "read_password": readPassword,
+        "write_password": writePassword,
+        "share_token": shareToken?.token
+      },
+    ) as int;
 
     return Repository._(session, handle, store);
   }

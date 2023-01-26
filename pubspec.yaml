@@ -14,7 +14,8 @@ dependencies:
   ffi: ^2.0.1
   hex: ^0.2.0
   path: ^1.8.0
-  messagepack: ^0.2.1
+  messagepack: ^0.2.1 # TODO: remove this in fafor of msgpack_dart
+  msgpack_dart: ^1.0.1
   platform: ^3.1.0
 
 dev_dependencies:

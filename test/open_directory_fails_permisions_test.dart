@@ -16,7 +16,7 @@ void main() {
   setUp(() async {
     await io.Directory(appDirectory).create();
 
-    session = Session.open(sessionStore);
+    session = await Session.open(sessionStore);
   });
 
   tearDown(() async {
