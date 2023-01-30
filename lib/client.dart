@@ -25,7 +25,7 @@ class Client {
     return client;
   }
 
-  Future<Object?> invoke(String method, Object? args) async {
+  Future<T> invoke<T>(String method, Object? args) async {
     final id = _getMessageId();
     final completer = Completer();
 
@@ -40,7 +40,7 @@ class Client {
 
       _socket.add(message);
 
-      return await completer.future;
+      return await completer.future as T;
     } finally {
       _responses.remove(id);
     }

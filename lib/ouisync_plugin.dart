@@ -69,15 +69,14 @@ class Session {
     String? quicV6,
     String? tcpV4,
     String? tcpV6,
-  }) =>
-      _withPool((pool) => _invoke<void>((port) => bindings.network_bind(
-            handle,
-            quicV4 != null ? pool.toNativeUtf8(quicV4) : nullptr,
-            quicV6 != null ? pool.toNativeUtf8(quicV6) : nullptr,
-            tcpV4 != null ? pool.toNativeUtf8(tcpV4) : nullptr,
-            tcpV6 != null ? pool.toNativeUtf8(tcpV6) : nullptr,
-            port,
-          )));
+  }) async {
+    await client.invoke<void>("network_bind", {
+      'quic_v4': quicV4,
+      'quic_v6': quicV6,
+      'tcp_v4': tcpV4,
+      'tcp_v6': tcpV6,
+    });
+  }
 
   Stream<NetworkEvent> get networkEvents =>
       _networkSubscription.stream.map(_decodeNetworkEvent);
@@ -93,25 +92,17 @@ class Session {
             handle, pool.toNativeUtf8(addr)));
   }
 
-  String? get tcpListenerLocalAddressV4 => bindings
-      .network_tcp_listener_local_addr_v4(handle)
-      .cast<Utf8>()
-      .intoNullableDartString();
+  Future<String?> get tcpListenerLocalAddressV4 =>
+      client.invoke<String?>('network_tcp_listener_local_address_v4', null);
 
-  String? get tcpListenerLocalAddressV6 => bindings
-      .network_tcp_listener_local_addr_v6(handle)
-      .cast<Utf8>()
-      .intoNullableDartString();
+  Future<String?> get tcpListenerLocalAddressV6 =>
+      client.invoke<String?>('network_tcp_listener_local_addr_v6', null);
 
-  String? get quicListenerLocalAddressV4 => bindings
-      .network_quic_listener_local_addr_v4(handle)
-      .cast<Utf8>()
-      .intoNullableDartString();
+  Future<String?> get quicListenerLocalAddressV4 =>
+      client.invoke<String?>('network_quic_listener_local_addr_v4', null);
 
-  String? get quicListenerLocalAddressV6 => bindings
-      .network_quic_listener_local_addr_v6(handle)
-      .cast<Utf8>()
-      .intoNullableDartString();
+  Future<String?> get quicListenerLocalAddressV6 =>
+      client.invoke<String?>('network_quic_listener_local_addr_v6', null);
 
   /// Gets a stream that yields lists of known peers.
   Stream<List<PeerInfo>> get onPeersChange => networkEvents.map((_) => peers);
@@ -175,14 +166,7 @@ class Session {
 
   /// Try to gracefully close connections to peers.
   Future<void> shutdownNetwork() async {
-    final recvPort = ReceivePort();
-
-    try {
-      bindings.network_shutdown(handle, recvPort.sendPort.nativePort);
-      await recvPort.first;
-    } finally {
-      recvPort.close();
-    }
+    await client.invoke<void>('network_shutdown', null);
   }
 
   /// Try to gracefully close connections to peers then close the session.
@@ -283,7 +267,7 @@ class Repository {
       print("Repository.create $store");
     }
 
-    final handle = await session.client.invoke(
+    final handle = await session.client.invoke<int>(
       'repository_create',
       {
         'path': store,
@@ -291,7 +275,7 @@ class Repository {
         'write_password': writePassword,
         'share_token': shareToken?.token
       },
-    ) as int;
+    );
 
     return Repository._(session, handle, store);
   }
@@ -306,10 +290,10 @@ class Repository {
       print("Repository.open $store");
     }
 
-    final handle = await session.client.invoke('repository_open', {
+    final handle = await session.client.invoke<int>('repository_open', {
       'path': store,
       'password': password,
-    }) as int;
+    });
 
     return Repository._(session, handle, store);
   }
@@ -332,10 +316,10 @@ class Repository {
     }
 
     return _decodeEntryType(
-      await session.client.invoke('repository_entry_type', {
+      await session.client.invoke<int>('repository_entry_type', {
         'repository': handle,
         'path': path,
-      }) as int,
+      }),
     );
   }
 
@@ -354,7 +338,7 @@ class Repository {
       print("Repository.move $src -> $dst");
     }
 
-    await session.client.invoke('repository_move_entry', {
+    await session.client.invoke<void>('repository_move_entry', {
       'repository': handle,
       'src': src,
       'dst': dst,
@@ -444,15 +428,15 @@ class Repository {
         .firstOrNull;
   }
 
-  String get infoHash =>
-      session.client.invoke("repository_info_hash", handle) as String;
+  Future<String> get infoHash =>
+      session.client.invoke<String>("repository_info_hash", handle);
 
   Future<void> setReadWriteAccess({
     required String? oldPassword,
     required String newPassword,
     required ShareToken? shareToken,
   }) =>
-      session.client.invoke('repository_set_read_and_write_access', {
+      session.client.invoke<void>('repository_set_read_and_write_access', {
         'repository': handle,
         'old_password': oldPassword,
         'new_password': newPassword,
@@ -463,15 +447,15 @@ class Repository {
     required String newPassword,
     required ShareToken? shareToken,
   }) =>
-      session.client.invoke('repository_set_read_access', {
+      session.client.invoke<void>('repository_set_read_access', {
         'repository': handle,
         'password': newPassword,
         'share_token': shareToken?.toString(),
       });
 
   Future<String> hexDatabaseId() async {
-    final bytes = await session.client.invoke("repository_database_id", handle)
-        as Uint8List;
+    final bytes = await session.client
+        .invoke<Uint8List>("repository_database_id", handle);
     return HEX.encode(bytes);
   }
 }
