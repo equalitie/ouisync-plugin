@@ -24,7 +24,7 @@ void main() {
 
   tearDown(() async {
     await repository.close();
-    session.close();
+    await session.close();
     temp.deleteSync(recursive: true);
   });
 

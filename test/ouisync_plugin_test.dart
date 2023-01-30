@@ -17,8 +17,8 @@ void main() {
 
   tearDown(() async {
     await repo.close();
-    session.close();
-    temp.deleteSync(recursive: true);
+    await session.close();
+    await temp.delete(recursive: true);
   });
 
   test('file write and read', () async {

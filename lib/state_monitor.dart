@@ -1,6 +1,4 @@
 import 'dart:ffi';
-import 'dart:async';
-import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:collection';
 
@@ -8,6 +6,7 @@ import 'package:ffi/ffi.dart' as ffi;
 import 'package:messagepack/messagepack.dart';
 
 import 'bindings_global.dart';
+import 'client.dart' show Subscription;
 import 'ouisync_plugin.dart' show BytesExtension, Session;
 
 // Version is incremented every time the monitor or any of it's values or
@@ -29,7 +28,7 @@ class MonitorId implements Comparable<MonitorId> {
 
   @override
   String toString() {
-    return "MonitorId($_name, $_disambiguator)";
+    return "$_name[$_disambiguator]";
   }
 
   @override
@@ -72,27 +71,8 @@ class StateMonitor {
     return int.tryParse(str);
   }
 
-  Subscription? subscribe() {
-    final recvPort = ReceivePort();
-
-    var subscriptionHandle = 0;
-
-    final pathBytes = _pathBytes(path);
-    _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
-      subscriptionHandle = bindings.session_state_monitor_subscribe(
-        session.handle,
-        pathPtr,
-        pathBytes.length,
-        recvPort.sendPort.nativePort,
-      );
-    });
-
-    if (subscriptionHandle == 0) {
-      return null;
-    }
-
-    return Subscription._(session, subscriptionHandle, recvPort);
-  }
+  Subscription subscribe() =>
+      Subscription(session.client, "state_monitor", path.join("/"));
 
   bool refresh() {
     final m = _getMonitor(session, path);
@@ -223,24 +203,5 @@ class StateMonitor {
     }
 
     return children;
-  }
-}
-
-class Subscription {
-  final Session _session;
-  final int _handle;
-  final ReceivePort _port;
-
-  // Broadcast Streams don't buffer, which is what we want given that the
-  // stream doesn't carry any meaningful value except for the information that
-  // a change happened.
-  late final Stream<void> broadcastStream;
-
-  Subscription._(this._session, this._handle, this._port)
-      : broadcastStream = _port.asBroadcastStream().cast<void>();
-
-  void close() {
-    bindings.session_state_monitor_unsubscribe(_session.handle, _handle);
-    _port.close();
   }
 }

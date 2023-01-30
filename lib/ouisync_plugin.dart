@@ -24,16 +24,10 @@ const bool debugTrace = false;
 class Session {
   final int handle;
   final Client client;
-  late final EventStreamController<NetworkEvent> _networkEventsController;
+  final Subscription _networkSubscription;
 
-  Session._(this.handle, this.client) {
-    _networkEventsController = EventStreamController(
-      session: this,
-      subscribe: (sendPort) =>
-          bindings.network_subscribe(handle, sendPort.nativePort),
-      decode: _decodeNetworkEvent,
-    );
-  }
+  Session._(this.handle, this.client)
+      : _networkSubscription = Subscription(client, "network", null);
 
   /// Opens a new session. [configsDirPath] is a path to a directory where
   /// configuration files shall be stored. If it doesn't exists, it will be
@@ -85,7 +79,8 @@ class Session {
             port,
           )));
 
-  Stream<NetworkEvent> get networkEvents => _networkEventsController.stream;
+  Stream<NetworkEvent> get networkEvents =>
+      _networkSubscription.stream.map(_decodeNetworkEvent);
 
   bool addUserProvidedQuicPeer(String addr) {
     return _withPoolSync((pool) => bindings.network_add_user_provided_quic_peer(
@@ -169,12 +164,12 @@ class Session {
       bindings.network_this_runtime_id(handle).cast<Utf8>().intoDartString();
 
   /// Closes the session.
-  void close() {
+  Future<void> close() async {
     if (debugTrace) {
       print("Session.close");
     }
 
-    _networkEventsController.close();
+    await _networkSubscription.close();
 
     bindings.session_close(handle);
     NativeChannels.session = null;
@@ -247,14 +242,14 @@ enum NetworkEvent {
   peerSetChange,
 }
 
-NetworkEvent? _decodeNetworkEvent(dynamic raw) {
-  switch (raw as int) {
+NetworkEvent _decodeNetworkEvent(Object? raw) {
+  switch (raw) {
     case NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
       return NetworkEvent.protocolVersionMismatch;
     case NETWORK_EVENT_PEER_SET_CHANGE:
       return NetworkEvent.peerSetChange;
     default:
-      return null;
+      throw Exception('invalid network event');
   }
 }
 
@@ -263,15 +258,10 @@ class Repository {
   final Session session;
   final int handle;
   final String _store;
-  final EventStreamController<RepositoryEvent> _eventsController;
+  final Subscription _subscription;
 
   Repository._(this.session, this.handle, this._store)
-      : _eventsController = EventStreamController(
-          session: session,
-          subscribe: (sendPort) => bindings.repository_subscribe(
-              session.handle, handle, sendPort.nativePort),
-          decode: (_) => RepositoryEvent(),
-        );
+      : _subscription = Subscription(session.client, "repository", handle);
 
   /// Creates a new repository and set access to it based on the following table:
   ///
@@ -332,8 +322,7 @@ class Repository {
       print("Repository.close");
     }
 
-    _eventsController.close();
-
+    await _subscription.close();
     await session.client.invoke('repository_close', handle);
   }
 
@@ -374,7 +363,7 @@ class Repository {
     });
   }
 
-  Stream<RepositoryEvent> get events => _eventsController.stream;
+  Stream<void> get events => _subscription.stream.cast<void>();
 
   bool get isDhtEnabled {
     if (debugTrace) {
@@ -548,10 +537,6 @@ class ShareToken {
   int get hashCode => token.hashCode;
 }
 
-class RepositoryEvent {
-  RepositoryEvent();
-}
-
 enum AccessMode {
   blind,
   read,
@@ -607,52 +592,6 @@ class Progress {
 
   @override
   int get hashCode => Object.hash(value, total);
-}
-
-/// Helper translates native event subscription into a Stream of events
-class EventStreamController<E> {
-  final Session session;
-  final ReceivePort _recvPort;
-  int? _handle;
-
-  late final Stream<E> stream;
-
-  EventStreamController({
-    required this.session,
-    required int Function(SendPort) subscribe,
-    required E? Function(dynamic) decode,
-  }) : _recvPort = ReceivePort() {
-    stream = _recvPort.asBroadcastStream(
-      onListen: (_) {
-        _handle ??= subscribe(_recvPort.sendPort);
-      },
-      onCancel: (_) {
-        final handle = _handle;
-        if (handle != null) {
-          bindings.subscription_cancel(session.handle, handle);
-          _handle = null;
-        }
-      },
-    ).transform(StreamTransformer<dynamic, E>.fromHandlers(
-      handleData: (raw, sink) {
-        final event = decode(raw);
-        if (event != null) {
-          sink.add(event);
-        }
-      },
-    ));
-  }
-
-  void close() {
-    final handle = _handle;
-    _handle = null;
-
-    if (handle != null) {
-      bindings.subscription_cancel(session.handle, handle);
-    }
-
-    _recvPort.close();
-  }
 }
 
 /// Type of a filesystem entry.

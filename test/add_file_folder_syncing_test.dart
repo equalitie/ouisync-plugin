@@ -10,7 +10,7 @@ void main() {
   late Session session;
 
   late Repository repository;
-  late StreamSubscription<RepositoryEvent> subscription;
+  late StreamSubscription<void> subscription;
 
   late String currentPath;
 
@@ -42,7 +42,7 @@ void main() {
     await subscription.cancel();
     await repository.close();
 
-    session.close();
+    await session.close();
     temp.deleteSync(recursive: true);
   });
 

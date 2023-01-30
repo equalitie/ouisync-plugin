@@ -11,6 +11,7 @@ import 'ouisync_plugin.dart' show Error;
 class Client {
   final WebSocket _socket;
   final _responses = HashMap<int, Completer<Object?>>();
+  final _subscriptions = HashMap<int, StreamSink<Object?>>();
   int _nextMessageId = 0;
 
   Client._(this._socket);
@@ -60,9 +61,6 @@ class Client {
 
       final message = deserialize(bytes);
 
-      // TODO: remove this print
-      print('received $message');
-
       if (message is! Map) {
         continue;
       }
@@ -81,6 +79,11 @@ class Client {
         } else {
           _handleInvalidResponse(responseCompleter);
         }
+      }
+
+      final subscription = _subscriptions[id];
+      if (subscription != null) {
+        subscription.add(message['payload']);
       }
     }
   }
@@ -116,5 +119,40 @@ class Client {
     final id = _nextMessageId;
     ++_nextMessageId;
     return id;
+  }
+}
+
+class Subscription {
+  final Client _client;
+  final StreamController<Object?> _controller;
+  final String _name;
+  final Object? _arg;
+  int _id = 0;
+
+  Subscription(this._client, this._name, this._arg)
+      : _controller = StreamController() {
+    final sink = _controller.sink;
+
+    _controller.onListen = () async {
+      assert(_id == 0);
+
+      _id = await _client.invoke('${_name}_subscribe', _arg) as int;
+      _client._subscriptions[_id] = sink;
+    };
+
+    _controller.onCancel = () async {
+      assert(_id != 0);
+
+      _client._subscriptions.remove(_id);
+      await _client.invoke('unsubscribe', _id);
+    };
+  }
+
+  Stream<Object?> get stream => _controller.stream;
+
+  Future<void> close() async {
+    if (_controller.hasListener) {
+      await _controller.close();
+    }
   }
 }
