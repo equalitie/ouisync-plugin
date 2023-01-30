@@ -461,6 +461,19 @@ class Repository {
                   : nullptr,
               port)));
 
+  Future<void> setReadAccess(
+          {required String newPassword,
+          required ShareToken? shareToken}) async =>
+      await _withPool((pool) => _invoke((port) =>
+          bindings.repository_set_read_access(
+              session.handle,
+              handle,
+              pool.toNativeUtf8(newPassword),
+              shareToken != null
+                  ? pool.toNativeUtf8(shareToken.token)
+                  : nullptr,
+              port)));
+
   Future<String> hexDatabaseId() async {
     final bytes = await _withPool((pool) => _invoke<Uint8List>((port) {
           bindings.repository_database_id(session.handle, handle, port);
