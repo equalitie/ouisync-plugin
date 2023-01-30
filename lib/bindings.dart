@@ -892,20 +892,28 @@ class Bindings {
   /// Attempting to change the secret without enough permissions will fail with PermissionDenied
   /// error.
   ///
-  /// If `local_rw_password` is null, the repository will become read and writable without a
+  /// If `local_new_rw_password` is null, the repository will become read and writable without a
   /// password.  To remove the read and write access use the
   /// `repository_remove_read_and_write_access` function.
+  ///
+  /// The `local_old_rw_password` is optional (may be a null pointer), if it is set the previously
+  /// used "writer ID" shall be used, otherwise a new one shall be generated. Note that it is
+  /// preferred to keep the writer ID as it was, this reduces the number of writers in Version
+  /// Vectors for every entry in the repository (files and directories) and thus reduces traffic and
+  /// CPU usage when calculating causal relationships.
   void repository_set_read_and_write_access(
     int session,
     int handle,
-    ffi.Pointer<ffi.Char> local_rw_password,
+    ffi.Pointer<ffi.Char> local_old_rw_password,
+    ffi.Pointer<ffi.Char> local_new_rw_password,
     ffi.Pointer<ffi.Char> share_token,
     int port,
   ) {
     return _repository_set_read_and_write_access(
       session,
       handle,
-      local_rw_password,
+      local_old_rw_password,
+      local_new_rw_password,
       share_token,
       port,
     );
@@ -918,11 +926,12 @@ class Bindings {
               Handle_RepositoryHolder,
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
               Port_Result)>>('repository_set_read_and_write_access');
   late final _repository_set_read_and_write_access =
       _repository_set_read_and_write_accessPtr.asFunction<
-          void Function(
-              int, int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>, int)>();
+          void Function(int, int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>, int)>();
 
   /// Note that after removing read key the user may still read the repository if they previously had
   /// write key set up.
@@ -1244,9 +1253,12 @@ class Bindings {
   late final _repository_disable_pex =
       _repository_disable_pexPtr.asFunction<void Function(int, int)>();
 
+  /// The `password` parameter is optional, if `null` the current access level of the opened
+  /// repository is used. If provided, the highest access level that the password can unlock is used.
   void repository_create_share_token(
     int session,
     int handle,
+    ffi.Pointer<ffi.Char> password,
     int access_mode,
     ffi.Pointer<ffi.Char> name,
     int port,
@@ -1254,6 +1266,7 @@ class Bindings {
     return _repository_create_share_token(
       session,
       handle,
+      password,
       access_mode,
       name,
       port,
@@ -1265,11 +1278,14 @@ class Bindings {
           ffi.Void Function(
               SessionHandle,
               Handle_RepositoryHolder,
+              ffi.Pointer<ffi.Char>,
               ffi.Uint8,
               ffi.Pointer<ffi.Char>,
               Port_Result_String)>>('repository_create_share_token');
-  late final _repository_create_share_token = _repository_create_share_tokenPtr
-      .asFunction<void Function(int, int, int, ffi.Pointer<ffi.Char>, int)>();
+  late final _repository_create_share_token =
+      _repository_create_share_tokenPtr.asFunction<
+          void Function(int, int, ffi.Pointer<ffi.Char>, int,
+              ffi.Pointer<ffi.Char>, int)>();
 
   int repository_access_mode(
     int session,

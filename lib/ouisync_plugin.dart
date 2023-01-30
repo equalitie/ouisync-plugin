@@ -409,6 +409,7 @@ class Repository {
   /// specify repository name which will be included in the token and suggested to the recipient.
   Future<ShareToken> createShareToken({
     required AccessMode accessMode,
+    String? password,
     String? name,
   }) async {
     if (debugTrace) {
@@ -419,6 +420,7 @@ class Repository {
         bindings.repository_create_share_token(
             session.handle,
             handle,
+            password != null ? pool.toNativeUtf8(password) : nullptr,
             _encodeAccessMode(accessMode),
             name != null ? pool.toNativeUtf8(name) : nullptr,
             port))));
@@ -445,10 +447,25 @@ class Repository {
       .intoDartString();
 
   Future<void> setReadWriteAccess(
-          {required String newPassword,
+          {required String? oldPassword,
+          required String newPassword,
           required ShareToken? shareToken}) async =>
       await _withPool((pool) => _invoke((port) =>
           bindings.repository_set_read_and_write_access(
+              session.handle,
+              handle,
+              oldPassword != null ? pool.toNativeUtf8(oldPassword) : nullptr,
+              pool.toNativeUtf8(newPassword),
+              shareToken != null
+                  ? pool.toNativeUtf8(shareToken.token)
+                  : nullptr,
+              port)));
+
+  Future<void> setReadAccess(
+          {required String newPassword,
+          required ShareToken? shareToken}) async =>
+      await _withPool((pool) => _invoke((port) =>
+          bindings.repository_set_read_access(
               session.handle,
               handle,
               pool.toNativeUtf8(newPassword),
