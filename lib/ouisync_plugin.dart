@@ -122,9 +122,7 @@ class Session {
     return PeerInfo.decodeAll(unpacker);
   }
 
-  StateMonitor? getRootStateMonitor() {
-    return StateMonitor.getRoot(this);
-  }
+  Future<StateMonitor?> getRootStateMonitor() => StateMonitor.getRoot(this);
 
   int get currentProtocolVersion =>
       bindings.network_current_protocol_version(handle);
@@ -438,8 +436,8 @@ class Repository {
     return Progress.decode(unpacker);
   }
 
-  StateMonitor? stateMonitor() {
-    return StateMonitor.getRoot(session)
+  Future<StateMonitor?> stateMonitor() async {
+    return (await StateMonitor.getRoot(session))
         ?.childrenWithName("Repositories")
         .firstOrNull
         ?.childrenWithName("repo(store=\"$_store\")")

@@ -1486,26 +1486,6 @@ class Bindings {
   late final _free_bytesPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(Bytes)>>('free_bytes');
   late final _free_bytes = _free_bytesPtr.asFunction<void Function(Bytes)>();
-
-  /// Retrieve a serialized state monitor corresponding to the `path`.
-  Bytes session_get_state_monitor(
-    int session,
-    ffi.Pointer<ffi.Uint8> path,
-    int path_len,
-  ) {
-    return _session_get_state_monitor(
-      session,
-      path,
-      path_len,
-    );
-  }
-
-  late final _session_get_state_monitorPtr = _lookup<
-      ffi.NativeFunction<
-          Bytes Function(SessionHandle, ffi.Pointer<ffi.Uint8>,
-              ffi.Uint64)>>('session_get_state_monitor');
-  late final _session_get_state_monitor = _session_get_state_monitorPtr
-      .asFunction<Bytes Function(int, ffi.Pointer<ffi.Uint8>, int)>();
 }
 
 abstract class ErrorCode {

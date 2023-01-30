@@ -1,13 +1,7 @@
-import 'dart:ffi';
-import 'dart:typed_data';
 import 'dart:collection';
 
-import 'package:ffi/ffi.dart' as ffi;
-import 'package:messagepack/messagepack.dart';
-
-import 'bindings_global.dart';
 import 'client.dart' show Subscription;
-import 'ouisync_plugin.dart' show BytesExtension, Session;
+import 'ouisync_plugin.dart' show Session;
 
 // Version is incremented every time the monitor or any of it's values or
 // children changes.
@@ -26,9 +20,18 @@ class MonitorId implements Comparable<MonitorId> {
   // For when we expect the name to uniquely identify the child.
   static MonitorId expectUnique(String name) => MonitorId(name, 0);
 
+  static MonitorId parse(String raw) {
+    // A string in the format "disambiguator:name".
+    final colon = raw.indexOf(':');
+    final disambiguator = int.parse(raw.substring(0, colon));
+    final name = raw.substring(colon + 1);
+
+    return MonitorId(name, disambiguator);
+  }
+
   @override
   String toString() {
-    return "$_name[$_disambiguator]";
+    return "$_name:$_disambiguator";
   }
 
   @override
@@ -49,13 +52,11 @@ class StateMonitor {
   Map<String, String> values;
   Map<MonitorId, Version> children;
 
-  static StateMonitor? getRoot(Session session) {
-    return _getMonitor(session, <MonitorId>[]);
-  }
+  static Future<StateMonitor?> getRoot(Session session) =>
+      _getMonitor(session, <MonitorId>[]);
 
-  StateMonitor? child(MonitorId childId) {
-    return _getMonitor(session, [...path, childId]);
-  }
+  Future<StateMonitor?> child(MonitorId childId) =>
+      _getMonitor(session, [...path, childId]);
 
   Iterable<StateMonitor> childrenWithName(String name) {
     return children.entries
@@ -74,8 +75,8 @@ class StateMonitor {
   Subscription subscribe() =>
       Subscription(session.client, "state_monitor", path.join("/"));
 
-  bool refresh() {
-    final m = _getMonitor(session, path);
+  Future<bool> refresh() async {
+    final m = await _getMonitor(session, path);
 
     if (m == null) {
       values.clear();
@@ -103,70 +104,27 @@ class StateMonitor {
     this.children,
   );
 
-  static _withPointer(Uint8List data, fn) {
-    var buffer = ffi.malloc<Uint8>(data.length);
-
-    try {
-      buffer.asTypedList(data.length).setAll(0, data);
-      fn(buffer);
-    } finally {
-      ffi.malloc.free(buffer);
-    }
-  }
-
-  static Uint8List _pathBytes(List<MonitorId> path) {
-    final p = Packer();
-    p.packListLength(path.length);
-
-    for (final item in path) {
-      p.packListLength(2);
-      p.packString(item._name);
-      p.packInt(item._disambiguator);
-    }
-
-    return p.takeBytes();
-  }
-
-  static StateMonitor? _getMonitor(Session session, List<MonitorId> path) {
-    StateMonitor? monitor;
-    final pathBytes = _pathBytes(path);
-    _withPointer(pathBytes, (Pointer<Uint8> pathPtr) {
-      final bytes = bindings.session_get_state_monitor(
-        session.handle,
-        pathPtr,
-        pathBytes.length,
-      );
-      monitor = StateMonitor._parse(session, path, bytes.intoUint8List());
-    });
-    return monitor;
-  }
-
-  static StateMonitor? _parse(
+  static Future<StateMonitor?> _getMonitor(
     Session session,
     List<MonitorId> path,
-    Uint8List messagepackData,
+  ) async {
+    final list = await session.client
+        .invoke("state_monitor_get", path.join("/")) as List<Object?>;
+    return StateMonitor._decode(session, path, list);
+  }
+
+  static StateMonitor? _decode(
+    Session session,
+    List<MonitorId> path,
+    List<Object?> raw,
   ) {
-    if (messagepackData.isEmpty) {
+    if (raw.length < 3) {
       return null;
     }
 
-    var unpacker = Unpacker(messagepackData);
-
-    //// Struct is encoded as a list.  Use this for debugging. Note that
-    //// unpackList returns a list of `Object?`s so we would need to do a lot
-    //// of type casting if we were to use this function directly.
-    //final struct = unpacker.unpackList();
-    //print("Unpacked StateMonitor: $struct");
-    //return null;
-
-    final listLength = unpacker.unpackListLength();
-
-    // Note: assertion happens only in the debug mode.
-    assert(listLength == 3);
-
-    final version = unpacker.unpackInt()!;
-    final values = _unpackValues(unpacker);
-    final children = _unpackChildren(unpacker);
+    final version = raw[0] as int;
+    final values = _decodeValues(raw[1]);
+    final children = _decodeChildren(raw[2]);
 
     return StateMonitor._(
       session,
@@ -177,29 +135,16 @@ class StateMonitor {
     );
   }
 
-  static Map<String, String> _unpackValues(Unpacker u) {
-    final valuesLen = u.unpackMapLength();
-    var values = SplayTreeMap<String, String>();
+  static Map<String, String> _decodeValues(Object? raw) =>
+      SplayTreeMap<String, String>.from(raw as Map<String, String>);
 
-    for (var i = 0; i < valuesLen; i++) {
-      final key = u.unpackString()!;
-      values[key] = u.unpackString()!;
-    }
-
-    return values;
-  }
-
-  static Map<MonitorId, int> _unpackChildren(Unpacker u) {
-    final childrenLen = u.unpackMapLength();
+  static Map<MonitorId, int> _decodeChildren(Object? raw) {
+    final rawChildren = raw as Map<String, int>;
     var children = SplayTreeMap<MonitorId, int>();
 
-    for (var i = 0; i < childrenLen; i++) {
-      // A string in the format "disambiguator:name".
-      final idStr = u.unpackString()!;
-      final colon = idStr.indexOf(':');
-      final disambiguator = int.parse(idStr.substring(0, colon));
-      final name = idStr.substring(colon + 1);
-      children[MonitorId(name, disambiguator)] = u.unpackInt()!;
+    for (final entry in rawChildren.entries) {
+      final id = MonitorId.parse(entry.key);
+      children[id] = entry.value;
     }
 
     return children;
