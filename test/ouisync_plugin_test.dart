@@ -10,14 +10,14 @@ void main() {
 
   setUp(() async {
     temp = await io.Directory.systemTemp.createTemp();
-    session = await Session.open('${temp.path}/config');
+    session = Session.create('${temp.path}/config');
     repo = await Repository.create(session,
         store: '${temp.path}/repo.db', readPassword: null, writePassword: null);
   });
 
   tearDown(() async {
     await repo.close();
-    await session.close();
+    await session.dispose();
     await temp.delete(recursive: true);
   });
 

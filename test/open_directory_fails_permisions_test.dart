@@ -16,12 +16,12 @@ void main() {
   setUp(() async {
     await io.Directory(appDirectory).create();
 
-    session = await Session.open(sessionStore);
+    session = Session.create(sessionStore);
   });
 
   tearDown(() async {
     await repository?.close();
-    await session.close();
+    await session.dispose();
 
     await io.Directory(appDirectory).delete(recursive: true);
   });

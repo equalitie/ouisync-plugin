@@ -9,14 +9,18 @@ void main() {
 
   setUp(() async {
     temp = await io.Directory.systemTemp.createTemp();
-    session = await Session.open('${temp.path}/config');
-    repo = await Repository.create(session,
-        store: '${temp.path}/repo.db', readPassword: null, writePassword: null);
+    session = Session.create('${temp.path}/config');
+    repo = await Repository.create(
+      session,
+      store: '${temp.path}/repo.db',
+      readPassword: null,
+      writePassword: null,
+    );
   });
 
-  tearDown(() {
-    session.close();
-    temp.deleteSync;
+  tearDown(() async {
+    await session.dispose();
+    await temp.delete(recursive: true);
   });
 
   test('Close a repository asynchronously in Windows fails', () async {

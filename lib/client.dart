@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
-import 'dart:io' show WebSocket;
 
 import 'package:msgpack_dart/msgpack_dart.dart';
 
@@ -9,20 +8,13 @@ import 'ouisync_plugin.dart' show Error;
 
 /// Client to interface with ouisync
 class Client {
-  final WebSocket _socket;
+  final ClientSocket _socket;
   final _responses = HashMap<int, Completer<Object?>>();
   final _subscriptions = HashMap<int, StreamSink<Object?>>();
   int _nextMessageId = 0;
 
-  Client._(this._socket);
-
-  static Future<Client> connect(String endpoint) async {
-    final socket = await WebSocket.connect('ws://$endpoint');
-    final client = Client._(socket);
-
-    unawaited(client._receive());
-
-    return client;
+  Client(this._socket) {
+    unawaited(_receive());
   }
 
   Future<T> invoke<T>(String method, Object? args) async {
@@ -38,7 +30,7 @@ class Client {
         'args': args,
       });
 
-      _socket.add(message);
+      _socket.sink.add(message);
 
       return await completer.future as T;
     } finally {
@@ -51,14 +43,7 @@ class Client {
   }
 
   Future<void> _receive() async {
-    await for (final data in _socket) {
-      final Uint8List bytes;
-      if (data is List<int>) {
-        bytes = Uint8List.fromList(data);
-      } else {
-        continue;
-      }
-
+    await for (final bytes in _socket.stream) {
       final message = deserialize(bytes);
 
       if (message is! Map) {
@@ -154,5 +139,17 @@ class Subscription {
     if (_controller.hasListener) {
       await _controller.close();
     }
+  }
+}
+
+class ClientSocket {
+  final Stream<Uint8List> stream;
+  final Sink<Uint8List> sink;
+
+  ClientSocket(this.stream, this.sink);
+
+  Future<void> close() {
+    sink.close();
+    return Future.value();
   }
 }

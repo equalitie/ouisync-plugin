@@ -1248,59 +1248,98 @@ class Bindings {
   late final _share_token_decode = _share_token_decodePtr.asFunction<
       ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Uint8>, int)>();
 
-  /// Opens the ouisync session. `post_c_object_fn` should be a pointer to the dart's
+  /// Creates a ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
-  SessionOpenResult session_open(
+  SessionOpenResult session_create(
     ffi.Pointer<ffi.Void> post_c_object_fn,
     ffi.Pointer<ffi.Char> configs_path,
   ) {
-    return _session_open(
+    return _session_create(
       post_c_object_fn,
       configs_path,
     );
   }
 
-  late final _session_openPtr = _lookup<
+  late final _session_createPtr = _lookup<
       ffi.NativeFunction<
           SessionOpenResult Function(
-              ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>>('session_open');
-  late final _session_open = _session_openPtr.asFunction<
+              ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>>('session_create');
+  late final _session_create = _session_createPtr.asFunction<
       SessionOpenResult Function(
           ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>();
 
-  /// Get the interface listener port
-  void session_interface_port(
+  /// Destroys the ouisync session.
+  void session_destroy(
+    int session,
+  ) {
+    return _session_destroy(
+      session,
+    );
+  }
+
+  late final _session_destroyPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
+          'session_destroy');
+  late final _session_destroy =
+      _session_destroyPtr.asFunction<void Function(int)>();
+
+  /// Create in-memory interface channel for when the client and the server are both in the same
+  /// process.
+  int session_channel_open(
     int session,
     int port,
   ) {
-    return _session_interface_port(
+    return _session_channel_open(
       session,
       port,
     );
   }
 
-  late final _session_interface_portPtr = _lookup<
+  late final _session_channel_openPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SessionHandle, Port_Result_u16)>>('session_interface_port');
-  late final _session_interface_port =
-      _session_interface_portPtr.asFunction<void Function(int, int)>();
+          Handle_ClientSender Function(
+              SessionHandle, Port_Vec_u8)>>('session_channel_open');
+  late final _session_channel_open =
+      _session_channel_openPtr.asFunction<int Function(int, int)>();
 
-  /// Closes the ouisync session.
-  void session_close(
+  void session_channel_send(
     int session,
+    int sender,
+    ffi.Pointer<ffi.Uint8> payload_ptr,
+    int payload_len,
   ) {
-    return _session_close(
+    return _session_channel_send(
       session,
+      sender,
+      payload_ptr,
+      payload_len,
     );
   }
 
-  late final _session_closePtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
-          'session_close');
-  late final _session_close =
-      _session_closePtr.asFunction<void Function(int)>();
+  late final _session_channel_sendPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle, Handle_ClientSender,
+              ffi.Pointer<ffi.Uint8>, ffi.Uint64)>>('session_channel_send');
+  late final _session_channel_send = _session_channel_sendPtr
+      .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int)>();
+
+  void session_channel_close(
+    int session,
+    int sender,
+  ) {
+    return _session_channel_close(
+      session,
+      sender,
+    );
+  }
+
+  late final _session_channel_closePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(
+              SessionHandle, Handle_ClientSender)>>('session_channel_close');
+  late final _session_channel_close =
+      _session_channel_closePtr.asFunction<void Function(int, int)>();
 
   /// Shutdowns the network and closes the session. This is equivalent to doing it in two steps
   /// (`network_shutdown` then `session_close`), but in flutter when the engine is being detached
@@ -1429,9 +1468,10 @@ typedef Port_Result_String = Port;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_Vec_u8 = Port;
+typedef Handle_ClientSender = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_u16 = Port;
+typedef Port_Vec_u8 = Port;
 
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 

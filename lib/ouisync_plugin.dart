@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:ffi';
+import 'dart:io' as io;
 import 'dart:isolate';
 import 'dart:math';
 
@@ -27,17 +28,19 @@ class Session {
   final Subscription _networkSubscription;
 
   Session._(this.handle, this.client)
-      : _networkSubscription = Subscription(client, "network", null);
+      : _networkSubscription = Subscription(client, "network", null) {
+    NativeChannels.session = this;
+  }
 
-  /// Opens a new session. [configsDirPath] is a path to a directory where
+  /// Creates a new session in this process. [configsDirPath] is a path to a directory where
   /// configuration files shall be stored. If it doesn't exists, it will be
   /// created.
-  static Future<Session> open(String configsDirPath) async {
+  static Session create(String configsDirPath) {
     if (debugTrace) {
       print("Session.open $configsDirPath");
     }
 
-    final result = _withPoolSync((pool) => bindings.session_open(
+    final result = _withPoolSync((pool) => bindings.session_create(
           NativeApi.postCObject.cast<Void>(),
           pool.toNativeUtf8(configsDirPath),
         ));
@@ -51,16 +54,18 @@ class Session {
       throw Error(result.error_code, errorMessage);
     }
 
-    final socketPort = await _invoke<int>(
-      (port) => bindings.session_interface_port(handle, port),
-    );
+    final socket = MemorySocket(handle);
+    final client = Client(socket);
 
-    final client = await Client.connect('127.0.0.1:$socketPort');
+    return Session._(handle, client);
+  }
 
-    final session = Session._(handle, client);
-    NativeChannels.session = session;
+  /// Connect to a ouisync session running in a different process or even on a different device.
+  static Future<Session> connect(String endpoint) async {
+    final socket = await WebSocket.connect(endpoint);
+    final client = Client(socket);
 
-    return session;
+    return Session._(0, client);
   }
 
   /// Binds network to the specified addresses.
@@ -152,16 +157,19 @@ class Session {
   String get thisRuntimeId =>
       bindings.network_this_runtime_id(handle).cast<Utf8>().intoDartString();
 
-  /// Closes the session.
-  Future<void> close() async {
+  /// Destroys the session.
+  Future<void> dispose() async {
     if (debugTrace) {
-      print("Session.close");
+      print("Session.dispose");
     }
 
     await _networkSubscription.close();
+    await client.close();
 
-    bindings.session_close(handle);
-    NativeChannels.session = null;
+    if (handle != 0) {
+      bindings.session_destroy(handle);
+      NativeChannels.session = null;
+    }
   }
 
   /// Try to gracefully close connections to peers.
@@ -171,7 +179,9 @@ class Session {
 
   /// Try to gracefully close connections to peers then close the session.
   void shutdownNetworkAndClose() {
-    bindings.session_shutdown_network_and_close(handle);
+    if (handle != 0) {
+      bindings.session_shutdown_network_and_close(handle);
+    }
   }
 }
 
@@ -921,6 +931,76 @@ class Error implements Exception {
 }
 
 // Private helpers to simplify working with the native API:
+
+class MemorySocket extends ClientSocket {
+  MemorySocket._(
+    Stream<Uint8List> stream,
+    Sink<Uint8List> sink,
+  ) : super(stream, sink);
+
+  factory MemorySocket(int sessionHandle) {
+    final recvPort = ReceivePort();
+    final senderHandle = bindings.session_channel_open(
+      sessionHandle,
+      recvPort.sendPort.nativePort,
+    );
+
+    final stream = recvPort.cast<Uint8List>();
+    final sink = MemorySink(sessionHandle, senderHandle);
+
+    return MemorySocket._(stream, sink);
+  }
+}
+
+class MemorySink extends Sink<Uint8List> {
+  final int _session;
+  final int _sender;
+
+  MemorySink(this._session, this._sender);
+
+  @override
+  void add(Uint8List data) {
+    // TODO: is there a way to do this without having to allocate whole new buffer?
+    var buffer = malloc<Uint8>(data.length);
+
+    try {
+      buffer.asTypedList(data.length).setAll(0, data);
+      bindings.session_channel_send(_session, _sender, buffer, data.length);
+    } finally {
+      malloc.free(buffer);
+    }
+  }
+
+  @override
+  void close() {
+    bindings.session_channel_close(_session, _sender);
+  }
+}
+
+class WebSocket extends ClientSocket {
+  WebSocket._(Stream<Uint8List> stream, Sink<Uint8List> sink)
+      : super(stream, sink);
+
+  static Future<WebSocket> connect(String endpoint) async {
+    final inner = await io.WebSocket.connect('ws://$endpoint');
+    final transformer = StreamTransformer<dynamic, Uint8List>.fromHandlers(
+      handleData: (data, sink) {
+        if (data is List<int>) {
+          sink.add(Uint8List.fromList(data));
+        }
+      },
+    );
+    final stream = inner.transform(transformer);
+    final sink = inner as Sink<Uint8List>;
+
+    return WebSocket._(stream, sink);
+  }
+
+  @override
+  Future<void> close() async {
+    await (sink as io.WebSocket).close();
+  }
+}
 
 // Call the async function passing it a [_Pool] which will be released when the function returns.
 Future<T> _withPool<T>(Future<T> Function(_Pool) fun) async {

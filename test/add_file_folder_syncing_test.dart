@@ -26,7 +26,7 @@ void main() {
 
   setUp(() async {
     temp = await io.Directory.systemTemp.createTemp();
-    session = await Session.open('${temp.path}/device_id.conf');
+    session = Session.create('${temp.path}/device_id.conf');
     repository = await Repository.create(session,
         store: '${temp.path}/repo.db', readPassword: null, writePassword: null);
 
@@ -41,9 +41,8 @@ void main() {
   tearDown(() async {
     await subscription.cancel();
     await repository.close();
-
-    await session.close();
-    temp.deleteSync(recursive: true);
+    await session.dispose();
+    await temp.delete(recursive: true);
   });
 
   test('Add file to directory with syncing not in directory', () async {
