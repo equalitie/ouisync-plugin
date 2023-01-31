@@ -437,7 +437,7 @@ class Repository {
     return StateMonitor.getRoot(session)
         ?.childrenWithName("Repositories")
         .firstOrNull
-        ?.childrenWithName("repository(db=$_store)")
+        ?.childrenWithName("repo(store=\"$_store\")")
         .firstOrNull;
   }
 
