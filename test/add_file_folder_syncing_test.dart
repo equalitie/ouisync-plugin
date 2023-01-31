@@ -21,7 +21,6 @@ void main() {
   Future<void> getDirectoryContents(Repository repo, String path) async {
     final folder1Contents = await Directory.open(repo, path);
     print('Directory contents: ${folder1Contents.toList()}');
-    folder1Contents.close();
   }
 
   setUp(() async {

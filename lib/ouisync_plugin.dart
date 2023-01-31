@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'dart:ffi';
 import 'dart:io' as io;
 import 'dart:isolate';
-import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
@@ -325,12 +324,12 @@ class Repository {
       print("Repository.type $path");
     }
 
-    return _decodeEntryType(
-      await session.client.invoke<int>('repository_entry_type', {
-        'repository': handle,
-        'path': path,
-      }),
-    );
+    final raw = await session.client.invoke<int?>('repository_entry_type', {
+      'repository': handle,
+      'path': path,
+    });
+
+    return raw != null ? _decodeEntryType(raw) : null;
   }
 
   /// Returns whether the entry (file or directory) at [path] exists.
@@ -357,41 +356,51 @@ class Repository {
 
   Stream<void> get events => _subscription.stream.cast<void>();
 
-  bool get isDhtEnabled {
+  Future<bool> get isDhtEnabled async {
     if (debugTrace) {
       print("Repository.isDhtEnabled");
     }
 
-    return bindings.repository_is_dht_enabled(session.handle, handle);
+    return await session.client
+        .invoke<bool>('repository_is_dht_enabled', handle);
   }
 
-  void enableDht() {
+  Future<void> enableDht() async {
     if (debugTrace) {
       print("Repository.enableDht");
     }
 
-    bindings.repository_enable_dht(session.handle, handle);
+    await session.client.invoke<void>('repository_set_dht_enabled', {
+      'repository': handle,
+      'enabled': true,
+    });
   }
 
-  void disableDht() {
+  Future<void> disableDht() async {
     if (debugTrace) {
       print("Repository.disableDht");
     }
 
-    bindings.repository_disable_dht(session.handle, handle);
+    await session.client.invoke<void>('repository_set_dht_enabled', {
+      'repository': handle,
+      'enabled': false,
+    });
   }
 
-  bool get isPexEnabled {
-    return bindings.repository_is_pex_enabled(session.handle, handle);
-  }
+  Future<bool> get isPexEnabled =>
+      session.client.invoke<bool>('repository_is_pex_enabled', handle);
 
-  void enablePex() {
-    bindings.repository_enable_pex(session.handle, handle);
-  }
+  Future<void> enablePex() =>
+      session.client.invoke<void>('repository_set_pex_enabled', {
+        'repository': handle,
+        'enabled': true,
+      });
 
-  void disablePex() {
-    bindings.repository_disable_pex(session.handle, handle);
-  }
+  Future<void> disablePex() =>
+      session.client.invoke<void>('repository_set_pex_enabled', {
+        'repository': handle,
+        'enabled': false,
+      });
 
   AccessMode get accessMode {
     if (debugTrace) {
@@ -595,37 +604,30 @@ enum EntryType {
   directory,
 }
 
-EntryType? _decodeEntryType(int n) {
+EntryType _decodeEntryType(int n) {
   switch (n) {
     case ENTRY_TYPE_FILE:
       return EntryType.file;
     case ENTRY_TYPE_DIRECTORY:
       return EntryType.directory;
     default:
-      return null;
+      throw Exception('invalid entry type');
   }
 }
 
 /// Single entry of a directory.
 class DirEntry {
-  final Directory directory;
-  final int index;
+  final String name;
+  final EntryType entryType;
 
-  DirEntry._(this.directory, this.index);
+  DirEntry(this.name, this.entryType);
 
-  /// Name of this entry.
-  ///
-  /// Note: this is just the name, not the full path.
-  String get name => bindings
-      .directory_entry_name(directory.session.handle, directory.handle, index)
-      .cast<Utf8>()
-      .toDartString();
+  static DirEntry decode(Object? raw) {
+    final map = raw as Map<Object?, Object?>;
+    final name = map['name'] as String;
+    final type = map['entry_type'] as int;
 
-  /// Type of this entry (file/directory).
-  EntryType get type {
-    return _decodeEntryType(bindings.directory_entry_type(
-            directory.session.handle, directory.handle, index)) ??
-        (throw Error(ErrorCode.other, 'invalid dir entry type'));
+    return DirEntry(name, _decodeEntryType(type));
   }
 }
 
@@ -637,10 +639,9 @@ class DirEntry {
 /// Subsequent external changes to the directory (e.g. added files) are not recognized and the
 /// directory needs to be manually reopened to do so.
 class Directory with IterableMixin<DirEntry> {
-  final Session session;
-  final int handle;
+  final List<DirEntry> entries;
 
-  Directory._(this.session, this.handle);
+  Directory._(this.entries);
 
   /// Opens a directory of [repo] at [path].
   ///
@@ -652,15 +653,16 @@ class Directory with IterableMixin<DirEntry> {
       print("Directory.open $path");
     }
 
-    return Directory._(
-        repo.session,
-        await _withPool(
-            (pool) => _invoke<int>((port) => bindings.directory_open(
-                  repo.session.handle,
-                  repo.handle,
-                  pool.toNativeUtf8(path),
-                  port,
-                ))));
+    final rawEntries = await repo.session.client.invoke<List<Object?>>(
+      'directory_open',
+      {
+        'repository': repo.handle,
+        'path': path,
+      },
+    );
+    final entries = rawEntries.map(DirEntry.decode).toList();
+
+    return Directory._(entries);
   }
 
   /// Creates a new directory in [repo] at [path].
@@ -671,13 +673,10 @@ class Directory with IterableMixin<DirEntry> {
       print("Directory.create $path");
     }
 
-    return _withPool(
-        (pool) => _invoke<void>((port) => bindings.directory_create(
-              repo.session.handle,
-              repo.handle,
-              pool.toNativeUtf8(path),
-              port,
-            )));
+    return repo.session.client.invoke<void>('directory_create', {
+      'repository': repo.handle,
+      'path': path,
+    });
   }
 
   /// Remove a directory from [repo] at [path]. If [recursive] is false (which is the default),
@@ -700,41 +699,9 @@ class Directory with IterableMixin<DirEntry> {
         fun(repo.session.handle, repo.handle, pool.toNativeUtf8(path), port)));
   }
 
-  /// Closes this directory.
-  void close() {
-    if (debugTrace) {
-      print("Directory.close");
-    }
-
-    bindings.directory_close(session.handle, handle);
-  }
-
   /// Returns an [Iterator] to iterate over entries of this directory.
   @override
-  Iterator<DirEntry> get iterator => DirEntriesIterator._(this);
-}
-
-/// Iterator for a [Directory]
-class DirEntriesIterator extends Iterator<DirEntry> {
-  final Directory directory;
-  final int count;
-  int index = -1;
-
-  DirEntriesIterator._(this.directory)
-      : count = bindings.directory_num_entries(
-            directory.session.handle, directory.handle);
-
-  @override
-  DirEntry get current {
-    assert(index >= 0 && index < count);
-    return DirEntry._(directory, index);
-  }
-
-  @override
-  bool moveNext() {
-    index = min(index + 1, count);
-    return index < count;
-  }
+  Iterator<DirEntry> get iterator => entries.iterator;
 }
 
 /// Reference to a file in a [Repository].

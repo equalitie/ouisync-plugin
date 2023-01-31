@@ -47,12 +47,7 @@ void main() {
 
   test('empty directory', () async {
     final rootDir = await Directory.open(repo, '/');
-
-    try {
-      expect(rootDir, isEmpty);
-    } finally {
-      rootDir.close();
-    }
+    expect(rootDir, isEmpty);
   });
 
   test('share token access mode', () async {
