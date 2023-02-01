@@ -18,53 +18,6 @@ class Bindings {
           lookup)
       : _lookup = lookup;
 
-  /// Removes the directory at the given path from the repository. The directory must be empty.
-  void directory_remove(
-    int session,
-    int repo,
-    ffi.Pointer<ffi.Char> path,
-    int port,
-  ) {
-    return _directory_remove(
-      session,
-      repo,
-      path,
-      port,
-    );
-  }
-
-  late final _directory_removePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
-              ffi.Pointer<ffi.Char>, Port_Result)>>('directory_remove');
-  late final _directory_remove = _directory_removePtr
-      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
-
-  /// Removes the directory at the given path including its content from the repository.
-  void directory_remove_recursively(
-    int session,
-    int repo,
-    ffi.Pointer<ffi.Char> path,
-    int port,
-  ) {
-    return _directory_remove_recursively(
-      session,
-      repo,
-      path,
-      port,
-    );
-  }
-
-  late final _directory_remove_recursivelyPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              SessionHandle,
-              Handle_RepositoryHolder,
-              ffi.Pointer<ffi.Char>,
-              Port_Result)>>('directory_remove_recursively');
-  late final _directory_remove_recursively = _directory_remove_recursivelyPtr
-      .asFunction<void Function(int, int, ffi.Pointer<ffi.Char>, int)>();
-
   void file_open(
     int session,
     int repo,
@@ -298,384 +251,6 @@ class Bindings {
   late final _file_copy_to_raw_fd =
       _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int, int)>();
 
-  /// Add a QUIC endpoint to which which OuiSync shall attempt to connect. Upon failure or success
-  /// but then disconnection, the endpoint be retried until the below
-  /// `network_remove_user_provided_quic_peer` function with the same endpoint is called.
-  ///
-  /// The endpoint provided to this function may be an IPv4 endpoint in the format
-  /// "192.168.0.1:1234", or an IPv6 address in the format "[2001:db8:1]:1234".
-  ///
-  /// If the format is not parsed correctly, this function returns `false`, in all other cases it
-  /// returns `true`. The latter includes the case when the peer has already been added.
-  bool network_add_user_provided_quic_peer(
-    int session,
-    ffi.Pointer<ffi.Char> addr,
-  ) {
-    return _network_add_user_provided_quic_peer(
-      session,
-      addr,
-    );
-  }
-
-  late final _network_add_user_provided_quic_peerPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Bool Function(SessionHandle,
-              ffi.Pointer<ffi.Char>)>>('network_add_user_provided_quic_peer');
-  late final _network_add_user_provided_quic_peer =
-      _network_add_user_provided_quic_peerPtr
-          .asFunction<bool Function(int, ffi.Pointer<ffi.Char>)>();
-
-  /// Remove a QUIC endpoint from the list of user provided QUIC peers (added by the above
-  /// `network_add_user_provided_quic_peer` function). Note that users added by other discovery
-  /// mechanisms are not affected by this function. Also, removing a peer will not cause
-  /// disconnection if the connection has already been established. But if the peers disconnected due
-  /// to other reasons, the connection to this `addr` shall not be reattempted after the call to this
-  /// function.
-  ///
-  /// The endpoint provided to this function may be an IPv4 endpoint in the format
-  /// "192.168.0.1:1234", or an IPv6 address in the format "[2001:db8:1]:1234".
-  ///
-  /// If the format is not parsed correctly, this function returns `false`, in all other cases it
-  /// returns `true`. The latter includes the case when the peer has not been previously added.
-  bool network_remove_user_provided_quic_peer(
-    int session,
-    ffi.Pointer<ffi.Char> addr,
-  ) {
-    return _network_remove_user_provided_quic_peer(
-      session,
-      addr,
-    );
-  }
-
-  late final _network_remove_user_provided_quic_peerPtr = _lookup<
-          ffi.NativeFunction<
-              ffi.Bool Function(SessionHandle, ffi.Pointer<ffi.Char>)>>(
-      'network_remove_user_provided_quic_peer');
-  late final _network_remove_user_provided_quic_peer =
-      _network_remove_user_provided_quic_peerPtr
-          .asFunction<bool Function(int, ffi.Pointer<ffi.Char>)>();
-
-  /// Return the list of peers with which we're connected, serialized with msgpack.
-  Bytes network_connected_peers(
-    int session,
-  ) {
-    return _network_connected_peers(
-      session,
-    );
-  }
-
-  late final _network_connected_peersPtr =
-      _lookup<ffi.NativeFunction<Bytes Function(SessionHandle)>>(
-          'network_connected_peers');
-  late final _network_connected_peers =
-      _network_connected_peersPtr.asFunction<Bytes Function(int)>();
-
-  /// Returns our runtime id formatted as a hex string.
-  /// The caller is responsible for deallocating it.
-  ffi.Pointer<ffi.Char> network_this_runtime_id(
-    int session,
-  ) {
-    return _network_this_runtime_id(
-      session,
-    );
-  }
-
-  late final _network_this_runtime_idPtr = _lookup<
-          ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(SessionHandle)>>(
-      'network_this_runtime_id');
-  late final _network_this_runtime_id = _network_this_runtime_idPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
-
-  /// Return our currently used protocol version number.
-  int network_current_protocol_version(
-    int session,
-  ) {
-    return _network_current_protocol_version(
-      session,
-    );
-  }
-
-  late final _network_current_protocol_versionPtr =
-      _lookup<ffi.NativeFunction<ffi.Uint32 Function(SessionHandle)>>(
-          'network_current_protocol_version');
-  late final _network_current_protocol_version =
-      _network_current_protocol_versionPtr.asFunction<int Function(int)>();
-
-  /// Return the highest seen protocol version number. The value returned is always higher
-  /// or equal to the value returned from network_current_protocol_version() fn.
-  int network_highest_seen_protocol_version(
-    int session,
-  ) {
-    return _network_highest_seen_protocol_version(
-      session,
-    );
-  }
-
-  late final _network_highest_seen_protocol_versionPtr =
-      _lookup<ffi.NativeFunction<ffi.Uint32 Function(SessionHandle)>>(
-          'network_highest_seen_protocol_version');
-  late final _network_highest_seen_protocol_version =
-      _network_highest_seen_protocol_versionPtr.asFunction<int Function(int)>();
-
-  /// Enables port forwarding (UPnP)
-  void network_enable_port_forwarding(
-    int session,
-  ) {
-    return _network_enable_port_forwarding(
-      session,
-    );
-  }
-
-  late final _network_enable_port_forwardingPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
-          'network_enable_port_forwarding');
-  late final _network_enable_port_forwarding =
-      _network_enable_port_forwardingPtr.asFunction<void Function(int)>();
-
-  /// Disables port forwarding (UPnP)
-  void network_disable_port_forwarding(
-    int session,
-  ) {
-    return _network_disable_port_forwarding(
-      session,
-    );
-  }
-
-  late final _network_disable_port_forwardingPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
-          'network_disable_port_forwarding');
-  late final _network_disable_port_forwarding =
-      _network_disable_port_forwardingPtr.asFunction<void Function(int)>();
-
-  /// Checks whether port forwarding (UPnP) is enabled
-  bool network_is_port_forwarding_enabled(
-    int session,
-  ) {
-    return _network_is_port_forwarding_enabled(
-      session,
-    );
-  }
-
-  late final _network_is_port_forwarding_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function(SessionHandle)>>(
-          'network_is_port_forwarding_enabled');
-  late final _network_is_port_forwarding_enabled =
-      _network_is_port_forwarding_enabledPtr.asFunction<bool Function(int)>();
-
-  /// Enables local discovery
-  void network_enable_local_discovery(
-    int session,
-  ) {
-    return _network_enable_local_discovery(
-      session,
-    );
-  }
-
-  late final _network_enable_local_discoveryPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
-          'network_enable_local_discovery');
-  late final _network_enable_local_discovery =
-      _network_enable_local_discoveryPtr.asFunction<void Function(int)>();
-
-  /// Disables local discovery
-  void network_disable_local_discovery(
-    int session,
-  ) {
-    return _network_disable_local_discovery(
-      session,
-    );
-  }
-
-  late final _network_disable_local_discoveryPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
-          'network_disable_local_discovery');
-  late final _network_disable_local_discovery =
-      _network_disable_local_discoveryPtr.asFunction<void Function(int)>();
-
-  /// Checks whether local discovery is enabled
-  bool network_is_local_discovery_enabled(
-    int session,
-  ) {
-    return _network_is_local_discovery_enabled(
-      session,
-    );
-  }
-
-  late final _network_is_local_discovery_enabledPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function(SessionHandle)>>(
-          'network_is_local_discovery_enabled');
-  late final _network_is_local_discovery_enabled =
-      _network_is_local_discovery_enabledPtr.asFunction<bool Function(int)>();
-
-  void repository_create_share_token(
-    int session,
-    int handle,
-    ffi.Pointer<ffi.Char> password,
-    int access_mode,
-    ffi.Pointer<ffi.Char> name,
-    int port,
-  ) {
-    return _repository_create_share_token(
-      session,
-      handle,
-      password,
-      access_mode,
-      name,
-      port,
-    );
-  }
-
-  late final _repository_create_share_tokenPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(
-              SessionHandle,
-              Handle_RepositoryHolder,
-              ffi.Pointer<ffi.Char>,
-              ffi.Uint8,
-              ffi.Pointer<ffi.Char>,
-              Port_Result_String)>>('repository_create_share_token');
-  late final _repository_create_share_token =
-      _repository_create_share_tokenPtr.asFunction<
-          void Function(int, int, ffi.Pointer<ffi.Char>, int,
-              ffi.Pointer<ffi.Char>, int)>();
-
-  int repository_access_mode(
-    int session,
-    int handle,
-  ) {
-    return _repository_access_mode(
-      session,
-      handle,
-    );
-  }
-
-  late final _repository_access_modePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Uint8 Function(SessionHandle,
-              Handle_RepositoryHolder)>>('repository_access_mode');
-  late final _repository_access_mode =
-      _repository_access_modePtr.asFunction<int Function(int, int)>();
-
-  /// Returns the syncing progress as a float in the 0.0 - 1.0 range.
-  void repository_sync_progress(
-    int session,
-    int handle,
-    int port,
-  ) {
-    return _repository_sync_progress(
-      session,
-      handle,
-      port,
-    );
-  }
-
-  late final _repository_sync_progressPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(SessionHandle, Handle_RepositoryHolder,
-              Port_Result_Vec_u8)>>('repository_sync_progress');
-  late final _repository_sync_progress =
-      _repository_sync_progressPtr.asFunction<void Function(int, int, int)>();
-
-  /// Returns the access mode of the given share token.
-  int share_token_mode(
-    ffi.Pointer<ffi.Char> token,
-  ) {
-    return _share_token_mode(
-      token,
-    );
-  }
-
-  late final _share_token_modePtr =
-      _lookup<ffi.NativeFunction<ffi.Uint8 Function(ffi.Pointer<ffi.Char>)>>(
-          'share_token_mode');
-  late final _share_token_mode =
-      _share_token_modePtr.asFunction<int Function(ffi.Pointer<ffi.Char>)>();
-
-  /// Returns the info-hash of the repository corresponding to the share token formatted as hex
-  /// string.
-  /// User is responsible for deallocating the returned string.
-  ffi.Pointer<ffi.Char> share_token_info_hash(
-    ffi.Pointer<ffi.Char> token,
-  ) {
-    return _share_token_info_hash(
-      token,
-    );
-  }
-
-  late final _share_token_info_hashPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              ffi.Pointer<ffi.Char>)>>('share_token_info_hash');
-  late final _share_token_info_hash = _share_token_info_hashPtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
-
-  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
-  ffi.Pointer<ffi.Char> share_token_suggested_name(
-    ffi.Pointer<ffi.Char> token,
-  ) {
-    return _share_token_suggested_name(
-      token,
-    );
-  }
-
-  late final _share_token_suggested_namePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              ffi.Pointer<ffi.Char>)>>('share_token_suggested_name');
-  late final _share_token_suggested_name = _share_token_suggested_namePtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
-
-  /// Take the input string, decide whether it's a valid OuiSync token and normalize it (remove white
-  /// space, unnecessary slashes,...).
-  /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
-  ffi.Pointer<ffi.Char> share_token_normalize(
-    ffi.Pointer<ffi.Char> token,
-  ) {
-    return _share_token_normalize(
-      token,
-    );
-  }
-
-  late final _share_token_normalizePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              ffi.Pointer<ffi.Char>)>>('share_token_normalize');
-  late final _share_token_normalize = _share_token_normalizePtr
-      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
-
-  /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
-  Bytes share_token_encode(
-    ffi.Pointer<ffi.Char> token,
-  ) {
-    return _share_token_encode(
-      token,
-    );
-  }
-
-  late final _share_token_encodePtr =
-      _lookup<ffi.NativeFunction<Bytes Function(ffi.Pointer<ffi.Char>)>>(
-          'share_token_encode');
-  late final _share_token_encode = _share_token_encodePtr
-      .asFunction<Bytes Function(ffi.Pointer<ffi.Char>)>();
-
-  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
-  ffi.Pointer<ffi.Char> share_token_decode(
-    ffi.Pointer<ffi.Uint8> bytes,
-    int len,
-  ) {
-    return _share_token_decode(
-      bytes,
-      len,
-    );
-  }
-
-  late final _share_token_decodePtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Char> Function(
-              ffi.Pointer<ffi.Uint8>, ffi.Uint64)>>('share_token_decode');
-  late final _share_token_decode = _share_token_decodePtr.asFunction<
-      ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Uint8>, int)>();
-
   /// Creates a ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
@@ -816,6 +391,106 @@ class Bindings {
   late final _free_bytesPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(Bytes)>>('free_bytes');
   late final _free_bytes = _free_bytesPtr.asFunction<void Function(Bytes)>();
+
+  /// Returns the access mode of the given share token.
+  int share_token_mode(
+    ffi.Pointer<ffi.Char> token,
+  ) {
+    return _share_token_mode(
+      token,
+    );
+  }
+
+  late final _share_token_modePtr =
+      _lookup<ffi.NativeFunction<ffi.Uint8 Function(ffi.Pointer<ffi.Char>)>>(
+          'share_token_mode');
+  late final _share_token_mode =
+      _share_token_modePtr.asFunction<int Function(ffi.Pointer<ffi.Char>)>();
+
+  /// Returns the info-hash of the repository corresponding to the share token formatted as hex
+  /// string.
+  /// User is responsible for deallocating the returned string.
+  ffi.Pointer<ffi.Char> share_token_info_hash(
+    ffi.Pointer<ffi.Char> token,
+  ) {
+    return _share_token_info_hash(
+      token,
+    );
+  }
+
+  late final _share_token_info_hashPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+              ffi.Pointer<ffi.Char>)>>('share_token_info_hash');
+  late final _share_token_info_hash = _share_token_info_hashPtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Char> share_token_suggested_name(
+    ffi.Pointer<ffi.Char> token,
+  ) {
+    return _share_token_suggested_name(
+      token,
+    );
+  }
+
+  late final _share_token_suggested_namePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+              ffi.Pointer<ffi.Char>)>>('share_token_suggested_name');
+  late final _share_token_suggested_name = _share_token_suggested_namePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
+  /// Take the input string, decide whether it's a valid OuiSync token and normalize it (remove white
+  /// space, unnecessary slashes,...).
+  /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
+  ffi.Pointer<ffi.Char> share_token_normalize(
+    ffi.Pointer<ffi.Char> token,
+  ) {
+    return _share_token_normalize(
+      token,
+    );
+  }
+
+  late final _share_token_normalizePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+              ffi.Pointer<ffi.Char>)>>('share_token_normalize');
+  late final _share_token_normalize = _share_token_normalizePtr
+      .asFunction<ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Char>)>();
+
+  /// IMPORTANT: the caller is responsible for deallocating the returned buffer unless it is `null`.
+  Bytes share_token_encode(
+    ffi.Pointer<ffi.Char> token,
+  ) {
+    return _share_token_encode(
+      token,
+    );
+  }
+
+  late final _share_token_encodePtr =
+      _lookup<ffi.NativeFunction<Bytes Function(ffi.Pointer<ffi.Char>)>>(
+          'share_token_encode');
+  late final _share_token_encode = _share_token_encodePtr
+      .asFunction<Bytes Function(ffi.Pointer<ffi.Char>)>();
+
+  /// IMPORTANT: the caller is responsible for deallocating the returned pointer unless it is `null`.
+  ffi.Pointer<ffi.Char> share_token_decode(
+    ffi.Pointer<ffi.Uint8> bytes,
+    int len,
+  ) {
+    return _share_token_decode(
+      bytes,
+      len,
+    );
+  }
+
+  late final _share_token_decodePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+              ffi.Pointer<ffi.Uint8>, ffi.Uint64)>>('share_token_decode');
+  late final _share_token_decode = _share_token_decodePtr.asFunction<
+      ffi.Pointer<ffi.Char> Function(ffi.Pointer<ffi.Uint8>, int)>();
 }
 
 abstract class ErrorCode {
@@ -850,21 +525,14 @@ abstract class ErrorCode {
   static const int deviceIdConfig = 10;
 
   /// Unspecified error
-  static const int other = 65536;
-}
-
-class Bytes extends ffi.Struct {
-  external ffi.Pointer<ffi.Uint8> ptr;
-
-  @ffi.Uint64()
-  external int len;
+  static const int other = 65535;
 }
 
 class SessionCreateResult extends ffi.Struct {
   @SessionHandle()
   external int session;
 
-  @ffi.Int32()
+  @ErrorCode1()
   external int error_code;
 
   external ffi.Pointer<ffi.Char> error_message;
@@ -874,24 +542,27 @@ typedef SessionHandle = UniqueHandle_Session;
 
 /// FFI handle to a resource with unique ownership.
 typedef UniqueHandle_Session = ffi.Uint64;
+typedef ErrorCode1 = ffi.Uint16;
+
+class Bytes extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint8> ptr;
+
+  @ffi.Uint64()
+  external int len;
+}
+
 typedef Handle_RepositoryHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result = Port;
+typedef Port_Result_Handle_FileHolder = Port;
 typedef Port = ffi.Int64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_Handle_FileHolder = Port;
+typedef Port_Result = Port;
 typedef Handle_FileHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result_u64 = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_String = Port;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_Vec_u8 = Port;
 typedef Handle_ClientSender = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
@@ -900,8 +571,6 @@ typedef Port_Vec_u8 = Port;
 const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
 
 const int NETWORK_EVENT_PEER_SET_CHANGE = 1;
-
-const int ENTRY_TYPE_INVALID = 0;
 
 const int ENTRY_TYPE_FILE = 1;
 

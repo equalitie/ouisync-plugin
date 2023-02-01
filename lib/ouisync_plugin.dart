@@ -8,7 +8,6 @@ import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
 import 'package:hex/hex.dart';
-import 'package:messagepack/messagepack.dart';
 
 import 'bindings_global.dart';
 import 'client.dart';
@@ -85,76 +84,69 @@ class Session {
   Stream<NetworkEvent> get networkEvents =>
       _networkSubscription.stream.map(_decodeNetworkEvent);
 
-  bool addUserProvidedQuicPeer(String addr) {
-    return _withPoolSync((pool) => bindings.network_add_user_provided_quic_peer(
-        handle, pool.toNativeUtf8(addr)));
-  }
+  Future<void> addUserProvidedQuicPeer(String addr) =>
+      client.invoke<void>('network_add_user_provided_quic_peer', addr);
 
-  bool removeUserProvidedQuicPeer(String addr) {
-    return _withPoolSync((pool) =>
-        bindings.network_remove_user_provided_quic_peer(
-            handle, pool.toNativeUtf8(addr)));
-  }
+  Future<void> removeUserProvidedQuicPeer(String addr) =>
+      client.invoke<void>('network_remove_user_provided_quic_peer', addr);
 
   Future<String?> get tcpListenerLocalAddressV4 =>
-      client.invoke<String?>('network_tcp_listener_local_address_v4', null);
+      client.invoke<String?>('network_tcp_listener_local_address_v4');
 
   Future<String?> get tcpListenerLocalAddressV6 =>
-      client.invoke<String?>('network_tcp_listener_local_addr_v6', null);
+      client.invoke<String?>('network_tcp_listener_local_addr_v6');
 
   Future<String?> get quicListenerLocalAddressV4 =>
-      client.invoke<String?>('network_quic_listener_local_addr_v4', null);
+      client.invoke<String?>('network_quic_listener_local_addr_v4');
 
   Future<String?> get quicListenerLocalAddressV6 =>
-      client.invoke<String?>('network_quic_listener_local_addr_v6', null);
+      client.invoke<String?>('network_quic_listener_local_addr_v6');
 
   /// Gets a stream that yields lists of known peers.
-  Stream<List<PeerInfo>> get onPeersChange => networkEvents.map((_) => peers);
-
-  List<PeerInfo> get peers {
-    final bytes = bindings.network_connected_peers(handle).intoUint8List();
-    final unpacker = Unpacker(bytes);
-    return PeerInfo.decodeAll(unpacker);
+  Stream<List<PeerInfo>> get onPeersChange async* {
+    await for (final _ in networkEvents) {
+      yield await peers;
+    }
   }
+
+  Future<List<PeerInfo>> get peers => client
+      .invoke<List<Object?>>('network_connected_peers')
+      .then(PeerInfo.decodeAll);
 
   Future<StateMonitor?> getRootStateMonitor() => StateMonitor.getRoot(this);
 
-  int get currentProtocolVersion =>
-      bindings.network_current_protocol_version(handle);
+  Future<int> get currentProtocolVersion =>
+      client.invoke<int>('network_current_protocol_version');
 
-  int get highestSeenProtocolVersion =>
-      bindings.network_highest_seen_protocol_version(handle);
+  Future<int> get highestSeenProtocolVersion =>
+      client.invoke<int>('network_highest_seen_protocol_version');
 
   /// Is port forwarding (UPnP) enabled?
-  bool get isPortForwardingEnabled =>
-      bindings.network_is_port_forwarding_enabled(handle);
+  Future<bool> get isPortForwardingEnabled =>
+      client.invoke<bool>('network_is_port_forwarding_enabled');
 
   /// Enable port forwarding (UPnP)
-  void enablePortForwarding() {
-    bindings.network_enable_port_forwarding(handle);
-  }
+  Future<void> enablePortForwarding() =>
+      client.invoke<void>('network_set_port_forwarding_enabled', true);
 
   /// Disable port forwarding (UPnP)
-  void disablePortForwarding() {
-    bindings.network_disable_port_forwarding(handle);
-  }
+  Future<void> disablePortForwarding() =>
+      client.invoke<void>('network_set_port_forwarding_enabled', false);
 
   /// Is local discovery enabled?
-  bool get isLocalDiscoveryEnabled =>
-      bindings.network_is_local_discovery_enabled(handle);
+  Future<bool> get isLocalDiscoveryEnabled =>
+      client.invoke<bool>('network_is_local_discovery_enabled');
 
   /// Enable local discovery
-  void enableLocalDiscovery() {
-    bindings.network_enable_local_discovery(handle);
-  }
+  Future<void> enableLocalDiscovery() =>
+      client.invoke<void>('network_set_local_discovery_enabled', true);
 
   /// Disable local discovery
-  void disableLocalDiscovery() {
-    bindings.network_disable_local_discovery(handle);
-  }
+  Future<void> disableLocalDiscovery() =>
+      client.invoke<void>('network_set_local_discovery_enabled', false);
 
-  String get thisRuntimeId =>
-      bindings.network_this_runtime_id(handle).cast<Utf8>().intoDartString();
+  Future<String> get thisRuntimeId =>
+      client.invoke<String>('network_this_runtime_id');
 
   /// Destroys the session.
   Future<void> dispose() async {
@@ -173,7 +165,7 @@ class Session {
 
   /// Try to gracefully close connections to peers.
   Future<void> shutdownNetwork() async {
-    await client.invoke<void>('network_shutdown', null);
+    await client.invoke<void>('network_shutdown');
   }
 
   /// Try to gracefully close connections to peers then close the session.
@@ -199,15 +191,14 @@ class PeerInfo {
     this.runtimeId,
   });
 
-  static PeerInfo decode(Unpacker unpacker) {
-    final count = unpacker.unpackListLength();
-    assert(count == 4 || count == 5);
+  static PeerInfo decode(Object? raw) {
+    final map = raw as Map<Object?, Object?>;
 
-    final ip = unpacker.unpackString()!;
-    final port = unpacker.unpackInt()!;
-    final source = unpacker.unpackString()!;
-    final state = unpacker.unpackString()!;
-    final runtimeId = count > 4 ? unpacker.unpackString()! : null;
+    final ip = map['ip'] as String;
+    final port = map['port'] as int;
+    final source = map['source'] as String;
+    final state = map['state'] as String;
+    final runtimeId = map['runtime_id'] as String?;
 
     return PeerInfo(
       ip: ip,
@@ -218,10 +209,8 @@ class PeerInfo {
     );
   }
 
-  static List<PeerInfo> decodeAll(Unpacker unpacker) {
-    final count = unpacker.unpackListLength();
-    return Iterable.generate(count, (_) => PeerInfo.decode(unpacker)).toList();
-  }
+  static List<PeerInfo> decodeAll(List<Object?> raw) =>
+      raw.map((rawItem) => PeerInfo.decode(rawItem)).toList();
 
   @override
   String toString() =>
@@ -402,13 +391,14 @@ class Repository {
         'enabled': false,
       });
 
-  AccessMode get accessMode {
+  Future<AccessMode> get accessMode {
     if (debugTrace) {
       print("Repository.get accessMode");
     }
 
-    return _decodeAccessMode(
-        bindings.repository_access_mode(session.handle, handle))!;
+    return session.client
+        .invoke<int>('repository_access_mode', handle)
+        .then((n) => _decodeAccessMode(n)!);
   }
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
@@ -417,27 +407,22 @@ class Repository {
     required AccessMode accessMode,
     String? password,
     String? name,
-  }) async {
+  }) {
     if (debugTrace) {
       print("Repository.createShareToken");
     }
 
-    return ShareToken._(await _withPool((pool) => _invoke<String>((port) =>
-        bindings.repository_create_share_token(
-            session.handle,
-            handle,
-            password != null ? pool.toNativeUtf8(password) : nullptr,
-            _encodeAccessMode(accessMode),
-            name != null ? pool.toNativeUtf8(name) : nullptr,
-            port))));
+    return session.client.invoke<String>('repository_create_share_token', {
+      'repository': handle,
+      'password': password,
+      'access_mode': _encodeAccessMode(accessMode),
+      'name': name,
+    }).then(ShareToken._);
   }
 
-  Future<Progress> syncProgress() async {
-    final bytes = await _invoke<Uint8List>((port) =>
-        bindings.repository_sync_progress(session.handle, handle, port));
-    final unpacker = Unpacker(bytes);
-    return Progress.decode(unpacker);
-  }
+  Future<Progress> get syncProgress => session.client
+      .invoke<Map<Object?, Object?>>('repository_sync_progress', handle)
+      .then(Progress.decode);
 
   Future<StateMonitor?> stateMonitor() async {
     return (await StateMonitor.getRoot(session))
@@ -574,12 +559,9 @@ class Progress {
 
   Progress(this.value, this.total);
 
-  static Progress decode(Unpacker unpacker) {
-    final count = unpacker.unpackListLength();
-    assert(count == 2);
-
-    final value = unpacker.unpackInt()!;
-    final total = unpacker.unpackInt()!;
+  static Progress decode(Map<Object?, Object?> raw) {
+    final value = raw['value'] as int;
+    final total = raw['total'] as int;
 
     return Progress(value, total);
   }
@@ -691,12 +673,11 @@ class Directory with IterableMixin<DirEntry> {
       print("Directory.remove $path");
     }
 
-    final fun = recursive
-        ? bindings.directory_remove_recursively
-        : bindings.directory_remove;
-
-    return _withPool((pool) => _invoke<void>((port) =>
-        fun(repo.session.handle, repo.handle, pool.toNativeUtf8(path), port)));
+    return repo.session.client.invoke<void>('directory_remove', {
+      'repository': repo.handle,
+      'path': path,
+      'recursive': recursive,
+    });
   }
 
   /// Returns an [Iterator] to iterate over entries of this directory.

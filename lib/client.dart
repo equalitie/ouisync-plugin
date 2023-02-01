@@ -17,7 +17,7 @@ class Client {
     unawaited(_receive());
   }
 
-  Future<T> invoke<T>(String method, Object? args) async {
+  Future<T> invoke<T>(String method, [Object? args]) async {
     final id = _getMessageId();
     final completer = Completer();
 
@@ -45,6 +45,8 @@ class Client {
   Future<void> _receive() async {
     await for (final bytes in _socket.stream) {
       final message = deserialize(bytes);
+
+      print('received: $message');
 
       if (message is! Map) {
         continue;

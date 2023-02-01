@@ -66,12 +66,12 @@ void main() {
     expect(token, equals(decoded));
   });
 
-  test('repository access mode', () {
-    expect(repo.accessMode, equals(AccessMode.write));
+  test('repository access mode', () async {
+    expect(await repo.accessMode, equals(AccessMode.write));
   });
 
   test('repository sync progress', () async {
-    final progress = await repo.syncProgress();
+    final progress = await repo.syncProgress;
     expect(progress, equals(Progress(0, 0)));
   });
 }
