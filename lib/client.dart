@@ -46,7 +46,7 @@ class Client {
     await for (final bytes in _socket.stream) {
       final message = deserialize(bytes);
 
-      //print('received: $message');
+      print('received: $message');
 
       if (message is! Map) {
         continue;
@@ -130,7 +130,7 @@ class Subscription {
   int _id = 0;
 
   Subscription(this._client, this._name, this._arg)
-      : _controller = StreamController() {
+      : _controller = StreamController.broadcast() {
     final sink = _controller.sink;
 
     _controller.onListen = () async {

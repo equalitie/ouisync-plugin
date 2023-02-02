@@ -91,7 +91,7 @@ class Session {
       client.invoke<void>('network_remove_user_provided_quic_peer', addr);
 
   Future<String?> get tcpListenerLocalAddressV4 =>
-      client.invoke<String?>('network_tcp_listener_local_address_v4');
+      client.invoke<String?>('network_tcp_listener_local_addr_v4');
 
   Future<String?> get tcpListenerLocalAddressV6 =>
       client.invoke<String?>('network_tcp_listener_local_addr_v6');
@@ -110,7 +110,7 @@ class Session {
   }
 
   Future<List<PeerInfo>> get peers => client
-      .invoke<List<Object?>>('network_connected_peers')
+      .invoke<List<Object?>>('network_known_peers')
       .then(PeerInfo.decodeAll);
 
   Future<StateMonitor> getRootStateMonitor() => StateMonitor.getRoot(this);
@@ -192,13 +192,13 @@ class PeerInfo {
   });
 
   static PeerInfo decode(Object? raw) {
-    final map = raw as Map<Object?, Object?>;
+    final map = raw as List<Object?>;
 
-    final ip = map['ip'] as String;
-    final port = map['port'] as int;
-    final source = map['source'] as String;
-    final state = map['state'] as String;
-    final runtimeId = map['runtime_id'] as String?;
+    final ip = map[0] as String;
+    final port = map[1] as int;
+    final source = map[2] as String;
+    final state = map[3] as String;
+    final runtimeId = map.length > 4 ? map[4] as String? : null;
 
     return PeerInfo(
       ip: ip,
