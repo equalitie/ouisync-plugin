@@ -46,7 +46,7 @@ class Client {
     await for (final bytes in _socket.stream) {
       final message = deserialize(bytes);
 
-      print('received: $message');
+      //print('received: $message');
 
       if (message is! Map) {
         continue;

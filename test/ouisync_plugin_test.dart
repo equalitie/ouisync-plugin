@@ -53,15 +53,15 @@ void main() {
   test('share token access mode', () async {
     for (var mode in AccessMode.values) {
       final token = await repo.createShareToken(accessMode: mode);
-      expect(token.mode, equals(mode));
+      expect(await token.mode, equals(mode));
     }
   });
 
   test('encode and decode share token', () async {
     final token =
         await repo.createShareToken(accessMode: AccessMode.read, name: 'test');
-    final encoded = token.encode();
-    final decoded = ShareToken.decode(encoded);
+    final encoded = await token.encode();
+    final decoded = await ShareToken.decode(session, encoded);
 
     expect(token, equals(decoded));
   });

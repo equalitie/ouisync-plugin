@@ -417,7 +417,7 @@ class Repository {
       'password': password,
       'access_mode': _encodeAccessMode(accessMode),
       'name': name,
-    }).then(ShareToken._);
+    }).then((token) => ShareToken._(session, token));
   }
 
   Future<Progress> get syncProgress => session.client
@@ -465,53 +465,38 @@ class Repository {
 }
 
 class ShareToken {
+  final Session session;
   final String token;
 
-  ShareToken._(this.token);
+  ShareToken._(this.session, this.token);
 
-  static ShareToken? fromString(String s) => _withPoolSync((pool) {
-        final normalized = bindings.share_token_normalize(pool.toNativeUtf8(s));
-
-        if (normalized == nullptr) {
-          return null;
-        }
-
-        return ShareToken._(normalized.cast<Utf8>().intoDartString());
-      });
+  static Future<ShareToken> fromString(Session session, String s) =>
+      session.client
+          .invoke<String>('share_token_normalize', s)
+          .then((s) => ShareToken._(session, s));
 
   /// Decode share token from raw bytes (obtained for example from a QR code).
   /// Returns null if the decoding failed.
-  static ShareToken? decode(Uint8List bytes) => _withPoolSync((pool) {
-        final buffer = pool<Uint8>(bytes.length);
-        buffer.asTypedList(bytes.length).setAll(0, bytes);
-
-        final tokenPtr = bindings.share_token_decode(buffer, bytes.length);
-
-        if (tokenPtr != nullptr) {
-          final token = tokenPtr.cast<Utf8>().intoDartString();
-          return ShareToken._(token);
-        } else {
-          return null;
-        }
-      });
+  static Future<ShareToken?> decode(Session session, Uint8List bytes) => session
+      .client
+      .invoke<String?>('share_token_decode', bytes)
+      .then((token) => (token != null) ? ShareToken._(session, token) : null);
 
   /// Encode this share token into raw bytes (for example to build a QR code from).
-  Uint8List encode() => _withPoolSync((pool) =>
-      bindings.share_token_encode(pool.toNativeUtf8(token)).intoUint8List());
+  Future<Uint8List> encode() =>
+      session.client.invoke<Uint8List>('share_token_encode', token);
 
   /// Get the suggested repository name from the share token.
-  String get suggestedName => _withPoolSync((pool) =>
-          bindings.share_token_suggested_name(pool.toNativeUtf8(token)))
-      .cast<Utf8>()
-      .intoDartString();
+  Future<String> get suggestedName =>
+      session.client.invoke<String>('share_token_suggested_name', token);
 
-  String get infoHash => _withPoolSync(
-        (pool) => bindings.share_token_info_hash(pool.toNativeUtf8(token)),
-      ).cast<Utf8>().intoNullableDartString()!;
+  Future<String> get infoHash =>
+      session.client.invoke<String>('share_token_info_hash', token);
 
   /// Get the access mode the share token provides.
-  AccessMode get mode => _decodeAccessMode(_withPoolSync(
-      (pool) => bindings.share_token_mode(pool.toNativeUtf8(token))))!;
+  Future<AccessMode> get mode => session.client
+      .invoke<int>('share_token_mode', token)
+      .then((n) => _decodeAccessMode(n)!);
 
   @override
   String toString() => token;
@@ -704,12 +689,10 @@ class File {
 
     return File._(
         repo.session,
-        await _withPool((pool) => _invoke<int>((port) => bindings.file_open(
-              repo.session.handle,
-              repo.handle,
-              pool.toNativeUtf8(path),
-              port,
-            ))));
+        await repo.session.client.invoke<int>('file_open', {
+          'repository': repo.handle,
+          'path': path,
+        }));
   }
 
   /// Creates a new file in [repo] at [path].
@@ -721,14 +704,11 @@ class File {
     }
 
     return File._(
-      repo.session,
-      await _withPool((pool) => _invoke<int>((port) => bindings.file_create(
-            repo.session.handle,
-            repo.handle,
-            pool.toNativeUtf8(path),
-            port,
-          ))),
-    );
+        repo.session,
+        await repo.session.client.invoke<int>('file_create', {
+          'repository': repo.handle,
+          'path': path,
+        }));
   }
 
   /// Removes (deletes) a file at [path] from [repo].
@@ -737,12 +717,10 @@ class File {
       print("File.remove $path");
     }
 
-    return _withPool((pool) => _invoke<void>((port) => bindings.file_remove(
-          repo.session.handle,
-          repo.handle,
-          pool.toNativeUtf8(path),
-          port,
-        )));
+    return repo.session.client.invoke<void>('file_remove', {
+      'repository': repo.handle,
+      'path': path,
+    });
   }
 
   /// Flushed and closes this file.
@@ -751,8 +729,7 @@ class File {
       print("File.close");
     }
 
-    return _invoke<void>(
-        (port) => bindings.file_close(session.handle, handle, port));
+    return session.client.invoke<void>('file_close', handle);
   }
 
   /// Flushes any pending writes to this file.
@@ -761,8 +738,7 @@ class File {
       print("File.flush");
     }
 
-    return _invoke<void>(
-        (port) => bindings.file_flush(session.handle, handle, port));
+    return session.client.invoke<void>('file_flush', handle);
   }
 
   /// Read [size] bytes from this file, starting at [offset].
@@ -791,49 +767,26 @@ class File {
   ///   }
   /// }
   /// ```
-  Future<List<int>> read(int offset, int size) async {
+  Future<List<int>> read(int offset, int size) {
     if (debugTrace) {
       print("File.read");
     }
 
-    var buffer = malloc<Uint8>(size);
-
-    try {
-      final actualSize = await _invoke<int>((port) => bindings.file_read(
-            session.handle,
-            handle,
-            offset,
-            buffer,
-            size,
-            port,
-          ));
-      return buffer.asTypedList(actualSize).toList();
-    } finally {
-      malloc.free(buffer);
-    }
+    return session.client.invoke<Uint8List>(
+        'file_read', {'file': handle, 'offset': offset, 'len': size});
   }
 
   /// Write [data] to this file starting at [offset].
-  Future<void> write(int offset, List<int> data) async {
+  Future<void> write(int offset, List<int> data) {
     if (debugTrace) {
       print("File.write");
     }
 
-    var buffer = malloc<Uint8>(data.length);
-
-    try {
-      buffer.asTypedList(data.length).setAll(0, data);
-      await _invoke<void>((port) => bindings.file_write(
-            session.handle,
-            handle,
-            offset,
-            buffer,
-            data.length,
-            port,
-          ));
-    } finally {
-      malloc.free(buffer);
-    }
+    return session.client.invoke<void>('file_write', {
+      'file': handle,
+      'offset': offset,
+      'data': Uint8List.fromList(data),
+    });
   }
 
   /// Truncate the file to [size] bytes.
@@ -842,8 +795,10 @@ class File {
       print("File.truncate");
     }
 
-    return _invoke<void>(
-        (port) => bindings.file_truncate(session.handle, handle, size, port));
+    return session.client.invoke<void>('file_truncate', {
+      'file': handle,
+      'len': size,
+    });
   }
 
   /// Returns the length of this file in bytes.
@@ -852,8 +807,7 @@ class File {
       print("File.length");
     }
 
-    return _invoke<int>(
-        (port) => bindings.file_len(session.handle, handle, port));
+    return session.client.invoke<int>('file_len', handle);
   }
 
   /// Copy the contents of the file into the provided raw file descriptor.
@@ -950,17 +904,6 @@ class WebSocket extends ClientSocket {
   }
 }
 
-// Call the async function passing it a [_Pool] which will be released when the function returns.
-Future<T> _withPool<T>(Future<T> Function(_Pool) fun) async {
-  final pool = _Pool();
-
-  try {
-    return await fun(pool);
-  } finally {
-    pool.release();
-  }
-}
-
 // Call the sync function passing it a [_Pool] which will be released when the function returns.
 T _withPoolSync<T>(T Function(_Pool) fun) {
   final pool = _Pool();
@@ -1033,39 +976,9 @@ extension Utf8Pointer on Pointer<Utf8> {
     freeString(this);
     return string;
   }
-
-  String? intoNullableDartString() {
-    if (address == 0) {
-      return null;
-    }
-    final string = toDartString();
-    freeString(this);
-    return string;
-  }
-}
-
-extension BytesExtension on Bytes {
-  // Converts this `Bytes` into `Uint8List` and deallocates the original pointer.
-  Uint8List intoUint8List() {
-    if (ptr != nullptr) {
-      try {
-        // Creating a copy so we can deallocate the pointer.
-        // TODO: is this the right way to do this?
-        return Uint8List.fromList(ptr.asTypedList(len));
-      } finally {
-        freeBytes(this);
-      }
-    } else {
-      return Uint8List(0);
-    }
-  }
 }
 
 // Free a pointer that was allocated by the native side.
 void freeString(Pointer<Utf8> ptr) {
   bindings.free_string(ptr.cast<Char>());
-}
-
-void freeBytes(Bytes bytes) {
-  bindings.free_bytes(bytes);
 }
