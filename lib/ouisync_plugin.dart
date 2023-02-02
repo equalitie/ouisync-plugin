@@ -113,7 +113,7 @@ class Session {
       .invoke<List<Object?>>('network_connected_peers')
       .then(PeerInfo.decodeAll);
 
-  Future<StateMonitor?> getRootStateMonitor() => StateMonitor.getRoot(this);
+  Future<StateMonitor> getRootStateMonitor() => StateMonitor.getRoot(this);
 
   Future<int> get currentProtocolVersion =>
       client.invoke<int>('network_current_protocol_version');
@@ -426,7 +426,7 @@ class Repository {
 
   Future<StateMonitor?> stateMonitor() async {
     return (await StateMonitor.getRoot(session))
-        ?.childrenWithName("Repositories")
+        .childrenWithName("Repositories")
         .firstOrNull
         ?.childrenWithName("repo(store=\"$_store\")")
         .firstOrNull;

@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'client.dart' show Subscription;
 import 'ouisync_plugin.dart' show Session;
 
+export 'client.dart' show Subscription;
+
 // Version is incremented every time the monitor or any of it's values or
 // children changes.
 typedef Version = int;
@@ -52,8 +54,12 @@ class StateMonitor {
   Map<String, String> values;
   Map<MonitorId, Version> children;
 
-  static Future<StateMonitor?> getRoot(Session session) =>
-      _getMonitor(session, <MonitorId>[]);
+  static Future<StateMonitor> getRoot(Session session) async {
+    final root = await _getMonitor(session, <MonitorId>[]);
+
+    // root always exists
+    return root!;
+  }
 
   Future<StateMonitor?> child(MonitorId childId) =>
       _getMonitor(session, [...path, childId]);

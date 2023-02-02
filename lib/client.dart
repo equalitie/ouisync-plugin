@@ -57,20 +57,33 @@ class Client {
         continue;
       }
 
+      final isSuccess = message.containsKey('success');
+      final isFailure = message.containsKey('failure');
       final responseCompleter = _responses.remove(id);
-      if (responseCompleter != null) {
-        if (message.containsKey('success')) {
-          _handleResponseSuccess(responseCompleter, message['success']);
-        } else if (message.containsKey('failure')) {
-          _handleResponseFailure(responseCompleter, message['failure']);
-        } else {
-          _handleInvalidResponse(responseCompleter);
+
+      if (isSuccess || isFailure) {
+        if (responseCompleter == null) {
+          print('unsolicited response');
+          continue;
         }
+
+        if (isSuccess) {
+          _handleResponseSuccess(responseCompleter, message['success']);
+        } else if (isFailure) {
+          _handleResponseFailure(responseCompleter, message['failure']);
+        }
+      } else if (responseCompleter != null) {
+        _handleInvalidResponse(responseCompleter);
       }
 
-      final subscription = _subscriptions[id];
-      if (subscription != null) {
-        subscription.add(message['payload']);
+      if (message.containsKey('notification')) {
+        final subscription = _subscriptions[id];
+        if (subscription == null) {
+          print('unsolicited notification');
+          continue;
+        }
+
+        subscription.add(message['notification']);
       }
     }
   }
