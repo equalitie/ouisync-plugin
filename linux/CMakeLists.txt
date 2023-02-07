@@ -1,11 +1,27 @@
 # The Flutter tooling requires that developers have CMake 3.10 or later
 # installed. You should not increase this version, as doing so will cause
 # the plugin to fail to compile for some customers of the plugin.
-cmake_minimum_required(VERSION 3.10)
+
+# The Corrosion package for building Rust works better with cmake >= 3.19
+# https://github.com/corrosion-rs/corrosion
+cmake_minimum_required(VERSION 3.19)
 
 # Project-level configuration.
 set(PROJECT_NAME "ouisync_plugin")
+set(OUISYNC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../ouisync")
 project(${PROJECT_NAME} LANGUAGES CXX)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    Corrosion
+    GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+    GIT_TAG v0.3.2 # Optionally specify a commit hash, version tag or branch here
+)
+# Set any global configuration variables such as `Rust_TOOLCHAIN` before this line!
+FetchContent_MakeAvailable(Corrosion)
+
+corrosion_import_crate(MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml" CRATES ouisync-ffi)
 
 # This value is used when generating builds using this plugin, so it must
 # not be changed.
@@ -37,11 +53,11 @@ target_include_directories(${PLUGIN_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
+target_link_libraries(${PLUGIN_NAME} PUBLIC ouisync-ffi)
 
 # List of absolute paths to libraries that should be bundled with the plugin.
 # This list could contain prebuilt libraries, or libraries created by an
 # external build triggered from this build file.
-set(ouisync_plugin_bundled_libraries
-  "${CMAKE_CURRENT_SOURCE_DIR}/../ouisync/target/release/libouisync_ffi.so"
+set(ouisync_plugin_bundled_libraries "${CMAKE_CURRENT_BINARY_DIR}/libouisync_ffi.so"
   PARENT_SCOPE
 )
