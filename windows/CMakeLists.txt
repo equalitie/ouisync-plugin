@@ -1,6 +1,24 @@
-cmake_minimum_required(VERSION 3.14)
+# We need to use cmake version >= 3.19 to be able to use FetchContent and include Corrosion for building Rust
+# https://github.com/corrosion-rs/corrosion
+cmake_minimum_required(VERSION 3.19)
+
 set(PROJECT_NAME "ouisync_plugin")
+set(OUISYNC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../ouisync")
+
 project(${PROJECT_NAME} LANGUAGES CXX)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    Corrosion
+    GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+    GIT_TAG v0.3.2 # Optionally specify a commit hash, version tag or branch here
+)
+# Set any global configuration variables such as `Rust_TOOLCHAIN` before this line!
+FetchContent_MakeAvailable(Corrosion)
+
+corrosion_import_crate(MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml" 
+CRATES ouisync-ffi)
 
 # This value is used when generating builds using this plugin, so it must
 # not be changed
@@ -19,6 +37,7 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(ouisync_plugin_bundled_libraries
-  "${CMAKE_CURRENT_SOURCE_DIR}/../ouisync/target/release/ouisync_ffi.dll"
+  $<$<CONFIG:Debug>:${CMAKE_CURRENT_BINARY_DIR}/Debug/ouisync_ffi.dll>
+  $<$<CONFIG:Release>:${CMAKE_CURRENT_BINARY_DIR}/Release/ouisync_ffi.dll>
   PARENT_SCOPE
 )
