@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'bindings.dart';
 export 'bindings.dart';
 
+import 'package:path/path.dart' as p;
+
 final bindings = Bindings(_defaultLib());
 
 DynamicLibrary _defaultLib() {
@@ -20,10 +22,19 @@ DynamicLibrary _defaultLib() {
   if (env.containsKey('FLUTTER_TEST')) {
     late final String path;
 
+    final root = env['APP_NAME'] == 'ouisync_plugin' ? '..' : '';
+
+    final basePath = 'ouisync/target';
+    final basePathWindows = 'build/windows/plugins/ouisync_plugin';
+
     if (kReleaseMode) {
-      path = 'ouisync/target/release';
+      path = Platform.isWindows
+          ? p.join(root, basePathWindows, 'Release')
+          : p.join(basePath, 'release');
     } else {
-      path = 'ouisync/target/debug';
+      path = Platform.isWindows
+          ? p.join(root, basePathWindows, 'Debug')
+          : p.join(basePath, 'debug');
     }
 
     if (Platform.isLinux) {
