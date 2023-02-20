@@ -47,80 +47,20 @@ class MonitorId implements Comparable<MonitorId> {
   }
 }
 
-class StateMonitor {
-  final Session session;
-  List<MonitorId> path;
-  Version version;
-  Map<String, String> values;
-  Map<MonitorId, Version> children;
+class StateMonitorNode {
+  final List<MonitorId> path;
+  final Version version;
+  final Map<String, String> values;
+  final Map<MonitorId, Version> children;
 
-  static Future<StateMonitor> getRoot(Session session) async {
-    final root = await _getMonitor(session, <MonitorId>[]);
-
-    // root always exists
-    return root!;
-  }
-
-  Future<StateMonitor?> child(MonitorId childId) =>
-      _getMonitor(session, [...path, childId]);
-
-  Iterable<StateMonitor> childrenWithName(String name) {
-    return children.entries
-        .where((e) => e.key.name == name)
-        .map((e) => child(e.key))
-        // Filter out nulls.
-        .whereType<StateMonitor>();
-  }
-
-  int? parseIntValue(String name) {
-    final str = values[name];
-    if (str == null) return null;
-    return int.tryParse(str);
-  }
-
-  Subscription subscribe() =>
-      Subscription(session.client, "state_monitor", path.join("/"));
-
-  Future<bool> refresh() async {
-    final m = await _getMonitor(session, path);
-
-    if (m == null) {
-      values.clear();
-      children.clear();
-      return false;
-    }
-
-    version = m.version;
-    values = m.values;
-    children = m.children;
-
-    return true;
-  }
-
-  @override
-  String toString() {
-    return "StateMonitor{ path:$path, version:$version, values:$values, children:$children }";
-  }
-
-  StateMonitor._(
-    this.session,
+  StateMonitorNode(
     this.path,
     this.version,
     this.values,
     this.children,
   );
 
-  static Future<StateMonitor?> _getMonitor(
-    Session session,
-    List<MonitorId> path,
-  ) async {
-    final list = await session.client
-        .invoke("state_monitor_get", path.join("/")) as List<Object?>;
-    return StateMonitor._decode(session, path, list);
-  }
-
-  static StateMonitor? _decode(
-    Session session,
+  static StateMonitorNode? _decode(
     List<MonitorId> path,
     List<Object?> raw,
   ) {
@@ -132,8 +72,7 @@ class StateMonitor {
     final values = _decodeValues(raw[1]);
     final children = _decodeChildren(raw[2]);
 
-    return StateMonitor._(
-      session,
+    return StateMonitorNode(
       path,
       version,
       values,
@@ -154,5 +93,40 @@ class StateMonitor {
     }
 
     return children;
+  }
+
+  int? parseIntValue(String name) {
+    final str = values[name];
+    if (str == null) return null;
+    return int.tryParse(str);
+  }
+
+  @override
+  String toString() =>
+      "StateMonitorNode { version:$version, values:$values, children:$children }";
+}
+
+class StateMonitor {
+  final Session session;
+  List<MonitorId> path;
+
+  StateMonitor._(this.session, this.path);
+
+  static StateMonitor getRoot(Session session) =>
+      StateMonitor._(session, <MonitorId>[]);
+
+  StateMonitor child(MonitorId childId) =>
+      StateMonitor._(session, [...path, childId]);
+
+  Subscription subscribe() =>
+      Subscription(session.client, "state_monitor", path.join("/"));
+
+  @override
+  String toString() => "StateMonitor($path)";
+
+  Future<StateMonitorNode?> load() async {
+    final list = await session.client
+        .invoke("state_monitor_get", path.join("/")) as List<Object?>;
+    return StateMonitorNode._decode(path, list);
   }
 }

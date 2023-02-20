@@ -4,7 +4,6 @@ import 'dart:ffi';
 import 'dart:io' as io;
 import 'dart:isolate';
 
-import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
 import 'package:hex/hex.dart';
@@ -113,7 +112,7 @@ class Session {
       .invoke<List<Object?>>('network_known_peers')
       .then(PeerInfo.decodeAll);
 
-  Future<StateMonitor> getRootStateMonitor() => StateMonitor.getRoot(this);
+  StateMonitor get rootStateMonitor => StateMonitor.getRoot(this);
 
   Future<int> get currentProtocolVersion =>
       client.invoke<int>('network_current_protocol_version');
@@ -424,13 +423,9 @@ class Repository {
       .invoke<Map<Object?, Object?>>('repository_sync_progress', handle)
       .then(Progress.decode);
 
-  Future<StateMonitor?> stateMonitor() async {
-    return (await StateMonitor.getRoot(session))
-        .childrenWithName("Repositories")
-        .firstOrNull
-        ?.childrenWithName("repo(store=\"$_store\")")
-        .firstOrNull;
-  }
+  StateMonitor get stateMonitor => StateMonitor.getRoot(session)
+      .child(MonitorId.expectUnique("Repositories"))
+      .child(MonitorId.expectUnique("repo(store=\"$_store\")"));
 
   Future<String> get infoHash =>
       session.client.invoke<String>("repository_info_hash", handle);
