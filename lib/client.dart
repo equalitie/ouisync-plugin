@@ -23,6 +23,9 @@ class Client {
 
     _responses[id] = completer;
 
+    // DEBUG
+    //print('send: id: $id, method: $method, args: $args');
+
     try {
       final message = serialize({
         'id': id,
@@ -46,7 +49,8 @@ class Client {
     await for (final bytes in _socket.stream) {
       final message = deserialize(bytes);
 
-      print('received: $message');
+      // DEBUG
+      //print('received: $message');
 
       if (message is! Map) {
         continue;
@@ -93,13 +97,13 @@ class Client {
   }
 
   void _handleResponseFailure(Completer<Object?> completer, Object? payload) {
-    if (payload is! Map) {
+    if (payload is! List) {
       _handleInvalidResponse(completer);
       return;
     }
 
-    final code = payload['code'];
-    final message = payload['message'];
+    final code = payload[0];
+    final message = payload[1];
 
     if (code is! int || message is! String) {
       _handleInvalidResponse(completer);

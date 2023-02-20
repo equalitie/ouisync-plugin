@@ -23,10 +23,10 @@ class MonitorId implements Comparable<MonitorId> {
   static MonitorId expectUnique(String name) => MonitorId(name, 0);
 
   static MonitorId parse(String raw) {
-    // A string in the format "disambiguator:name".
-    final colon = raw.indexOf(':');
-    final disambiguator = int.parse(raw.substring(0, colon));
-    final name = raw.substring(colon + 1);
+    // A string in the format "name:disambiguator".
+    final colon = raw.lastIndexOf(':');
+    final name = raw.substring(0, colon);
+    final disambiguator = int.parse(raw.substring(colon + 1));
 
     return MonitorId(name, disambiguator);
   }
@@ -80,19 +80,20 @@ class StateMonitorNode {
     );
   }
 
-  static Map<String, String> _decodeValues(Object? raw) =>
-      SplayTreeMap<String, String>.from(raw as Map<String, String>);
+  static Map<String, String> _decodeValues(Object? raw) {
+    final rawMap = raw as Map<Object?, Object?>;
+    final map = rawMap.cast<String, String>();
+
+    return SplayTreeMap<String, String>.from(map);
+  }
 
   static Map<MonitorId, int> _decodeChildren(Object? raw) {
-    final rawChildren = raw as Map<String, int>;
-    var children = SplayTreeMap<MonitorId, int>();
+    final rawMap = raw as Map<Object?, Object?>;
+    final map = rawMap
+        .cast<String, int>()
+        .map((key, value) => MapEntry(MonitorId.parse(key), value));
 
-    for (final entry in rawChildren.entries) {
-      final id = MonitorId.parse(entry.key);
-      children[id] = entry.value;
-    }
-
-    return children;
+    return SplayTreeMap<MonitorId, int>.from(map);
   }
 
   int? parseIntValue(String name) {
@@ -118,15 +119,15 @@ class StateMonitor {
   StateMonitor child(MonitorId childId) =>
       StateMonitor._(session, [...path, childId]);
 
-  Subscription subscribe() =>
-      Subscription(session.client, "state_monitor", path.join("/"));
+  Subscription subscribe() => Subscription(
+      session.client, "state_monitor", path.map((id) => id.toString()));
 
   @override
   String toString() => "StateMonitor($path)";
 
   Future<StateMonitorNode?> load() async {
-    final list = await session.client
-        .invoke("state_monitor_get", path.join("/")) as List<Object?>;
+    final list = await session.client.invoke(
+        "state_monitor_get", path.map((id) => id.toString())) as List<Object?>;
     return StateMonitorNode._decode(path, list);
   }
 }

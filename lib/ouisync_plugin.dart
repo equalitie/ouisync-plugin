@@ -420,7 +420,7 @@ class Repository {
   }
 
   Future<Progress> get syncProgress => session.client
-      .invoke<Map<Object?, Object?>>('repository_sync_progress', handle)
+      .invoke<List<Object?>>('repository_sync_progress', handle)
       .then(Progress.decode);
 
   StateMonitor get stateMonitor => StateMonitor.getRoot(session)
@@ -539,9 +539,9 @@ class Progress {
 
   Progress(this.value, this.total);
 
-  static Progress decode(Map<Object?, Object?> raw) {
-    final value = raw['value'] as int;
-    final total = raw['total'] as int;
+  static Progress decode(List<Object?> raw) {
+    final value = raw[0] as int;
+    final total = raw[1] as int;
 
     return Progress(value, total);
   }
@@ -585,9 +585,9 @@ class DirEntry {
   DirEntry(this.name, this.entryType);
 
   static DirEntry decode(Object? raw) {
-    final map = raw as Map<Object?, Object?>;
-    final name = map['name'] as String;
-    final type = map['entry_type'] as int;
+    final map = raw as List<Object?>;
+    final name = map[0] as String;
+    final type = map[1] as int;
 
     return DirEntry(name, _decodeEntryType(type));
   }
