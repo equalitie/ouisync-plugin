@@ -24,7 +24,7 @@ class Client {
     _responses[id] = completer;
 
     // DEBUG
-    //print('send: id: $id, method: $method, args: $args');
+    print('send: id: $id, method: $method, args: $args');
 
     try {
       final message = serialize({
@@ -50,7 +50,7 @@ class Client {
       final message = deserialize(bytes);
 
       // DEBUG
-      //print('received: $message');
+      print('received: $message');
 
       if (message is! Map) {
         continue;
@@ -138,17 +138,22 @@ class Subscription {
     final sink = _controller.sink;
 
     _controller.onListen = () async {
-      assert(_id == 0);
+      if (_id != 0) {
+        return;
+      }
 
       _id = await _client.invoke('${_name}_subscribe', _arg) as int;
       _client._subscriptions[_id] = sink;
     };
 
     _controller.onCancel = () async {
-      assert(_id != 0);
+      if (_id == 0) {
+        return;
+      }
 
       _client._subscriptions.remove(_id);
       await _client.invoke('unsubscribe', _id);
+      _id = 0;
     };
   }
 
