@@ -24,7 +24,7 @@ class Client {
     _responses[id] = completer;
 
     // DEBUG
-    print('send: id: $id, method: $method, args: $args');
+    //print('send: id: $id, method: $method, args: $args');
 
     try {
       final message = serialize({
@@ -50,7 +50,7 @@ class Client {
       final message = deserialize(bytes);
 
       // DEBUG
-      print('received: $message');
+      //print('received: $message');
 
       if (message is! Map) {
         continue;
