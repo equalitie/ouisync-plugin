@@ -1,4 +1,6 @@
 import 'dart:io' as io;
+import 'dart:async';
+
 import 'package:async/async.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -26,12 +28,12 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    initObjects().then((value) => getFiles('/'));
+    unawaited(initObjects().then((value) => getFiles('/')));
   }
 
   Future<void> initObjects() async {
     final dataDir = (await getApplicationSupportDirectory()).path;
-    final session = await Session.open(join(dataDir, 'config.db'));
+    final session = Session.create(join(dataDir, 'config.db'));
 
     final store = join(dataDir, 'repo.db');
     final storeExists = await io.File(store).exists();
@@ -41,7 +43,7 @@ class _MyAppState extends State<MyApp> {
         : await Repository.create(session,
             store: store, readPassword: null, writePassword: null);
 
-    bittorrentDhtEnabled = repo.isDhtEnabled;
+    bittorrentDhtEnabled = await repo.isDhtEnabled;
 
     NativeChannels.init(repository: repo);
 
@@ -52,9 +54,9 @@ class _MyAppState extends State<MyApp> {
   }
 
   @override
-  void dispose() async {
+  void dispose() {
     repo.close();
-    session.close();
+    unawaited(session.dispose());
 
     super.dispose();
   }
@@ -109,14 +111,14 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void enableDisableDht(bool enable) {
+  Future<void> enableDisableDht(bool enable) async {
     if (enable) {
-      repo.enableDht();
+      await repo.enableDht();
     } else {
-      repo.disableDht();
+      await repo.disableDht();
     }
 
-    final isEnabled = repo.isDhtEnabled;
+    final isEnabled = await repo.isDhtEnabled;
 
     setState(() {
       bittorrentDhtEnabled = isEnabled;
@@ -201,8 +203,6 @@ class _MyAppState extends State<MyApp> {
       contents.clear();
       contents.addAll(items);
     });
-
-    dir.close();
   }
 }
 
