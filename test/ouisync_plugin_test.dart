@@ -81,5 +81,12 @@ void main() {
         session.rootStateMonitor.child(MonitorId.expectUnique("invalid"));
     final node = await monitor.load();
     expect(node, isNull);
+
+    // This is to assert that no exception is thrown
+    final monitorSubscription = monitor.subscribe();
+    final streamSubscription = monitorSubscription.stream.listen((_) {});
+
+    await streamSubscription.cancel();
+    await monitorSubscription.close();
   });
 }

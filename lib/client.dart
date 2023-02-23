@@ -142,8 +142,12 @@ class Subscription {
         return;
       }
 
-      _id = await _client.invoke('${_name}_subscribe', _arg) as int;
-      _client._subscriptions[_id] = sink;
+      try {
+        _id = await _client.invoke('${_name}_subscribe', _arg) as int;
+        _client._subscriptions[_id] = sink;
+      } catch (e) {
+        print('failed to create subscribtion for $_name: $e');
+      }
     };
 
     _controller.onCancel = () async {

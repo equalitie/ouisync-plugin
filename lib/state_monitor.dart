@@ -60,14 +60,10 @@ class StateMonitorNode {
     this.children,
   );
 
-  static StateMonitorNode? _decode(
+  static StateMonitorNode _decode(
     List<MonitorId> path,
     List<Object?> raw,
   ) {
-    if (raw.length < 3) {
-      return null;
-    }
-
     final version = raw[0] as int;
     final values = _decodeValues(raw[1]);
     final children = _decodeChildren(raw[2]);
@@ -131,7 +127,8 @@ class StateMonitor {
               .invoke("state_monitor_get", path.map((id) => id.toString()))
           as List<Object?>;
       return StateMonitorNode._decode(path, list);
-    } catch (_) {
+    } catch (e) {
+      print('failed to load state monitor node at $path: $e');
       return null;
     }
   }
