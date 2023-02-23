@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' as io;
 import 'package:test/test.dart';
 import 'package:ouisync_plugin/ouisync_plugin.dart';
+import 'package:ouisync_plugin/state_monitor.dart';
 
 void main() {
   late io.Directory temp;
@@ -73,5 +74,12 @@ void main() {
   test('repository sync progress', () async {
     final progress = await repo.syncProgress;
     expect(progress, equals(Progress(0, 0)));
+  });
+
+  test('state monitor missing node', () async {
+    final monitor =
+        session.rootStateMonitor.child(MonitorId.expectUnique("invalid"));
+    final node = await monitor.load();
+    expect(node, isNull);
   });
 }

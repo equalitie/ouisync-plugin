@@ -126,8 +126,13 @@ class StateMonitor {
   String toString() => "StateMonitor($path)";
 
   Future<StateMonitorNode?> load() async {
-    final list = await session.client.invoke(
-        "state_monitor_get", path.map((id) => id.toString())) as List<Object?>;
-    return StateMonitorNode._decode(path, list);
+    try {
+      final list = await session.client
+              .invoke("state_monitor_get", path.map((id) => id.toString()))
+          as List<Object?>;
+      return StateMonitorNode._decode(path, list);
+    } catch (_) {
+      return null;
+    }
   }
 }
