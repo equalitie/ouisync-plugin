@@ -67,6 +67,11 @@ void main() {
     expect(token, equals(decoded));
   });
 
+  test('parse invalid share token', () async {
+    final input = "broken!@#%";
+    expect(ShareToken.fromString(session, input), throwsA(isA<Error>()));
+  });
+
   test('repository access mode', () async {
     expect(await repo.accessMode, equals(AccessMode.write));
   });
