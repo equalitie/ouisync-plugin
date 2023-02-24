@@ -18,35 +18,14 @@ class Bindings {
           lookup)
       : _lookup = lookup;
 
-  /// Copy the file contents into the provided raw file descriptor.
-  ///
-  /// This function takes ownership of the file descriptor and closes it when it finishes. If the
-  /// caller needs to access the descriptor afterwards (or while the function is running), he/she
-  /// needs to `dup` it before passing it into this function.
-  void file_copy_to_raw_fd(
-    int session,
-    int handle,
-    int fd,
-    int port,
-  ) {
-    return _file_copy_to_raw_fd(
-      session,
-      handle,
-      fd,
-      port,
-    );
-  }
-
-  late final _file_copy_to_raw_fdPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(SessionHandle, Handle_FileHolder, ffi.Int,
-              Port_Result)>>('file_copy_to_raw_fd');
-  late final _file_copy_to_raw_fd =
-      _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int, int)>();
-
   /// Creates a ouisync session. `post_c_object_fn` should be a pointer to the dart's
   /// `NativeApi.postCObject` function cast to `Pointer<Void>` (the casting is necessary to work
   /// around limitations of the binding generators).
+  ///
+  /// # Safety
+  ///
+  /// - `post_c_object_fn` must be a pointer to the dart's `NativeApi.postCObject` function
+  /// - `configs_path` must be a pointer to a nul-terminated utf-8 encoded string
   SessionCreateResult session_create(
     ffi.Pointer<ffi.Void> post_c_object_fn,
     ffi.Pointer<ffi.Char> configs_path,
@@ -66,6 +45,10 @@ class Bindings {
           ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>)>();
 
   /// Destroys the ouisync session.
+  ///
+  /// # Safety
+  ///
+  /// `session` must be a valid session handle.
   void session_destroy(
     int session,
   ) {
@@ -82,6 +65,10 @@ class Bindings {
 
   /// Create in-memory interface channel for when the client and the server are both in the same
   /// process.
+  ///
+  /// # Safety
+  ///
+  /// `session` must be a valid session handle. `port` must be a valid dart native port.
   int session_channel_open(
     int session,
     int port,
@@ -99,6 +86,10 @@ class Bindings {
   late final _session_channel_open =
       _session_channel_openPtr.asFunction<int Function(int, int)>();
 
+  /// # Safety
+  ///
+  /// `session` must be a valid session handle, `sender` must be a valid client sender handle,
+  /// `payload_ptr` must be a pointer to a byte buffer whose length is at least `payload_len` bytes.
   void session_channel_send(
     int session,
     int sender,
@@ -120,6 +111,9 @@ class Bindings {
   late final _session_channel_send = _session_channel_sendPtr
       .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int)>();
 
+  /// # Safety
+  ///
+  /// `session` must be a valid session handle and `sender` must be a valid client sender handle.
   void session_channel_close(
     int session,
     int sender,
@@ -143,6 +137,10 @@ class Bindings {
   /// randomly), and thus `session_close` is never invoked. My guess is that because the dart engine
   /// is being detached we can't do any async await on the dart side anymore, and thus need to do it
   /// here.
+  ///
+  /// # Safety
+  ///
+  /// `session` must be a valid session handle.
   void session_shutdown_network_and_close(
     int session,
   ) {
@@ -157,7 +155,42 @@ class Bindings {
   late final _session_shutdown_network_and_close =
       _session_shutdown_network_and_closePtr.asFunction<void Function(int)>();
 
+  /// Copy the file contents into the provided raw file descriptor.
+  ///
+  /// This function takes ownership of the file descriptor and closes it when it finishes. If the
+  /// caller needs to access the descriptor afterwards (or while the function is running), he/she
+  /// needs to `dup` it before passing it into this function.
+  ///
+  /// # Safety
+  ///
+  /// `session` must be a valid session handle, `handle` must be a valid file holder handle, `fd`
+  /// must be a valid and open file descriptor and `port` must be a valid dart native port.
+  void file_copy_to_raw_fd(
+    int session,
+    int handle,
+    int fd,
+    int port,
+  ) {
+    return _file_copy_to_raw_fd(
+      session,
+      handle,
+      fd,
+      port,
+    );
+  }
+
+  late final _file_copy_to_raw_fdPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(SessionHandle, Handle_FileHolder, ffi.Int,
+              Port_Result)>>('file_copy_to_raw_fd');
+  late final _file_copy_to_raw_fd =
+      _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int, int)>();
+
   /// Deallocate string that has been allocated on the rust side
+  ///
+  /// # Safety
+  ///
+  /// `ptr` must be a pointer obtained from a call to `CString::into_raw`.
   void free_string(
     ffi.Pointer<ffi.Char> ptr,
   ) {
@@ -204,6 +237,15 @@ abstract class ErrorCode {
   /// Failed to read from or write into the device ID config file
   static const int deviceIdConfig = 10;
 
+  /// Argument passed to a function is not valid
+  static const int invalidArgument = 11;
+
+  /// Interface request is malformed
+  static const int malformedRequest = 12;
+
+  /// Storage format version mismatch
+  static const int storageVersionMismatch = 13;
+
   /// Unspecified error
   static const int other = 65535;
 }
@@ -223,19 +265,15 @@ typedef SessionHandle = UniqueHandle_Session;
 /// FFI handle to a resource with unique ownership.
 typedef UniqueHandle_Session = ffi.Uint64;
 typedef ErrorCode1 = ffi.Uint16;
-typedef Handle_FileHolder = ffi.Uint64;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result = Port;
-typedef Port = ffi.Int64;
 typedef Handle_ClientSender = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Vec_u8 = Port;
+typedef Port = ffi.Int64;
+typedef Handle_FileHolder = ffi.Uint64;
 
-const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
-
-const int NETWORK_EVENT_PEER_SET_CHANGE = 1;
+/// Type-safe wrapper over native dart SendPort.
+typedef Port_Result = Port;
 
 const int ENTRY_TYPE_FILE = 1;
 
@@ -246,3 +284,7 @@ const int ACCESS_MODE_BLIND = 0;
 const int ACCESS_MODE_READ = 1;
 
 const int ACCESS_MODE_WRITE = 2;
+
+const int NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH = 0;
+
+const int NETWORK_EVENT_PEER_SET_CHANGE = 1;
