@@ -23,15 +23,24 @@ class Client {
 
     _responses[id] = completer;
 
+    final request = {'method': method, 'args': args};
+
     // DEBUG
-    //print('send: id: $id, method: $method, args: $args');
+    //print('send: id: $id, request: $request');
 
     try {
-      final message = serialize({
-        'id': id,
-        'method': method,
-        'args': args,
-      });
+      // Message format:
+      //
+      // +-------------------------------------+-------------------------------------------+
+      // | id (big endian 64 bit unsigned int) | request (messagepack encoded byte string) |
+      // +-------------------------------------+-------------------------------------------+
+      //
+      // This allows the server to decode the id even if the request is malformed so it can send
+      // error response back.
+      final message = (BytesBuilder()
+            ..add((ByteData(8)..setUint64(0, id)).buffer.asUint8List())
+            ..add(serialize(request)))
+          .takeBytes();
 
       _socket.sink.add(message);
 
@@ -47,17 +56,17 @@ class Client {
 
   Future<void> _receive() async {
     await for (final bytes in _socket.stream) {
-      final message = deserialize(bytes);
-
-      // DEBUG
-      //print('received: $message');
-
-      if (message is! Map) {
+      if (bytes.length < 8) {
         continue;
       }
 
-      final id = message['id'];
-      if (id is! int) {
+      final id = bytes.buffer.asByteData().getUint64(0);
+      final message = deserialize(bytes.sublist(8));
+
+      // DEBUG
+      //print('received: id: $id, message: $message');
+
+      if (message is! Map) {
         continue;
       }
 
