@@ -64,7 +64,7 @@ class Client {
       final message = deserialize(bytes.sublist(8));
 
       // DEBUG
-      //print('received: id: $id, message: $message');
+      //print('recv: id: $id, message: $message');
 
       if (message is! Map) {
         continue;
@@ -141,33 +141,12 @@ class Subscription {
   final String _name;
   final Object? _arg;
   int _id = 0;
+  _SubscriptionState _state = _SubscriptionState.idle;
 
   Subscription(this._client, this._name, this._arg)
       : _controller = StreamController.broadcast() {
-    final sink = _controller.sink;
-
-    _controller.onListen = () async {
-      if (_id != 0) {
-        return;
-      }
-
-      try {
-        _id = await _client.invoke('${_name}_subscribe', _arg) as int;
-        _client._subscriptions[_id] = sink;
-      } catch (e) {
-        print('failed to create subscribtion for $_name: $e');
-      }
-    };
-
-    _controller.onCancel = () async {
-      if (_id == 0) {
-        return;
-      }
-
-      _client._subscriptions.remove(_id);
-      await _client.invoke('unsubscribe', _id);
-      _id = 0;
-    };
+    _controller.onListen = () => _switch(_SubscriptionState.subscribing);
+    _controller.onCancel = () => _switch(_SubscriptionState.unsubscribing);
   }
 
   Stream<Object?> get stream => _controller.stream;
@@ -177,6 +156,72 @@ class Subscription {
       await _controller.close();
     }
   }
+
+  Future<void> _switch(_SubscriptionState target) async {
+    switch (_state) {
+      case _SubscriptionState.idle:
+        _state = target;
+        break;
+      case _SubscriptionState.subscribing:
+      case _SubscriptionState.unsubscribing:
+        _state = target;
+        return;
+    }
+
+    while (true) {
+      final state = _state;
+
+      switch (state) {
+        case _SubscriptionState.idle:
+          return;
+        case _SubscriptionState.subscribing:
+          await _subscribe();
+          break;
+        case _SubscriptionState.unsubscribing:
+          await _unsubscribe();
+          break;
+      }
+
+      if (_state == state) {
+        _state = _SubscriptionState.idle;
+      }
+    }
+  }
+
+  Future<void> _subscribe() async {
+    if (_id != 0) {
+      return;
+    }
+
+    try {
+      _id = await _client.invoke('${_name}_subscribe', _arg) as int;
+      _client._subscriptions[_id] = _controller.sink;
+    } catch (e) {
+      print('failed to subscribe to $_name: $e');
+    }
+  }
+
+  Future<void> _unsubscribe() async {
+    if (_id == 0) {
+      return;
+    }
+
+    _client._subscriptions.remove(_id);
+
+    try {
+      await _client.invoke('unsubscribe', _id);
+    } catch (e) {
+      print('failed to unsubscribe from $_name: $e');
+    }
+
+    _id = 0;
+  }
+}
+
+enum _SubscriptionState {
+  idle,
+  subscribing,
+  unsubscribing,
 }
 
 class ClientSocket {
