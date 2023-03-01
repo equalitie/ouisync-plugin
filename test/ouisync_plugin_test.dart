@@ -85,4 +85,34 @@ void main() {
     await streamSubscription.cancel();
     await monitorSubscription.close();
   });
+
+  test('rename repository', () async {
+    {
+      final file = await File.create(repo, 'file.txt');
+      await file.write(0, utf8.encode('hello world'));
+      await file.close();
+    }
+
+    final token = await repo.createReopenToken();
+    await repo.close();
+
+    final src = '${temp.path}/repo.db';
+    final dst = '${temp.path}/repo-new.db';
+
+    for (final ext in ['', '-wal', '-shm']) {
+      final file = io.File('$src$ext');
+
+      if (await file.exists()) {
+        await file.rename('$dst$ext');
+      }
+    }
+
+    repo = await Repository.reopen(session, store: dst, token: token);
+
+    {
+      final file = await File.open(repo, 'file.txt');
+      final content = await file.read(0, 11);
+      expect(utf8.decode(content), equals('hello world'));
+    }
+  });
 }

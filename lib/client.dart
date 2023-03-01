@@ -26,7 +26,7 @@ class Client {
     final request = {method: args};
 
     // DEBUG
-    print('send: id: $id, request: $request');
+    //print('send: id: $id, request: $request');
 
     try {
       // Message format:
@@ -64,7 +64,7 @@ class Client {
       final message = deserialize(bytes.sublist(8));
 
       // DEBUG
-      print('recv: id: $id, message: $message');
+      //print('recv: id: $id, message: $message');
 
       if (message is! Map) {
         continue;
