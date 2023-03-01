@@ -23,10 +23,10 @@ class Client {
 
     _responses[id] = completer;
 
-    final request = {'method': method, 'args': args};
+    final request = {method: args};
 
     // DEBUG
-    //print('send: id: $id, request: $request');
+    print('send: id: $id, request: $request');
 
     try {
       // Message format:
@@ -64,7 +64,7 @@ class Client {
       final message = deserialize(bytes.sublist(8));
 
       // DEBUG
-      //print('recv: id: $id, message: $message');
+      print('recv: id: $id, message: $message');
 
       if (message is! Map) {
         continue;
@@ -96,13 +96,22 @@ class Client {
           continue;
         }
 
-        subscription.add(message['notification']);
+        _handleNotification(subscription, message['notification']);
       }
     }
   }
 
   void _handleResponseSuccess(Completer<Object?> completer, Object? payload) {
-    completer.complete(payload);
+    if (payload == "none") {
+      completer.complete(null);
+      return;
+    }
+
+    if (payload is Map && payload.length == 1) {
+      completer.complete(payload.entries.single.value);
+    } else {
+      _handleInvalidResponse(completer);
+    }
   }
 
   void _handleResponseFailure(Completer<Object?> completer, Object? payload) {
@@ -132,6 +141,17 @@ class Client {
     final id = _nextMessageId;
     ++_nextMessageId;
     return id;
+  }
+
+  void _handleNotification(StreamSink<Object?> sink, Object? payload) {
+    if (payload is String) {
+      sink.add(null);
+    } else if (payload is Map && payload.length == 1) {
+      sink.add(payload.entries.single.value);
+    } else {
+      final error = Exception('invalid notification');
+      sink.addError(error);
+    }
   }
 }
 

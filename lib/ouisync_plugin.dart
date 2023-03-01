@@ -196,8 +196,19 @@ class PeerInfo {
     final ip = map[0] as String;
     final port = map[1] as int;
     final source = map[2] as String;
-    final state = map[3] as String;
-    final runtimeId = map.length > 4 ? map[4] as String? : null;
+    final rawState = map[3];
+
+    String state;
+    String? runtimeId;
+
+    if (rawState is String) {
+      state = rawState;
+    } else if (rawState is Map) {
+      state = rawState.entries.single.key as String;
+      runtimeId = HEX.encode(rawState.entries.single.value as Uint8List);
+    } else {
+      throw Exception('invalid peer info state');
+    }
 
     return PeerInfo(
       ip: ip,

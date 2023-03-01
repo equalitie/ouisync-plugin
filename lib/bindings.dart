@@ -81,7 +81,7 @@ class Bindings {
 
   late final _session_channel_openPtr = _lookup<
       ffi.NativeFunction<
-          Handle_ClientSender Function(
+          Handle_ForeignClientSender Function(
               SessionHandle, Port_Vec_u8)>>('session_channel_open');
   late final _session_channel_open =
       _session_channel_openPtr.asFunction<int Function(int, int)>();
@@ -106,7 +106,7 @@ class Bindings {
 
   late final _session_channel_sendPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(SessionHandle, Handle_ClientSender,
+          ffi.Void Function(SessionHandle, Handle_ForeignClientSender,
               ffi.Pointer<ffi.Uint8>, ffi.Uint64)>>('session_channel_send');
   late final _session_channel_send = _session_channel_sendPtr
       .asFunction<void Function(int, int, ffi.Pointer<ffi.Uint8>, int)>();
@@ -126,8 +126,8 @@ class Bindings {
 
   late final _session_channel_closePtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(
-              SessionHandle, Handle_ClientSender)>>('session_channel_close');
+          ffi.Void Function(SessionHandle,
+              Handle_ForeignClientSender)>>('session_channel_close');
   late final _session_channel_close =
       _session_channel_closePtr.asFunction<void Function(int, int)>();
 
@@ -246,6 +246,9 @@ abstract class ErrorCode {
   /// Storage format version mismatch
   static const int storageVersionMismatch = 13;
 
+  /// Connection lost
+  static const int connectionLost = 14;
+
   /// Unspecified error
   static const int other = 65535;
 }
@@ -265,7 +268,7 @@ typedef SessionHandle = UniqueHandle_Session;
 /// FFI handle to a resource with unique ownership.
 typedef UniqueHandle_Session = ffi.Uint64;
 typedef ErrorCode1 = ffi.Uint16;
-typedef Handle_ClientSender = ffi.Uint64;
+typedef Handle_ForeignClientSender = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Vec_u8 = Port;
