@@ -58,15 +58,6 @@ void main() {
     }
   });
 
-  test('encode and decode share token', () async {
-    final token =
-        await repo.createShareToken(accessMode: AccessMode.read, name: 'test');
-    final encoded = await token.encode();
-    final decoded = await ShareToken.decode(session, encoded);
-
-    expect(token, equals(decoded));
-  });
-
   test('parse invalid share token', () async {
     final input = "broken!@#%";
     expect(ShareToken.fromString(session, input), throwsA(isA<Error>()));

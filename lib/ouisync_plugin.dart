@@ -481,17 +481,6 @@ class ShareToken {
           .invoke<String>('share_token_normalize', s)
           .then((s) => ShareToken._(session, s));
 
-  /// Decode share token from raw bytes (obtained for example from a QR code).
-  /// Returns null if the decoding failed.
-  static Future<ShareToken?> decode(Session session, Uint8List bytes) => session
-      .client
-      .invoke<String?>('share_token_decode', bytes)
-      .then((token) => (token != null) ? ShareToken._(session, token) : null);
-
-  /// Encode this share token into raw bytes (for example to build a QR code from).
-  Future<Uint8List> encode() =>
-      session.client.invoke<Uint8List>('share_token_encode', token);
-
   /// Get the suggested repository name from the share token.
   Future<String> get suggestedName =>
       session.client.invoke<String>('share_token_suggested_name', token);
