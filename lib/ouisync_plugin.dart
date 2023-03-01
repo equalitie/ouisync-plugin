@@ -306,6 +306,20 @@ class Repository {
     return Repository._(session, handle, store);
   }
 
+  /// Opens an existing repository using a reopen token.
+  static Future<Repository> reopen(
+    Session session, {
+    required String store,
+    required Uint8List token,
+  }) async {
+    final handle = await session.client.invoke<int>('repository_reopen', {
+      'path': store,
+      'token': token,
+    });
+
+    return Repository._(session, handle, store);
+  }
+
   /// Close the repository. Accessing the repository after it's been closed is an error.
   Future<void> close() async {
     if (debugTrace) {
@@ -315,6 +329,11 @@ class Repository {
     await _subscription.close();
     await session.client.invoke('repository_close', handle);
   }
+
+  /// Creates a reopen token to be used to reopen this repository in the same access mode as it has
+  /// now.
+  Future<Uint8List> createReopenToken() => session.client
+      .invoke<Uint8List>('repository_create_reopen_token', handle);
 
   /// Returns the type (file, directory, ..) of the entry at [path]. Returns `null` if the entry
   /// doesn't exists.
