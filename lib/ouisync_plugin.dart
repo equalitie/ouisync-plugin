@@ -83,11 +83,11 @@ class Session {
   Stream<NetworkEvent> get networkEvents =>
       _networkSubscription.stream.map(_decodeNetworkEvent);
 
-  Future<void> addUserProvidedQuicPeer(String addr) =>
-      client.invoke<void>('network_add_user_provided_quic_peer', addr);
+  Future<void> addUserProvidedPeer(String addr) =>
+      client.invoke<void>('network_add_user_provided_peer', addr);
 
-  Future<void> removeUserProvidedQuicPeer(String addr) =>
-      client.invoke<void>('network_remove_user_provided_quic_peer', addr);
+  Future<void> removeUserProvidedPeer(String addr) =>
+      client.invoke<void>('network_remove_user_provided_peer', addr);
 
   Future<String?> get tcpListenerLocalAddressV4 =>
       client.invoke<String?>('network_tcp_listener_local_addr_v4');
