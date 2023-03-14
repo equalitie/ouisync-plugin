@@ -249,6 +249,9 @@ abstract class ErrorCode {
   /// Connection lost
   static const int connectionLost = 14;
 
+  /// Request is forbidden
+  static const int forbiddenRequest = 15;
+
   /// Unspecified error
   static const int other = 65535;
 }

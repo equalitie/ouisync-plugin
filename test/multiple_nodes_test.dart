@@ -44,7 +44,7 @@ void main() {
 
   test('notification on sync', () async {
     final addr = (await session1.quicListenerLocalAddressV4)!;
-    await session2.addUserProvidedQuicPeer(addr);
+    await session2.addUserProvidedPeer('quic/$addr');
 
     // One event for each block created (one for the root directory and one for the file)
     final expect = expectLater(repo2.events, emitsInOrder([null, null]));
@@ -67,7 +67,7 @@ void main() {
           .having((peer) => peer.runtimeId, 'runtimeId', isNotNull))),
     );
 
-    await session2.addUserProvidedQuicPeer(addr);
+    await session2.addUserProvidedPeer('quic/$addr');
 
     await expect;
   });
