@@ -37,9 +37,11 @@ class Session {
       print("Session.open $configsDirPath");
     }
 
+    final recvPort = ReceivePort();
     final result = _withPoolSync((pool) => bindings.session_create(
           NativeApi.postCObject.cast<Void>(),
           pool.toNativeUtf8(configsDirPath),
+          recvPort.sendPort.nativePort,
         ));
 
     int handle;
@@ -51,7 +53,7 @@ class Session {
       throw Error(result.error_code, errorMessage);
     }
 
-    final socket = MemorySocket(handle);
+    final socket = MemorySocket(handle, recvPort);
     final client = Client(socket);
 
     return Session._(handle, client);
@@ -854,15 +856,9 @@ class MemorySocket extends ClientSocket {
     Sink<Uint8List> sink,
   ) : super(stream, sink);
 
-  factory MemorySocket(int sessionHandle) {
-    final recvPort = ReceivePort();
-    final senderHandle = bindings.session_channel_open(
-      sessionHandle,
-      recvPort.sendPort.nativePort,
-    );
-
-    final stream = recvPort.cast<Uint8List>();
-    final sink = MemorySink(sessionHandle, senderHandle);
+  factory MemorySocket(int sessionHandle, ReceivePort port) {
+    final stream = port.cast<Uint8List>();
+    final sink = MemorySink(sessionHandle);
 
     return MemorySocket._(stream, sink);
   }
@@ -870,9 +866,8 @@ class MemorySocket extends ClientSocket {
 
 class MemorySink extends Sink<Uint8List> {
   final int _session;
-  final int _sender;
 
-  MemorySink(this._session, this._sender);
+  MemorySink(this._session);
 
   @override
   void add(Uint8List data) {
@@ -881,16 +876,14 @@ class MemorySink extends Sink<Uint8List> {
 
     try {
       buffer.asTypedList(data.length).setAll(0, data);
-      bindings.session_channel_send(_session, _sender, buffer, data.length);
+      bindings.session_channel_send(_session, buffer, data.length);
     } finally {
       malloc.free(buffer);
     }
   }
 
   @override
-  void close() {
-    bindings.session_channel_close(_session, _sender);
-  }
+  void close() {}
 }
 
 class WebSocket extends ClientSocket {
