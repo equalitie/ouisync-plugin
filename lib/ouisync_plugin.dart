@@ -74,8 +74,8 @@ class Session {
     bool defaultLocalDiscoveryEnabled = false,
   }) =>
       client.invoke<void>("network_init", {
-        'portForwardingEnabled': defaultPortForwardingEnabled,
-        'localDiscoveryEnabled': defaultLocalDiscoveryEnabled,
+        'port_forwarding_enabled': defaultPortForwardingEnabled,
+        'local_discovery_enabled': defaultLocalDiscoveryEnabled,
       });
 
   /// Binds network to the specified addresses.
