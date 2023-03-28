@@ -191,8 +191,8 @@ abstract class ErrorCode {
   /// The indended operation is not supported
   static const int operationNotSupported = 8;
 
-  /// Failed to read from or write into the device ID config file
-  static const int deviceIdConfig = 10;
+  /// Failed to read from or write into the config file
+  static const int config = 10;
 
   /// Argument passed to a function is not valid
   static const int invalidArgument = 11;

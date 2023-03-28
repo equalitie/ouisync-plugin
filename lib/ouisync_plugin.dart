@@ -67,6 +67,17 @@ class Session {
     return Session._(0, client);
   }
 
+  /// Initialize network from config. Fall back to the provided defaults if the corresponding
+  /// config entries don't exist.
+  Future<void> initNetwork({
+    bool defaultPortForwardingEnabled = false,
+    bool defaultLocalDiscoveryEnabled = false,
+  }) =>
+      client.invoke<void>("network_init", {
+        'portForwardingEnabled': defaultPortForwardingEnabled,
+        'localDiscoveryEnabled': defaultLocalDiscoveryEnabled,
+      });
+
   /// Binds network to the specified addresses.
   Future<void> bindNetwork({
     String? quicV4,
