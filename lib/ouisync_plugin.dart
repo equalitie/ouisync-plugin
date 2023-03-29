@@ -137,25 +137,17 @@ class Session {
   Future<bool> get isPortForwardingEnabled =>
       client.invoke<bool>('network_is_port_forwarding_enabled');
 
-  /// Enable port forwarding (UPnP)
-  Future<void> enablePortForwarding() =>
-      client.invoke<void>('network_set_port_forwarding_enabled', true);
-
-  /// Disable port forwarding (UPnP)
-  Future<void> disablePortForwarding() =>
-      client.invoke<void>('network_set_port_forwarding_enabled', false);
+  /// Enable/disable port forwarding (UPnP)
+  Future<void> setPortForwardingEnabled(bool enabled) =>
+      client.invoke<void>('network_set_port_forwarding_enabled', enabled);
 
   /// Is local discovery enabled?
   Future<bool> get isLocalDiscoveryEnabled =>
       client.invoke<bool>('network_is_local_discovery_enabled');
 
-  /// Enable local discovery
-  Future<void> enableLocalDiscovery() =>
-      client.invoke<void>('network_set_local_discovery_enabled', true);
-
-  /// Disable local discovery
-  Future<void> disableLocalDiscovery() =>
-      client.invoke<void>('network_set_local_discovery_enabled', false);
+  /// Enable/disable local discovery
+  Future<void> setLocalDiscoveryEnabled(bool enabled) =>
+      client.invoke<void>('network_set_local_discovery_enabled', enabled);
 
   Future<String> get thisRuntimeId =>
       client.invoke<String>('network_this_runtime_id');
@@ -396,41 +388,24 @@ class Repository {
         .invoke<bool>('repository_is_dht_enabled', handle);
   }
 
-  Future<void> enableDht() async {
+  Future<void> setDhtEnabled(bool enabled) async {
     if (debugTrace) {
-      print("Repository.enableDht");
+      print("Repository.setDhtEnabled($enabled)");
     }
 
     await session.client.invoke<void>('repository_set_dht_enabled', {
       'repository': handle,
-      'enabled': true,
-    });
-  }
-
-  Future<void> disableDht() async {
-    if (debugTrace) {
-      print("Repository.disableDht");
-    }
-
-    await session.client.invoke<void>('repository_set_dht_enabled', {
-      'repository': handle,
-      'enabled': false,
+      'enabled': enabled,
     });
   }
 
   Future<bool> get isPexEnabled =>
       session.client.invoke<bool>('repository_is_pex_enabled', handle);
 
-  Future<void> enablePex() =>
+  Future<void> setPexEnabled(bool enabled) =>
       session.client.invoke<void>('repository_set_pex_enabled', {
         'repository': handle,
-        'enabled': true,
-      });
-
-  Future<void> disablePex() =>
-      session.client.invoke<void>('repository_set_pex_enabled', {
-        'repository': handle,
-        'enabled': false,
+        'enabled': enabled,
       });
 
   Future<AccessMode> get accessMode {
