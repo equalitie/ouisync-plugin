@@ -104,20 +104,15 @@ class _MyAppState extends State<MyApp> {
           title: Text("BitTorrent DHT"),
           value: bittorrentDhtEnabled,
           onChanged: (bool value) {
-            enableDisableDht(value);
+            setDhtEnabled(value);
           },
         ),
       ],
     );
   }
 
-  Future<void> enableDisableDht(bool enable) async {
-    if (enable) {
-      await repo.enableDht();
-    } else {
-      await repo.disableDht();
-    }
-
+  Future<void> setDhtEnabled(bool enable) async {
+    await repo.setDhtEnabled(enable);
     final isEnabled = await repo.isDhtEnabled;
 
     setState(() {
