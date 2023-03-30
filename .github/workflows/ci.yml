@@ -64,6 +64,8 @@ jobs:
       run: flutter analyze
 
     - name: Run tests
+      env:
+        RUST_LOG: ouisync=trace,ouisync::state_monitor=off,sqlx=warn
       run: flutter test
 
     - run: rustup target add x86_64-linux-android # armv7-linux-androideabi aarch64-linux-android i686-linux-android
