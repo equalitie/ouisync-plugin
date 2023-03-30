@@ -1,76 +1,77 @@
 on: [push]
 
-name: CI
+name: Ouisync Flutter Plugin
 
 jobs:
-  build_and_test:
-    name: OuiSync Flutter Plugin
+  setup:
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: recursive
-
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-
-      # Not an ideal solution, but seems tha't the currently accepted workaround:
-      # https://github.com/dart-lang/ffigen/issues/222
-    - name: Create a link to libclang.so where flutter looks for it.
-      run: sudo ln -s /usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/renderscript/prebuilt/linux-x86_64/lib64/libclang.so /usr/lib/
-
-    - name: Building ouisync library for the test
-      # Building without `--release` because debug is required for `flutter test`
-      run: cd ouisync && cargo build -p ouisync-ffi # --verbose
-
-    - name: Generate ./ouisync/target/bindings.h
-      run: cd ouisync && cargo run --bin bindgen
-
-    - uses: actions/setup-java@v1
-      with:
-        java-version: '12.x'
-
-    - uses: nttld/setup-ndk@v1
-      with:
-          ndk-version: r25c
-
-    - name: Tell the build process where Android NDK is located
-      # Note: we should be able to get the NDK directory value from
       #
-      # ${{ steps.setup-ndk.outputs.ndk-path }}
+      # Setup
       #
-      # as described here
+
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - uses: subosito/flutter-action@v2
+        with:
+            channel: 'stable'
+            cache: true
+
+      # Cache rust artifacts
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ouisync/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('ouisync/**/Cargo.toml') }}
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Generate bindings
+        run: |
+          cd ouisync && cargo run --bin bindgen
+          flutter pub run ffigen
+
       #
-      # https://github.com/marketplace/actions/setup-android-ndk
+      # Test
       #
-      # but that doesn't seem to work.
-      run: echo "ndk.dir=$(dirname $(which ndk-build))" >> android/local.properties
 
-    - name: Installing llvm
-      run: sudo apt-get install libclang-dev
+      - name: Building ouisync library for the test
+        # Building without `--release` because debug is required for `flutter test`
+        run: cd ouisync && cargo build -p ouisync-ffi # --verbose
 
-    - uses: subosito/flutter-action@v2
-      with:
-          channel: 'stable'
+      - name: Analyze
+        run: flutter analyze
 
-    - name: Get dependencies
-      run: flutter pub get
+      - name: Run tests
+        env:
+          RUST_LOG: ouisync=debug,ouisync::state_monitor=off,sqlx=warn
+        run: flutter test
 
-    - name: Generate ./lib/bindings.dart based on ./ouisync/target/bindings.h
-      run: flutter pub run ffigen
+      #
+      # Build
+      #
 
-    - name: Analyze
-      run: flutter analyze
+      - name: Add android targets
+        run: rustup target add x86_64-linux-android # armv7-linux-androideabi aarch64-linux-android i686-linux-android
 
-    - name: Run tests
-      env:
-        RUST_LOG: ouisync=trace,ouisync::state_monitor=off,sqlx=warn
-      run: flutter test
+      - name: Tell the build process where Android NDK is located
+        run: echo "ndk.dir=$ANDROID_NDK_ROOT" >> android/local.properties
 
-    - run: rustup target add x86_64-linux-android # armv7-linux-androideabi aarch64-linux-android i686-linux-android
+      # HACK: x86_64-linux-android-ar was removed from the recent NDKs in favor of llvm-ar, but some
+      # rust crates still expect it there.
+      - name: Work around missing tool
+        run: cd $ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin && ln -s llvm-ar x86_64-linux-android-ar
 
-    # TODO: This builds another ouisync library, can we use that for tests
-    # instead of the one built above? (to avoid compiling it twice and thus
-    # slowing down CI).
-    - run: flutter build aar --target-platform=android-x64 --no-release --debug --no-profile
+      - name: Build AAR
+        run: flutter build aar --target-platform=android-x64 --no-release --debug --no-profile
+
+
+
