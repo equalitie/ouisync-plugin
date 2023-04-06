@@ -72,6 +72,10 @@ void main() {
     expect(progress, equals(Progress(0, 0)));
   });
 
+  test('repository state monitor', () async {
+    expect(await repo.stateMonitor.load(), isNotNull);
+  });
+
   test('state monitor missing node', () async {
     final monitor =
         session.rootStateMonitor.child(MonitorId.expectUnique("invalid"));

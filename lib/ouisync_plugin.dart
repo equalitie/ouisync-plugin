@@ -443,7 +443,7 @@ class Repository {
 
   StateMonitor get stateMonitor => StateMonitor.getRoot(session)
       .child(MonitorId.expectUnique("Repositories"))
-      .child(MonitorId.expectUnique("repo(store=\"$_store\")"));
+      .child(MonitorId.expectUnique(_store));
 
   Future<String> get infoHash =>
       session.client.invoke<String>("repository_info_hash", handle);
