@@ -107,6 +107,7 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     Log.d(javaClass.simpleName, "Uri: ${uri.toString()}")
 
     val intent = getIntentForAction(uri, Intent.ACTION_SEND)
+    intent.setType("*/*")
 
     activity?.startActivity(Intent.createChooser(intent, title))
   }
