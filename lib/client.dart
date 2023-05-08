@@ -1,19 +1,24 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:ffi';
+import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
+import 'bindings_global.dart';
 import 'ouisync_plugin.dart' show Error;
 
 /// Client to interface with ouisync
 class Client {
-  final ClientSocket _socket;
+  final int _session;
+  final Stream<Uint8List> _stream;
   final _responses = HashMap<int, Completer<Object?>>();
   final _subscriptions = HashMap<int, StreamSink<Object?>>();
   int _nextMessageId = 0;
 
-  Client(this._socket) {
+  Client(this._session, ReceivePort port) : _stream = port.cast<Uint8List>() {
     unawaited(_receive());
   }
 
@@ -42,7 +47,7 @@ class Client {
             ..add(serialize(request)))
           .takeBytes();
 
-      _socket.sink.add(message);
+      _send(message);
 
       return await completer.future as T;
     } finally {
@@ -50,12 +55,20 @@ class Client {
     }
   }
 
-  Future<void> close() async {
-    await _socket.close();
+  void _send(Uint8List data) {
+    // TODO: is there a way to do this without having to allocate whole new buffer?
+    var buffer = malloc<Uint8>(data.length);
+
+    try {
+      buffer.asTypedList(data.length).setAll(0, data);
+      bindings.session_channel_send(_session, buffer, data.length);
+    } finally {
+      malloc.free(buffer);
+    }
   }
 
   Future<void> _receive() async {
-    await for (final bytes in _socket.stream) {
+    await for (final bytes in _stream) {
       if (bytes.length < 8) {
         continue;
       }
@@ -242,16 +255,4 @@ enum _SubscriptionState {
   idle,
   subscribing,
   unsubscribing,
-}
-
-class ClientSocket {
-  final Stream<Uint8List> stream;
-  final Sink<Uint8List> sink;
-
-  ClientSocket(this.stream, this.sink);
-
-  Future<void> close() {
-    sink.close();
-    return Future.value();
-  }
 }
