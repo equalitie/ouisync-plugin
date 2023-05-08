@@ -464,6 +464,12 @@ class Repository {
         .invoke<Uint8List>("repository_database_id", handle);
     return HEX.encode(bytes);
   }
+
+  Future<void> mirror({required String host}) =>
+      session.client.invoke<void>('repository_mirror', {
+        'repository': handle,
+        'host': host,
+      });
 }
 
 class ShareToken {
