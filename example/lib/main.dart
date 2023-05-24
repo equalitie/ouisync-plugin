@@ -86,8 +86,8 @@ class _MyAppState extends State<MyApp> {
           child: Row(
             children: [
               ElevatedButton(
-                  onPressed: () async => await addFile()
-                      .then((value) async => {await getFiles('/')}),
+                  onPressed: () async =>
+                      await addFile().then((value) => getFiles('/')),
                   child: Text('Add file')),
             ],
           ),
