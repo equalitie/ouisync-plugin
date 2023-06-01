@@ -214,7 +214,7 @@ abstract class ErrorCode {
   static const int other = 65535;
 }
 
-final class SessionCreateResult extends ffi.Struct {
+class SessionCreateResult extends ffi.Struct {
   @SessionHandle()
   external int session;
 
