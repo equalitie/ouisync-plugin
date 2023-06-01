@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'client.dart' show Subscription;
 import 'ouisync_plugin.dart' show Session;
 
@@ -49,13 +47,11 @@ class MonitorId implements Comparable<MonitorId> {
 
 class StateMonitorNode {
   final List<MonitorId> path;
-  final Version version;
   final Map<String, String> values;
-  final Map<MonitorId, Version> children;
+  final List<MonitorId> children;
 
   StateMonitorNode(
     this.path,
-    this.version,
     this.values,
     this.children,
   );
@@ -64,13 +60,11 @@ class StateMonitorNode {
     List<MonitorId> path,
     List<Object?> raw,
   ) {
-    final version = raw[0] as int;
-    final values = _decodeValues(raw[1]);
-    final children = _decodeChildren(raw[2]);
+    final values = _decodeValues(raw[0]);
+    final children = _decodeChildren(raw[1]);
 
     return StateMonitorNode(
       path,
-      version,
       values,
       children,
     );
@@ -78,18 +72,12 @@ class StateMonitorNode {
 
   static Map<String, String> _decodeValues(Object? raw) {
     final rawMap = raw as Map<Object?, Object?>;
-    final map = rawMap.cast<String, String>();
-
-    return SplayTreeMap<String, String>.from(map);
+    return rawMap.cast<String, String>();
   }
 
-  static Map<MonitorId, int> _decodeChildren(Object? raw) {
-    final rawMap = raw as Map<Object?, Object?>;
-    final map = rawMap
-        .cast<String, int>()
-        .map((key, value) => MapEntry(MonitorId.parse(key), value));
-
-    return SplayTreeMap<MonitorId, int>.from(map);
+  static List<MonitorId> _decodeChildren(Object? raw) {
+    final rawList = raw as List<Object?>;
+    return rawList.cast<String>().map((id) => MonitorId.parse(id)).toList();
   }
 
   int? parseIntValue(String name) {
@@ -100,7 +88,7 @@ class StateMonitorNode {
 
   @override
   String toString() =>
-      "StateMonitorNode { version:$version, values:$values, children:$children }";
+      "StateMonitorNode { values:$values, children:$children }";
 }
 
 class StateMonitor {
