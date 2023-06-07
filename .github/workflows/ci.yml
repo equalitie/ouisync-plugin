@@ -32,7 +32,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('ouisync/**/Cargo.toml') }}
 
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          sudo apt-get install libfuse-dev
+          flutter pub get
 
       - name: Generate bindings
         run: |
