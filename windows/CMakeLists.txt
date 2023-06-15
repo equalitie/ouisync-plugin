@@ -20,6 +20,14 @@ FetchContent_MakeAvailable(Corrosion)
 corrosion_import_crate(MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml" 
 CRATES ouisync-ffi)
 
+# Not putting it inside Debug or Release subdirectories because they don't
+# necessarily exist yet. Or maybe we should create it?
+set(DOKAN_DLL_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}")
+
+# This forces the rust-dokan dependency to create the dokan2.dll library and
+# place in the ${binary_output_dir} directory.
+corrosion_set_env_vars(ouisync-ffi "DOKAN_DLL_OUTPUT_PATH=${DOKAN_DLL_OUTPUT_PATH}")
+
 # This value is used when generating builds using this plugin, so it must
 # not be changed
 set(PLUGIN_NAME "ouisync_plugin_plugin")
@@ -39,5 +47,6 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 set(ouisync_plugin_bundled_libraries
   $<$<CONFIG:Debug>:${CMAKE_CURRENT_BINARY_DIR}/Debug/ouisync_ffi.dll>
   $<$<CONFIG:Release>:${CMAKE_CURRENT_BINARY_DIR}/Release/ouisync_ffi.dll>
+  ${DOKAN_DLL_OUTPUT_PATH}/dokan2.dll
   PARENT_SCOPE
 )
