@@ -28,18 +28,23 @@ class Session {
     NativeChannels.session = this;
   }
 
-  /// Creates a new session in this process. [configsDirPath] is a path to a directory where
-  /// configuration files shall be stored. If it doesn't exists, it will be
-  /// created.
-  static Session create(String configsDirPath) {
+  /// Creates a new session in this process.
+  /// [configPath] is a path to a directory where configuration files shall be stored. If it
+  /// doesn't exists, it will be created.
+  /// [logPath] is a path to the log file. If null, logs will be printed to standard output.
+  static Session create({
+    required String configPath,
+    String? logPath,
+  }) {
     if (debugTrace) {
-      print("Session.open $configsDirPath");
+      print("Session.open $configPath");
     }
 
     final recvPort = ReceivePort();
     final result = _withPoolSync((pool) => bindings.session_create(
           NativeApi.postCObject.cast<Void>(),
-          pool.toNativeUtf8(configsDirPath),
+          pool.toNativeUtf8(configPath),
+          logPath != null ? pool.toNativeUtf8(logPath) : nullptr,
           recvPort.sendPort.nativePort,
         ));
 

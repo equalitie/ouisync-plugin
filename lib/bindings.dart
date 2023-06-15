@@ -29,22 +29,27 @@ class Bindings {
   SessionCreateResult session_create(
     ffi.Pointer<ffi.Void> post_c_object_fn,
     ffi.Pointer<ffi.Char> configs_path,
+    ffi.Pointer<ffi.Char> log_path,
     int server_tx_port,
   ) {
     return _session_create(
       post_c_object_fn,
       configs_path,
+      log_path,
       server_tx_port,
     );
   }
 
   late final _session_createPtr = _lookup<
       ffi.NativeFunction<
-          SessionCreateResult Function(ffi.Pointer<ffi.Void>,
-              ffi.Pointer<ffi.Char>, Port_Bytes)>>('session_create');
+          SessionCreateResult Function(
+              ffi.Pointer<ffi.Void>,
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>,
+              Port_Bytes)>>('session_create');
   late final _session_create = _session_createPtr.asFunction<
-      SessionCreateResult Function(
-          ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>, int)>();
+      SessionCreateResult Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Char>, int)>();
 
   /// Destroys the ouisync session.
   ///
