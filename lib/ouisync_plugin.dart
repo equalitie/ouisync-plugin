@@ -57,6 +57,14 @@ class Session {
     return Session._(handle, client);
   }
 
+  // Mount all repositories that are open now or in future in read or
+  // read/write mode into the `mountPoint`. The `mountPoint` may point to an
+  // empty directory or may be a drive letter.
+  Future<void> mountAllRepositories(String mountPoint) {
+    return _invoke<void>((port) =>
+        _withPoolSync((pool) => bindings.session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
+  }
+
   /// Initialize network from config. Fall back to the provided defaults if the corresponding
   /// config entries don't exist.
   Future<void> initNetwork({
