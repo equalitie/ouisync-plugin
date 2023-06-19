@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> initObjects() async {
     final dataDir = (await getApplicationSupportDirectory()).path;
-    final session = Session.create(join(dataDir, 'config.db'));
+    final session = Session.create(configPath: join(dataDir, 'config.db'));
 
     final store = join(dataDir, 'repo.db');
     final storeExists = await io.File(store).exists();
