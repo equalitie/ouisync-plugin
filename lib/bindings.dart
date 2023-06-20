@@ -191,6 +191,30 @@ class Bindings {
           'free_string');
   late final _free_string =
       _free_stringPtr.asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  /// Print log message
+  ///
+  /// # Safety
+  ///
+  /// `message_ptr` must be a pointer to a nul-terminated utf-8 encoded string
+  void log_print(
+    int level,
+    ffi.Pointer<ffi.Char> scope_ptr,
+    ffi.Pointer<ffi.Char> message_ptr,
+  ) {
+    return _log_print(
+      level,
+      scope_ptr,
+      message_ptr,
+    );
+  }
+
+  late final _log_printPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Uint8, ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Char>)>>('log_print');
+  late final _log_print = _log_printPtr.asFunction<
+      void Function(int, ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Char>)>();
 }
 
 abstract class ErrorCode {
@@ -299,6 +323,16 @@ typedef Handle_FileHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Result = RawPort;
+
+const int LOG_LEVEL_ERROR = 1;
+
+const int LOG_LEVEL_WARN = 2;
+
+const int LOG_LEVEL_INFO = 3;
+
+const int LOG_LEVEL_DEBUG = 4;
+
+const int LOG_LEVEL_TRACE = 5;
 
 const int ENTRY_TYPE_FILE = 1;
 

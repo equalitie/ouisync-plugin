@@ -66,8 +66,8 @@ class Session {
   // read/write mode into the `mountPoint`. The `mountPoint` may point to an
   // empty directory or may be a drive letter.
   Future<void> mountAllRepositories(String mountPoint) {
-    return _invoke<void>((port) =>
-        _withPoolSync((pool) => bindings.session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
+    return _invoke<void>((port) => _withPoolSync((pool) => bindings
+        .session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
   }
 
   /// Initialize network from config. Fall back to the provided defaults if the corresponding
@@ -828,6 +828,31 @@ class File {
 
     return _invoke<void>((port) =>
         bindings.file_copy_to_raw_fd(session.handle, handle, fd, port));
+  }
+}
+
+/// Print log message
+void logPrint(LogLevel level, String scope, String message) =>
+    _withPoolSync((pool) => bindings.log_print(
+          _encodeLogLevel(level),
+          pool.toNativeUtf8(scope),
+          pool.toNativeUtf8(message),
+        ));
+
+enum LogLevel { error, warn, info, debug, trace }
+
+int _encodeLogLevel(LogLevel level) {
+  switch (level) {
+    case LogLevel.error:
+      return LOG_LEVEL_ERROR;
+    case LogLevel.warn:
+      return LOG_LEVEL_WARN;
+    case LogLevel.info:
+      return LOG_LEVEL_INFO;
+    case LogLevel.debug:
+      return LOG_LEVEL_DEBUG;
+    case LogLevel.trace:
+      return LOG_LEVEL_TRACE;
   }
 }
 
