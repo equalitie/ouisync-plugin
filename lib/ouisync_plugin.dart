@@ -155,6 +155,9 @@ class Session {
   Future<String> get thisRuntimeId =>
       client.invoke<String>('network_this_runtime_id');
 
+  Future<void> addStorageServer(String host) =>
+      client.invoke<void>('network_add_storage_server', host);
+
   /// Destroys the session.
   Future<void> dispose() async {
     if (debugTrace) {
@@ -478,10 +481,9 @@ class Repository {
     return HEX.encode(bytes);
   }
 
-  Future<void> mirror({required String host}) =>
-      session.client.invoke<void>('repository_mirror', {
+  /// Create mirror of this repository on the storage servers.
+  Future<void> mirror() => session.client.invoke<void>('repository_mirror', {
         'repository': handle,
-        'host': host,
       });
 }
 
