@@ -22,6 +22,7 @@ class Session {
   final int handle;
   final Client client;
   final Subscription _networkSubscription;
+  String? _mountPoint;
 
   Session._(this.handle, this.client)
       : _networkSubscription = Subscription(client, "network", null) {
@@ -62,12 +63,15 @@ class Session {
     return Session._(handle, client);
   }
 
+  String? get mountPoint => _mountPoint;
+
   // Mount all repositories that are open now or in future in read or
   // read/write mode into the `mountPoint`. The `mountPoint` may point to an
   // empty directory or may be a drive letter.
-  Future<void> mountAllRepositories(String mountPoint) {
-    return _invoke<void>((port) => _withPoolSync((pool) => bindings
+  Future<void> mountAllRepositories(String mountPoint) async {
+    await _invoke<void>((port) => _withPoolSync((pool) => bindings
         .session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
+    this._mountPoint = mountPoint;
   }
 
   /// Initialize network from config. Fall back to the provided defaults if the corresponding
