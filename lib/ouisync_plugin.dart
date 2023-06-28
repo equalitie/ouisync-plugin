@@ -71,7 +71,7 @@ class Session {
   Future<void> mountAllRepositories(String mountPoint) async {
     await _invoke<void>((port) => _withPoolSync((pool) => bindings
         .session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
-    this._mountPoint = mountPoint;
+    _mountPoint = mountPoint;
   }
 
   /// Initialize network from config. Fall back to the provided defaults if the corresponding
