@@ -7,7 +7,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
 import 'package:hex/hex.dart';
 
-import 'bindings_global.dart';
+import 'bindings_global.dart' as b;
 import 'client.dart';
 import 'native_channels.dart';
 import 'state_monitor.dart';
@@ -15,6 +15,9 @@ import 'state_monitor.dart';
 export 'native_channels.dart' show NativeChannels;
 
 const bool debugTrace = false;
+
+// Export
+typedef ErrorCode = b.ErrorCode;
 
 /// Entry point to the ouisync bindings. A session should be opened at the start of the application
 /// and closed at the end. There can be only one session at the time.
@@ -42,7 +45,7 @@ class Session {
     }
 
     final recvPort = ReceivePort();
-    final result = _withPoolSync((pool) => bindings.session_create(
+    final result = _withPoolSync((pool) => b.bindings.session_create(
           NativeApi.postCObject.cast<Void>(),
           pool.toNativeUtf8(configPath),
           logPath != null ? pool.toNativeUtf8(logPath) : nullptr,
@@ -69,7 +72,7 @@ class Session {
   // read/write mode into the `mountPoint`. The `mountPoint` may point to an
   // empty directory or may be a drive letter.
   Future<void> mountAllRepositories(String mountPoint) async {
-    await _invoke<void>((port) => _withPoolSync((pool) => bindings
+    await _invoke<void>((port) => _withPoolSync((pool) => b.bindings
         .session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
     _mountPoint = mountPoint;
   }
@@ -171,7 +174,7 @@ class Session {
     await _networkSubscription.close();
 
     if (handle != 0) {
-      bindings.session_destroy(handle);
+      b.bindings.session_destroy(handle);
       NativeChannels.session = null;
     }
   }
@@ -184,7 +187,7 @@ class Session {
   /// Try to gracefully close connections to peers then close the session.
   void shutdownNetworkAndClose() {
     if (handle != 0) {
-      bindings.session_shutdown_network_and_close(handle);
+      b.bindings.session_shutdown_network_and_close(handle);
     }
   }
 }
@@ -248,9 +251,9 @@ enum NetworkEvent {
 
 NetworkEvent _decodeNetworkEvent(Object? raw) {
   switch (raw) {
-    case NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
+    case b.NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
       return NetworkEvent.protocolVersionMismatch;
-    case NETWORK_EVENT_PEER_SET_CHANGE:
+    case b.NETWORK_EVENT_PEER_SET_CHANGE:
       return NetworkEvent.peerSetChange;
     default:
       throw Exception('invalid network event');
@@ -533,21 +536,21 @@ enum AccessMode {
 int _encodeAccessMode(AccessMode mode) {
   switch (mode) {
     case AccessMode.blind:
-      return ACCESS_MODE_BLIND;
+      return b.ACCESS_MODE_BLIND;
     case AccessMode.read:
-      return ACCESS_MODE_READ;
+      return b.ACCESS_MODE_READ;
     case AccessMode.write:
-      return ACCESS_MODE_WRITE;
+      return b.ACCESS_MODE_WRITE;
   }
 }
 
 AccessMode? _decodeAccessMode(int n) {
   switch (n) {
-    case ACCESS_MODE_BLIND:
+    case b.ACCESS_MODE_BLIND:
       return AccessMode.blind;
-    case ACCESS_MODE_READ:
+    case b.ACCESS_MODE_READ:
       return AccessMode.read;
-    case ACCESS_MODE_WRITE:
+    case b.ACCESS_MODE_WRITE:
       return AccessMode.write;
     default:
       return null;
@@ -589,9 +592,9 @@ enum EntryType {
 
 EntryType _decodeEntryType(int n) {
   switch (n) {
-    case ENTRY_TYPE_FILE:
+    case b.ENTRY_TYPE_FILE:
       return EntryType.file;
-    case ENTRY_TYPE_DIRECTORY:
+    case b.ENTRY_TYPE_DIRECTORY:
       return EntryType.directory;
     default:
       throw Exception('invalid entry type');
@@ -833,13 +836,13 @@ class File {
     }
 
     return _invoke<void>((port) =>
-        bindings.file_copy_to_raw_fd(session.handle, handle, fd, port));
+        b.bindings.file_copy_to_raw_fd(session.handle, handle, fd, port));
   }
 }
 
 /// Print log message
 void logPrint(LogLevel level, String scope, String message) =>
-    _withPoolSync((pool) => bindings.log_print(
+    _withPoolSync((pool) => b.bindings.log_print(
           _encodeLogLevel(level),
           pool.toNativeUtf8(scope),
           pool.toNativeUtf8(message),
@@ -850,15 +853,15 @@ enum LogLevel { error, warn, info, debug, trace }
 int _encodeLogLevel(LogLevel level) {
   switch (level) {
     case LogLevel.error:
-      return LOG_LEVEL_ERROR;
+      return b.LOG_LEVEL_ERROR;
     case LogLevel.warn:
-      return LOG_LEVEL_WARN;
+      return b.LOG_LEVEL_WARN;
     case LogLevel.info:
-      return LOG_LEVEL_INFO;
+      return b.LOG_LEVEL_INFO;
     case LogLevel.debug:
-      return LOG_LEVEL_DEBUG;
+      return b.LOG_LEVEL_DEBUG;
     case LogLevel.trace:
-      return LOG_LEVEL_TRACE;
+      return b.LOG_LEVEL_TRACE;
   }
 }
 
@@ -951,5 +954,5 @@ extension Utf8Pointer on Pointer<Utf8> {
 
 // Free a pointer that was allocated by the native side.
 void freeString(Pointer<Utf8> ptr) {
-  bindings.free_string(ptr.cast<Char>());
+  b.bindings.free_string(ptr.cast<Char>());
 }
