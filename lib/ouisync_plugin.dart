@@ -829,6 +829,9 @@ class File {
     return session.client.invoke<int>('file_len', handle);
   }
 
+  Future<int> get progress =>
+      session.client.invoke<int>('file_progress', handle);
+
   /// Copy the contents of the file into the provided raw file descriptor.
   Future<void> copyToRawFd(int fd) {
     if (debugTrace) {
