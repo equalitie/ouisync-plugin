@@ -221,8 +221,8 @@ abstract class ErrorCode {
   /// No error
   static const int ok = 0;
 
-  /// Database error
-  static const int db = 1;
+  /// Store error
+  static const int store = 1;
 
   /// Insuficient permission to perform the intended operation
   static const int permissionDenied = 2;
