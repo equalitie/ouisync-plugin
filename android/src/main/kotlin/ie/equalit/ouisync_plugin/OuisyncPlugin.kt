@@ -91,7 +91,7 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         // opened.
         activity?.startActivity(intent)
     } else {
-        val title = "Preview file from OuiSync"
+        val title = "Preview file from Ouisync"
         activity?.startActivity(Intent.createChooser(intent, title))
     }
   }
@@ -100,7 +100,7 @@ class OuisyncPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     val authority = arguments["authority"]
     val path = arguments["path"]
     val size = arguments["size"]
-    val title = "Share file from OuiSync"
+    val title = "Share file from Ouisync"
 
     val uri = Uri.parse("content://$authority.pipe/$size$path")
 

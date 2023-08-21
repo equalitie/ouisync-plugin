@@ -225,7 +225,7 @@ void showAlertDialog(BuildContext context, String path, int size) {
   );
 
   AlertDialog alert = AlertDialog(
-    title: Text("OuiSync Plugin Example App"),
+    title: Text("Ouisync Plugin Example App"),
     content: Text("File:\n$path"),
     actions: [
       previewFileButton,
