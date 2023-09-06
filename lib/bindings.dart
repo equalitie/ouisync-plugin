@@ -71,30 +71,6 @@ class Bindings {
   late final _session_destroy =
       _session_destroyPtr.asFunction<void Function(int)>();
 
-  /// Mount all repositories that are or will be opened in read and/or write mode.
-  ///
-  /// # Safety
-  ///
-  /// `session` must be a valid session handle.
-  void session_mount_all(
-    int session,
-    ffi.Pointer<ffi.Char> mount_point,
-    int port,
-  ) {
-    return _session_mount_all(
-      session,
-      mount_point,
-      port,
-    );
-  }
-
-  late final _session_mount_allPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(SessionHandle, ffi.Pointer<ffi.Char>,
-              Port_Result_MountError)>>('session_mount_all');
-  late final _session_mount_all = _session_mount_allPtr
-      .asFunction<void Function(int, ffi.Pointer<ffi.Char>, int)>();
-
   /// # Safety
   ///
   /// `session` must be a valid session handle, `sender` must be a valid client sender handle,
@@ -169,7 +145,7 @@ class Bindings {
   late final _file_copy_to_raw_fdPtr = _lookup<
       ffi.NativeFunction<
           ffi.Void Function(SessionHandle, Handle_FileHolder, ffi.Int,
-              Port_Result)>>('file_copy_to_raw_fd');
+              Port_Result_Error)>>('file_copy_to_raw_fd');
   late final _file_copy_to_raw_fd =
       _file_copy_to_raw_fdPtr.asFunction<void Function(int, int, int, int)>();
 
@@ -251,47 +227,17 @@ abstract class ErrorCode {
   /// Argument passed to a function is not valid
   static const int invalidArgument = 11;
 
-  /// Interface request is malformed
-  static const int malformedRequest = 12;
+  /// Request or response is malformed
+  static const int malformedMessage = 12;
 
   /// Storage format version mismatch
   static const int storageVersionMismatch = 13;
 
   /// Connection lost
   static const int connectionLost = 14;
-
-  /// Request is forbidden
-  static const int forbiddenRequest = 15;
-
-  /// Failed to parse the mount point string
-  static const int vfsFailedToParseMountPoint = 2048;
-
-  /// Mounting is not yes supported on this Operating System
-  static const int vfsUnsupportedOs = 2049;
-
-  /// A general error
-  static const int vfsGeneral = 2051;
-
-  /// Bad drive letter
-  static const int vfsDriveLetter = 2052;
-
-  /// Can't install the Dokan driver.
-  static const int vfsDriverInstall = 2053;
-
-  /// The driver responds that something is wrong.
-  static const int vfsStart = 2050;
-
-  /// Can't assign a drive letter or mount point.
-  ///
-  /// This probably means that the mount point is already used by another volume.
-  static const int vfsMount = 2054;
-
-  /// The mount point is invalid.
-  static const int vfsMountPoint = 2055;
-
-  /// The Dokan version that this wrapper is targeting is incompatible with the loaded Dokan
-  /// library.
-  static const int vfsVersion = 2056;
+  static const int vfsInvalidMountPoint = 2048;
+  static const int vfsDriverInstall = 2049;
+  static const int vfsBackend = 2050;
 
   /// Unspecified error
   static const int other = 65535;
@@ -316,13 +262,10 @@ typedef ErrorCode1 = ffi.Uint16;
 /// Type-safe wrapper over native dart SendPort.
 typedef Port_Bytes = RawPort;
 typedef RawPort = ffi.Int64;
-
-/// Type-safe wrapper over native dart SendPort.
-typedef Port_Result_MountError = RawPort;
 typedef Handle_FileHolder = ffi.Uint64;
 
 /// Type-safe wrapper over native dart SendPort.
-typedef Port_Result = RawPort;
+typedef Port_Result_Error = RawPort;
 
 const int LOG_LEVEL_ERROR = 1;
 

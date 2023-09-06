@@ -72,8 +72,7 @@ class Session {
   // read/write mode into the `mountPoint`. The `mountPoint` may point to an
   // empty directory or may be a drive letter.
   Future<void> mountAllRepositories(String mountPoint) async {
-    await _invoke<void>((port) => _withPoolSync((pool) => b.bindings
-        .session_mount_all(handle, pool.toNativeUtf8(mountPoint), port)));
+    await client.invoke<void>("repository_mount_all", mountPoint);
     _mountPoint = mountPoint;
   }
 
