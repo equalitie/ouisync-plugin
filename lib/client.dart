@@ -85,9 +85,10 @@ class Client {
 
       final isSuccess = message.containsKey('success');
       final isFailure = message.containsKey('failure');
-      final responseCompleter = _responses.remove(id);
+      final isNotification = message.containsKey('notification');
 
       if (isSuccess || isFailure) {
+        final responseCompleter = _responses.remove(id);
         if (responseCompleter == null) {
           print('unsolicited response');
           continue;
@@ -98,11 +99,7 @@ class Client {
         } else if (isFailure) {
           _handleResponseFailure(responseCompleter, message['failure']);
         }
-      } else if (responseCompleter != null) {
-        _handleInvalidResponse(responseCompleter);
-      }
-
-      if (message.containsKey('notification')) {
+      } else if (isNotification) {
         final subscription = _subscriptions[id];
         if (subscription == null) {
           print('unsolicited notification');
@@ -110,6 +107,11 @@ class Client {
         }
 
         _handleNotification(subscription, message['notification']);
+      } else {
+        final responseCompleter = _responses.remove(id);
+        if (responseCompleter != null) {
+          _handleInvalidResponse(responseCompleter);
+        }
       }
     }
   }
