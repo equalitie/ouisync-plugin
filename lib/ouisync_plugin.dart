@@ -201,7 +201,7 @@ class Session {
     final h = _handle;
     _handle = 0;
 
-    await _networkSubscription.close();
+    unawaited(_networkSubscription.close());
 
     NativeChannels.session = null;
     b.bindings.session_shutdown_network_and_close(h);
