@@ -57,19 +57,19 @@ class Bindings {
   /// # Safety
   ///
   /// `session` must be a valid session handle.
-  void session_destroy(
+  void session_close(
     int session,
   ) {
-    return _session_destroy(
+    return _session_close(
       session,
     );
   }
 
-  late final _session_destroyPtr =
+  late final _session_closePtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(SessionHandle)>>(
-          'session_destroy');
-  late final _session_destroy =
-      _session_destroyPtr.asFunction<void Function(int)>();
+          'session_close');
+  late final _session_close =
+      _session_closePtr.asFunction<void Function(int)>();
 
   /// # Safety
   ///

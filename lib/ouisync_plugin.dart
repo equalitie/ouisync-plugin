@@ -22,12 +22,14 @@ typedef ErrorCode = b.ErrorCode;
 /// Entry point to the ouisync bindings. A session should be opened at the start of the application
 /// and closed at the end. There can be only one session at the time.
 class Session {
-  final int handle;
+  int _handle;
   final Client client;
   final Subscription _networkSubscription;
   String? _mountPoint;
 
-  Session._(this.handle, this.client)
+  int get handle => _handle;
+
+  Session._(this._handle, this.client)
       : _networkSubscription = Subscription(client, "network", null) {
     NativeChannels.session = this;
   }
@@ -164,30 +166,50 @@ class Session {
   Future<void> addStorageServer(String host) =>
       client.invoke<void>('network_add_storage_server', host);
 
-  /// Destroys the session.
-  Future<void> dispose() async {
-    if (debugTrace) {
-      print("Session.dispose");
+  /// Try to gracefully close connections to peers then close the session.
+  ///
+  /// Note that this function is idempotent with itself as well as with the
+  /// `syncClose` function.
+  Future<void> asyncClose() async {
+    if (_handle == 0) {
+      return;
     }
+
+    final h = _handle;
+    _handle = 0;
 
     await _networkSubscription.close();
 
-    if (handle != 0) {
-      b.bindings.session_destroy(handle);
-      NativeChannels.session = null;
-    }
-  }
+    NativeChannels.session = null;
 
-  /// Try to gracefully close connections to peers.
-  Future<void> shutdownNetwork() async {
-    await client.invoke<void>('network_shutdown');
+    await _shutdownNetwork();
+    b.bindings.session_close(h);
   }
 
   /// Try to gracefully close connections to peers then close the session.
-  void shutdownNetworkAndClose() {
-    if (handle != 0) {
-      b.bindings.session_shutdown_network_and_close(handle);
+  /// Async functions don't work reliably when the dart engine is being
+  /// shutdown (on app exit). In those situations the network needs to be shut
+  /// down using a blocking call.
+  ///
+  /// Note that this function is idempotent with itself as well as with the
+  /// `asyncClose` function.
+  void syncClose() {
+    if (_handle == 0) {
+      return;
     }
+
+    final h = _handle;
+    _handle = 0;
+
+    await _networkSubscription.close();
+
+    NativeChannels.session = null;
+    b.bindings.session_shutdown_network_and_close(h);
+  }
+
+  /// Try to gracefully close connections to peers.
+  Future<void> _shutdownNetwork() async {
+    await client.invoke<void>('network_shutdown');
   }
 }
 
