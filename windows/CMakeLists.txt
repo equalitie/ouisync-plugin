@@ -17,8 +17,11 @@ FetchContent_Declare(
 # Set any global configuration variables such as `Rust_TOOLCHAIN` before this line!
 FetchContent_MakeAvailable(Corrosion)
 
-corrosion_import_crate(MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml" 
-CRATES ouisync-ffi)
+corrosion_import_crate(
+  MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml"
+  CRATES ouisync-ffi
+  FEATURES dart
+)
 
 # Not putting it inside Debug or Release subdirectories because they don't
 # necessarily exist yet. Or maybe we should create it?

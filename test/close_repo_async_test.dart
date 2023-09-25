@@ -19,7 +19,7 @@ void main() {
   });
 
   tearDown(() async {
-    await session.dispose();
+    await session.asyncClose();
     await temp.delete(recursive: true);
   });
 

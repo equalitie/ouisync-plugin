@@ -40,7 +40,7 @@ void main() {
   tearDown(() async {
     await subscription.cancel();
     await repository.close();
-    await session.dispose();
+    await session.asyncClose();
     await temp.delete(recursive: true);
   });
 

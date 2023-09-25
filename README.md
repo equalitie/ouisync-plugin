@@ -27,18 +27,11 @@ to list all available triples):
 
 This repository contains the `ouisync` library as a submodule, which must be pulled as follows:
 
-```git submodule update --init --recursive```
+    $ git submodule update --init --recursive
 
-In order to use this plugin, one must generate the `ouisync/target/bindings.h` header file and then the `lib/bindings.dart` file.
+In order to use this plugin, one must generate the `lib/bindings.g.dart` file:
 
-The former is done with the command:
-
-    $ cd ouisync
-    $ cargo build --lib
-
-The latter is then done from the root folder of this repository:
-
-    $ flutter pub run ffigen
+    $ dart run util/bindgen.dart
 
 Note that the above needs to be done every time the public interface of the
 `ouisync` submodule changes.

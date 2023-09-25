@@ -1,7 +1,6 @@
 include: package:lints/recommended.yaml
 
 analyzer:
-  exclude: [lib/bindings.dart]
   language:
     strict-raw-types: true
 
