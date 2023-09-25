@@ -85,9 +85,9 @@ cargo {
     targets = abiTargets
     profile = gradle.startParameter.taskNames.any{it.toLowerCase().contains("debug")} ? "debug" : "release"
 
-    features {
-        defaultAnd "dart"
-    }
+    // features {
+    //     defaultAnd "dart"
+    // }
 
     extraCargoBuildArguments = ['-p', 'ouisync-ffi']
 }
