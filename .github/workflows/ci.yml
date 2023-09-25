@@ -1,17 +1,17 @@
 on: [push]
 
-name: Ouisync Flutter Plugin
+name: CI
 
 jobs:
   setup:
-    name: Build and test
+    name: build and test
     runs-on: ubuntu-latest
     steps:
       #
       # Setup
       #
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -37,9 +37,7 @@ jobs:
           flutter pub get
 
       - name: Generate bindings
-        run: |
-          cd ouisync && cargo run --bin bindgen
-          flutter pub run ffigen
+        run: dart run util/bindgen.dart
 
       #
       # Test
@@ -54,7 +52,7 @@ jobs:
 
       - name: Run tests
         env:
-          RUST_LOG: ouisync=debug,ouisync::state_monitor=off,sqlx=warn
+          RUST_LOG: ouisync=debug,sqlx=warn
         run: flutter test
 
       #
