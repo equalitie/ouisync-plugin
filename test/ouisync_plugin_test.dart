@@ -22,7 +22,7 @@ void main() {
 
   tearDown(() async {
     await repo.close();
-    await session.asyncClose();
+    await session.close();
     await temp.delete(recursive: true);
   });
 

@@ -171,8 +171,8 @@ class Session {
   /// Try to gracefully close connections to peers then close the session.
   ///
   /// Note that this function is idempotent with itself as well as with the
-  /// `syncClose` function.
-  Future<void> asyncClose() async {
+  /// `closeSync` function.
+  Future<void> close() async {
     if (_handle == 0) {
       return;
     }
@@ -194,8 +194,8 @@ class Session {
   /// down using a blocking call.
   ///
   /// Note that this function is idempotent with itself as well as with the
-  /// `asyncClose` function.
-  void syncClose() {
+  /// `close` function.
+  void closeSync() {
     if (_handle == 0) {
       return;
     }

@@ -37,8 +37,8 @@ void main() {
   tearDown(() async {
     await repo2.close();
     await repo1.close();
-    await session2.asyncClose();
-    await session1.asyncClose();
+    await session2.close();
+    await session1.close();
     await temp.delete(recursive: true);
   });
 

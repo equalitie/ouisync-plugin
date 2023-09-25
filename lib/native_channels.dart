@@ -92,7 +92,7 @@ class NativeChannels {
         session = null;
 
         if (s != null) {
-          s.syncClose();
+          s.closeSync();
         }
 
         return;

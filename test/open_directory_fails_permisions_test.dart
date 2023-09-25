@@ -21,7 +21,7 @@ void main() {
 
   tearDown(() async {
     await repository?.close();
-    await session.asyncClose();
+    await session.close();
 
     await io.Directory(appDirectory).delete(recursive: true);
   });
