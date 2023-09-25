@@ -56,7 +56,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     repo.close();
-    unawaited(session.dispose());
+    unawaited(session.asyncClose());
 
     super.dispose();
   }
