@@ -7,7 +7,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 import 'package:msgpack_dart/msgpack_dart.dart';
 
-import 'bindings_global.dart';
+import 'bindings.dart';
 import 'ouisync_plugin.dart' show Error;
 
 /// Client to interface with ouisync
@@ -143,7 +143,7 @@ class Client {
       return;
     }
 
-    final error = Error(code, message);
+    final error = Error(ErrorCode.decode(code), message);
     completer.completeError(error);
   }
 

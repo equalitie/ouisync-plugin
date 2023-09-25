@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:isolate';
 
@@ -7,17 +8,16 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/services.dart';
 import 'package:hex/hex.dart';
 
-import 'bindings_global.dart' as b;
+import 'bindings.dart';
 import 'client.dart';
 import 'native_channels.dart';
 import 'state_monitor.dart';
 
+export 'bindings.dart'
+    show AccessMode, EntryType, ErrorCode, LogLevel, NetworkEvent;
 export 'native_channels.dart' show NativeChannels;
 
 const bool debugTrace = false;
-
-// Export
-typedef ErrorCode = b.ErrorCode;
 
 /// Entry point to the ouisync bindings. A session should be opened at the start of the application
 /// and closed at the end. There can be only one session at the time.
@@ -47,20 +47,22 @@ class Session {
     }
 
     final recvPort = ReceivePort();
-    final result = _withPoolSync((pool) => b.bindings.session_create(
+    final result = _withPoolSync((pool) => bindings.session_create(
           NativeApi.postCObject.cast<Void>(),
           pool.toNativeUtf8(configPath),
           logPath != null ? pool.toNativeUtf8(logPath) : nullptr,
           recvPort.sendPort.nativePort,
         ));
 
+    final errorCode = ErrorCode.decode(result.error_code);
+
     int handle;
 
-    if (result.error_code == ErrorCode.ok) {
+    if (errorCode == ErrorCode.ok) {
       handle = result.session;
     } else {
       final errorMessage = result.error_message.cast<Utf8>().intoDartString();
-      throw Error(result.error_code, errorMessage);
+      throw Error(errorCode, errorMessage);
     }
 
     final client = Client(handle, recvPort);
@@ -105,7 +107,7 @@ class Session {
   }
 
   Stream<NetworkEvent> get networkEvents =>
-      _networkSubscription.stream.map(_decodeNetworkEvent);
+      _networkSubscription.stream.map((raw) => NetworkEvent.decode(raw as int));
 
   Future<void> addUserProvidedPeer(String addr) =>
       client.invoke<void>('network_add_user_provided_peer', addr);
@@ -183,7 +185,7 @@ class Session {
     NativeChannels.session = null;
 
     await _shutdownNetwork();
-    b.bindings.session_close(h);
+    bindings.session_close(h);
   }
 
   /// Try to gracefully close connections to peers then close the session.
@@ -204,7 +206,7 @@ class Session {
     unawaited(_networkSubscription.close());
 
     NativeChannels.session = null;
-    b.bindings.session_shutdown_network_and_close(h);
+    bindings.session_shutdown_network_and_close(h);
   }
 
   /// Try to gracefully close connections to peers.
@@ -263,22 +265,6 @@ class PeerInfo {
   @override
   String toString() =>
       '$runtimeType(ip: $ip, port: $port, source: $source, state: $state, runtimeId: $runtimeId)';
-}
-
-enum NetworkEvent {
-  protocolVersionMismatch,
-  peerSetChange,
-}
-
-NetworkEvent _decodeNetworkEvent(Object? raw) {
-  switch (raw) {
-    case b.NETWORK_EVENT_PROTOCOL_VERSION_MISMATCH:
-      return NetworkEvent.protocolVersionMismatch;
-    case b.NETWORK_EVENT_PEER_SET_CHANGE:
-      return NetworkEvent.peerSetChange;
-    default:
-      throw Exception('invalid network event');
-  }
 }
 
 /// A reference to a ouisync repository.
@@ -385,7 +371,7 @@ class Repository {
       'path': path,
     });
 
-    return raw != null ? _decodeEntryType(raw) : null;
+    return raw != null ? EntryType.decode(raw) : null;
   }
 
   /// Returns whether the entry (file or directory) at [path] exists.
@@ -448,7 +434,7 @@ class Repository {
 
     return session.client
         .invoke<int>('repository_access_mode', handle)
-        .then((n) => _decodeAccessMode(n)!);
+        .then((n) => AccessMode.decode(n));
   }
 
   /// Create a share token providing access to this repository with the given mode. Can optionally
@@ -465,7 +451,7 @@ class Repository {
     return session.client.invoke<String>('repository_create_share_token', {
       'repository': handle,
       'password': password,
-      'access_mode': _encodeAccessMode(accessMode),
+      'access_mode': accessMode.encode(),
       'name': name,
     }).then((token) => ShareToken._(session, token));
   }
@@ -536,7 +522,7 @@ class ShareToken {
   /// Get the access mode the share token provides.
   Future<AccessMode> get mode => session.client
       .invoke<int>('share_token_mode', token)
-      .then((n) => _decodeAccessMode(n)!);
+      .then((n) => AccessMode.decode(n));
 
   @override
   String toString() => token;
@@ -546,36 +532,6 @@ class ShareToken {
 
   @override
   int get hashCode => token.hashCode;
-}
-
-enum AccessMode {
-  blind,
-  read,
-  write,
-}
-
-int _encodeAccessMode(AccessMode mode) {
-  switch (mode) {
-    case AccessMode.blind:
-      return b.ACCESS_MODE_BLIND;
-    case AccessMode.read:
-      return b.ACCESS_MODE_READ;
-    case AccessMode.write:
-      return b.ACCESS_MODE_WRITE;
-  }
-}
-
-AccessMode? _decodeAccessMode(int n) {
-  switch (n) {
-    case b.ACCESS_MODE_BLIND:
-      return AccessMode.blind;
-    case b.ACCESS_MODE_READ:
-      return AccessMode.read;
-    case b.ACCESS_MODE_WRITE:
-      return AccessMode.write;
-    default:
-      return null;
-  }
 }
 
 class Progress {
@@ -602,26 +558,6 @@ class Progress {
   int get hashCode => Object.hash(value, total);
 }
 
-/// Type of a filesystem entry.
-enum EntryType {
-  /// Regular file.
-  file,
-
-  /// Directory.
-  directory,
-}
-
-EntryType _decodeEntryType(int n) {
-  switch (n) {
-    case b.ENTRY_TYPE_FILE:
-      return EntryType.file;
-    case b.ENTRY_TYPE_DIRECTORY:
-      return EntryType.directory;
-    default:
-      throw Exception('invalid entry type');
-  }
-}
-
 /// Single entry of a directory.
 class DirEntry {
   final String name;
@@ -634,7 +570,7 @@ class DirEntry {
     final name = map[0] as String;
     final type = map[1] as int;
 
-    return DirEntry(name, _decodeEntryType(type));
+    return DirEntry(name, EntryType.decode(type));
   }
 }
 
@@ -859,40 +795,29 @@ class File {
       print("File.copyToRawFd");
     }
 
-    return _invoke<void>((port) =>
-        b.bindings.file_copy_to_raw_fd(session.handle, handle, fd, port));
+    return _invoke(
+      (port) => bindings.file_copy_to_raw_fd(
+        session.handle,
+        handle,
+        fd,
+        port,
+      ),
+    );
   }
 }
 
 /// Print log message
 void logPrint(LogLevel level, String scope, String message) =>
-    _withPoolSync((pool) => b.bindings.log_print(
-          _encodeLogLevel(level),
+    _withPoolSync((pool) => bindings.log_print(
+          level.encode(),
           pool.toNativeUtf8(scope),
           pool.toNativeUtf8(message),
         ));
 
-enum LogLevel { error, warn, info, debug, trace }
-
-int _encodeLogLevel(LogLevel level) {
-  switch (level) {
-    case LogLevel.error:
-      return b.LOG_LEVEL_ERROR;
-    case LogLevel.warn:
-      return b.LOG_LEVEL_WARN;
-    case LogLevel.info:
-      return b.LOG_LEVEL_INFO;
-    case LogLevel.debug:
-      return b.LOG_LEVEL_DEBUG;
-    case LogLevel.trace:
-      return b.LOG_LEVEL_TRACE;
-  }
-}
-
 /// The exception type throws from this library.
 class Error implements Exception {
   final String message;
-  final int code;
+  final ErrorCode code;
 
   Error(this.code, this.message);
 
@@ -914,26 +839,22 @@ T _withPoolSync<T>(T Function(_Pool) fun) {
 }
 
 // Helper to invoke a native async function.
-Future<T> _invoke<T>(void Function(int) fun) async {
+Future<void> _invoke(void Function(int) fun) async {
   final recvPort = ReceivePort();
 
   try {
     fun(recvPort.sendPort.nativePort);
 
-    var code = -1;
+    var buffer = await recvPort.first as Uint8List;
 
-    // Is there a better way to retrieve the first two values of a stream?
-    await for (var item in recvPort) {
-      if (code == -1) {
-        code = item as int;
-      } else if (code == ErrorCode.ok) {
-        return item as T;
-      } else {
-        throw Error(code, item as String);
-      }
+    if (buffer.isEmpty) {
+      return;
     }
 
-    throw Exception('invoked native async function did not produce any result');
+    final code = ErrorCode.decode(buffer.buffer.asByteData().getUint16(0));
+    final message = utf8.decode(buffer.sublist(2));
+
+    throw Error(code, message);
   } finally {
     recvPort.close();
   }
@@ -978,5 +899,5 @@ extension Utf8Pointer on Pointer<Utf8> {
 
 // Free a pointer that was allocated by the native side.
 void freeString(Pointer<Utf8> ptr) {
-  b.bindings.free_string(ptr.cast<Char>());
+  bindings.free_string(ptr.cast<Char>());
 }

@@ -12,8 +12,12 @@ void main() {
   setUp(() async {
     temp = await io.Directory.systemTemp.createTemp();
     session = Session.create(configPath: '${temp.path}/config');
-    repo = await Repository.create(session,
-        store: '${temp.path}/repo.db', readPassword: null, writePassword: null);
+    repo = await Repository.create(
+      session,
+      store: '${temp.path}/repo.db',
+      readPassword: null,
+      writePassword: null,
+    );
   });
 
   tearDown(() async {
