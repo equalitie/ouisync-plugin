@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 import 'dart:ffi';
 import 'dart:isolate';
 
@@ -839,22 +838,26 @@ T _withPoolSync<T>(T Function(_Pool) fun) {
 }
 
 // Helper to invoke a native async function.
-Future<void> _invoke(void Function(int) fun) async {
+Future<T> _invoke<T>(void Function(int) fun) async {
   final recvPort = ReceivePort();
 
   try {
     fun(recvPort.sendPort.nativePort);
 
-    var buffer = await recvPort.first as Uint8List;
+    ErrorCode? code;
 
-    if (buffer.isEmpty) {
-      return;
+    // Is there a better way to retrieve the first two values of a stream?
+    await for (var item in recvPort) {
+      if (code == null) {
+        code = ErrorCode.decode(item as int);
+      } else if (code == ErrorCode.ok) {
+        return item as T;
+      } else {
+        throw Error(code, item as String);
+      }
     }
 
-    final code = ErrorCode.decode(buffer.buffer.asByteData().getUint16(0));
-    final message = utf8.decode(buffer.sublist(2));
-
-    throw Error(code, message);
+    throw Exception('invoked native async function did not produce any result');
   } finally {
     recvPort.close();
   }
