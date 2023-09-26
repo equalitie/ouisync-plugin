@@ -24,7 +24,6 @@ FetchContent_MakeAvailable(Corrosion)
 corrosion_import_crate(
   MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml"
   CRATES ouisync-ffi
-  FEATURES dart
 )
 
 # This value is used when generating builds using this plugin, so it must

@@ -20,7 +20,6 @@ FetchContent_MakeAvailable(Corrosion)
 corrosion_import_crate(
   MANIFEST_PATH "${OUISYNC_DIR}/Cargo.toml"
   CRATES ouisync-ffi
-  FEATURES dart
 )
 
 # Not putting it inside Debug or Release subdirectories because they don't
