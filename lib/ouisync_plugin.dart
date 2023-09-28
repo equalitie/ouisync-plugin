@@ -47,9 +47,9 @@ class Session {
 
     final recvPort = ReceivePort();
     final result = _withPoolSync((pool) => bindings.session_create(
-          NativeApi.postCObject.cast<Void>(),
           pool.toNativeUtf8(configPath),
           logPath != null ? pool.toNativeUtf8(logPath) : nullptr,
+          NativeApi.postCObject,
           recvPort.sendPort.nativePort,
         ));
 
@@ -799,6 +799,7 @@ class File {
         session.handle,
         handle,
         fd,
+        NativeApi.postCObject,
         port,
       ),
     );

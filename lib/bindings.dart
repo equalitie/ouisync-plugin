@@ -12,14 +12,16 @@ import 'package:path/path.dart' as p;
 
 final bindings = Bindings(_defaultLib());
 
+typedef PostCObject = Int8 Function(Int64, Pointer<Dart_CObject>);
+
 typedef _session_create_c = SessionCreateResult Function(
-  Pointer<Void>,
   Pointer<Char>,
   Pointer<Char>,
+  Pointer<NativeFunction<PostCObject>>,
   Int64,
 );
 typedef session_create_dart = SessionCreateResult Function(
-    Pointer<Void>, Pointer<Char>, Pointer<Char>, int);
+    Pointer<Char>, Pointer<Char>, Pointer<NativeFunction<PostCObject>>, int);
 
 typedef _session_channel_send_c = Void Function(Uint64, Pointer<Uint8>, Uint64);
 typedef session_channel_send_dart = void Function(int, Pointer<Uint8>, int);
@@ -30,8 +32,10 @@ typedef session_close_dart = void Function(int);
 typedef _session_shutdown_network_and_close_c = Void Function(Uint64);
 typedef session_shutdown_network_and_close_dart = void Function(int);
 
-typedef _file_copy_to_raw_fd_c = Void Function(Uint64, Uint64, Int, Int64);
-typedef file_copy_to_raw_fd_dart = void Function(int, int, int, int);
+typedef _file_copy_to_raw_fd_c = Void Function(
+    Uint64, Uint64, Int, Pointer<NativeFunction<PostCObject>>, Int64);
+typedef file_copy_to_raw_fd_dart = void Function(
+    int, int, int, Pointer<NativeFunction<PostCObject>>, int);
 
 typedef _log_print_c = Void Function(Uint8, Pointer<Char>, Pointer<Char>);
 typedef log_print_dart = void Function(int, Pointer<Char>, Pointer<Char>);
@@ -52,7 +56,7 @@ class SessionCreateResult extends Struct {
 class Bindings {
   Bindings(DynamicLibrary library)
       : session_create = library
-            .lookup<NativeFunction<_session_create_c>>('session_create')
+            .lookup<NativeFunction<_session_create_c>>('session_create_dart')
             .asFunction(),
         session_channel_send = library
             .lookup<NativeFunction<_session_channel_send_c>>(
@@ -67,7 +71,7 @@ class Bindings {
             .asFunction(),
         file_copy_to_raw_fd = library
             .lookup<NativeFunction<_file_copy_to_raw_fd_c>>(
-                'file_copy_to_raw_fd')
+                'file_copy_to_raw_fd_dart')
             .asFunction(),
         log_print = library
             .lookup<NativeFunction<_log_print_c>>('log_print')
